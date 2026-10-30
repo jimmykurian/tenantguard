@@ -68,17 +68,17 @@ TGM003 catches the same model.
 
 ## Phase 2: SaveChanges guard
 
-- [ ] `TenantGuardSaveChangesInterceptor`, sync and async, registered by `UseTenantGuard`
-- [ ] Per-model metadata cached as a model annotation; no reflection at save time
-- [ ] Added / Modified / Deleted checks per SPEC 5, `ValueComparer`-based equality
-- [ ] `NoTenantPolicy`, `StampOnAdd`
-- [ ] `TenantIsolationViolationException` with `Violations`, key values, message cap of 10
-- [ ] `context.TenantGuard().Bypass(reason)` scope with Warning log; empty reason throws
-- [ ] Logging per SPEC 11 through the application `ILoggerFactory`, `NullLogger` fallback
-- [ ] Tests: every state and policy; shadow tenant property; owned types skipped;
+- [x] `TenantGuardSaveChangesInterceptor`, sync and async, registered by `UseTenantGuard`
+- [x] Per-model metadata cached as a model annotation; no reflection at save time
+- [x] Added / Modified / Deleted checks per SPEC 5, `ValueComparer`-based equality
+- [x] `NoTenantPolicy`, `StampOnAdd`
+- [x] `TenantIsolationViolationException` with `Violations`, key values, message cap of 10
+- [x] `context.TenantGuard().Bypass(reason)` scope with Warning log; empty reason throws
+- [x] Logging per SPEC 11 through the application `ILoggerFactory`, `NullLogger` fallback
+- [x] Tests: every state and policy; shadow tenant property; owned types skipped;
       cross-tenant move rejected; bypass scope; a context with no tenant-scoped entries
       allocates nothing (a `[Fact]` using `GC.GetAllocatedBytesForCurrentThread`)
-- [ ] Behavior pins 1, 2, 6
+- [x] Behavior pins 1, 2, 6
 
 Acceptance: the hand-rolled sample, with a deliberately mis-stamped insert, throws before
 the database sees it, and the log carries `ViolationBlocked`.
