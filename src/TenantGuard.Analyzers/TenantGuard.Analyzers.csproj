@@ -4,13 +4,30 @@
     <TargetFramework>$(TenantGuardAnalyzerTargetFramework)</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>TenantGuard.Analyzers</RootNamespace>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
     <IsPackable>true</IsPackable>
     <PackageId>TenantGuard.Analyzers</PackageId>
     <Description>Roslyn analyzers that flag IgnoreQueryFilters() and raw SQL without a tenant predicate unless the method carries a justification. Bundled in TenantGuard.EntityFrameworkCore; this package ships them standalone.</Description>
+    <!-- An analyzer package: the assembly goes under analyzers/, with no lib/ and no dependencies. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>

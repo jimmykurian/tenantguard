@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/TenantGuard.Analyzers/TenantGuard.Analyzers.csproj" />
+    <!-- The sources under test compile against EF Core and the attribute the way an app's code does. -->
+    <ProjectReference Include="../../src/TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
