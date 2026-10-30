@@ -47,20 +47,20 @@ Acceptance: `task ci` green locally and in CI. `dotnet pack` produces three pack
 
 ## Phase 1: model validation
 
-- [ ] Options model: `TenantGuardOptions`, `TenantGuardOptionsBuilder`, `UseTenantGuard`
+- [x] Options model: `TenantGuardOptions`, `TenantGuardOptionsBuilder`, `UseTenantGuard`
       as an `IDbContextOptionsExtension` with `Info` (debug string, cache key fragment)
-- [ ] Tenant property discovery per SPEC 4.1, including shadow properties and
+- [x] Tenant property discovery per SPEC 4.1, including shadow properties and
       `[TenantKey]`; Finbuckle annotation left as a TODO string constant until Phase 4
-- [ ] Filter inspection: find the filter(s) referencing the tenant property with
+- [x] Filter inspection: find the filter(s) referencing the tenant property with
       `GetDeclaredQueryFilters()`, which EF Core 10 and 11 both have
-- [ ] Operand classification and rules TGM001 to TGM008 with the exact messages
-- [ ] `IModelFinalizedConvention` plugin, `TenantGuardModelException`, `Enforcement`
-- [ ] `TenantGuardModel.Validate` and `ModelReport`
-- [ ] `AddTenantGuardStartupValidation<TContext>()` hosted service
-- [ ] Tests: one positive and one negative model per rule; strict mode with `Shared<T>()`;
+- [x] Operand classification and rules TGM001 to TGM008 with the exact messages
+- [x] `IModelFinalizedConvention` plugin, `TenantGuardModelException`, `Enforcement`
+- [x] `TenantGuardModel.Validate` and `ModelReport`
+- [x] `AddTenantGuardStartupValidation<TContext>()` startup check through `ValidateOnStart`
+- [x] Tests: one positive and one negative model per rule; strict mode with `Shared<T>()`;
       TPH hierarchy; keyless type; owned type; shadow property; `EF.Property` filter;
       filter through a navigation
-- [ ] Behavior pins 4 and 5 (SPEC 9), which justify TGM003
+- [x] Behavior pins 4 and 5 (SPEC 9), which justify TGM003
 
 Acceptance: a context with one unguarded entity fails at host start with a message that
 names the entity and the property. The captured-local pin demonstrates the leak and

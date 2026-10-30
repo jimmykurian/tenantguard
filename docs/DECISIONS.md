@@ -7,6 +7,33 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-10-30: Startup validation through ValidateOnStart, not a hosted service (accepted)
+
+Decision: `AddTenantGuardStartupValidation<TContext>()` registers an `IHostedService`
+(SPEC 4.3), which needs `Microsoft.Extensions.Hosting.Abstractions` (entry of 2026-10-29).
+
+Problem: that makes `Microsoft.Extensions.Hosting.Abstractions` a second runtime
+dependency, against the EF Core only rule in AGENTS.md.
+
+Proposed change: register the check through `ValidateOnStart` in
+`Microsoft.Extensions.Options`, which EF Core already brings in. The host runs it at start,
+before any hosted service, so a bad model still fails the host before it serves a request,
+and EF Core stays the only runtime dependency. The check resolves the context in a scope,
+or creates one from `IDbContextFactory<TContext>`, and fails with a message when the
+context is not registered or does not use `UseTenantGuard`. SPEC 4.3 changes to match.
+
+## 2026-10-30: Public API for options and severity (accepted)
+
+Decision: SPEC 8 is the complete v0.1 public API, and anything it does not list is internal.
+
+Problem: SPEC 8 uses `Severity` and `TenantGuardOptions` without listing them, and gives no
+way to get a `TenantGuardOptions` for `TenantGuardModel.Validate` outside `UseTenantGuard`.
+
+Proposed change: add `public enum Severity { Warning, Error }`, an opaque
+`public sealed class TenantGuardOptions`, and a public constructor and `Options` property on
+`TenantGuardOptionsBuilder`, the way `DbContextOptionsBuilder` exposes its options:
+`new TenantGuardOptionsBuilder().TenantPropertyNames("OrgId").Options`. SPEC 8 lists them.
+
 ## 2026-10-30: Per-file copyright headers instead of none (accepted)
 
 Decision: one LICENSE at the root and no per-file headers (AGENTS.md).
@@ -38,7 +65,7 @@ on 2026-11-10, `global.json` pins SDK `11.0.100-rc.3.26522.148` with `allowPrere
 and `net11.0` references EF Core `11.0.0-rc.3.26522.148`; at release, move both to the
 GA versions and drop `allowPrerelease`.
 
-## 2026-10-29: `AddTenantGuardStartupValidation` needs a hosting dependency (open)
+## 2026-10-29: `AddTenantGuardStartupValidation` needs a hosting dependency (rejected)
 
 Decision: the runtime package depends on `Microsoft.EntityFrameworkCore` only (AGENTS.md).
 
@@ -51,3 +78,5 @@ dependency, at the version matching each target's EF Core (10.0.x for net10.0, 1
 net11.0). It is abstractions only and every ASP.NET Core or worker app already has it.
 The other option, a separate `TenantGuard.Hosting` package, adds a fourth package the
 spec does not list.
+
+Rejected in favor of the ValidateOnStart entry above, which needs no new dependency.
