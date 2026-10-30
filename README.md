@@ -52,7 +52,8 @@ Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.de
 `task ci` runs everything CI runs; `task --list` shows the rest.
 
 Commits follow [Conventional Commits](https://conventionalcommits.org).
-`git config commit.template .gitmessage` loads a template with the types and scopes.
+`git config commit.template .gitmessage` loads a template with the types and scopes, and
+`git config core.hooksPath .githooks` turns on a commit-msg hook that checks them.
 
 ## License
 

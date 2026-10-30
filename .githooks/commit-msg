@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -eo pipefail
+
+# Checks the commit message header against Conventional Commits, with the types and
+# scopes listed in .gitmessage: type(scope): summary, the summary not capitalized and
+# with no period at the end. Merge, revert, fixup!, squash! and amend! messages pass.
+
+cd "$(git rev-parse --show-toplevel)"
+HEADER="$(grep -v '^#' "$1" | grep -m 1 -v '^[[:space:]]*$' || true)"
+
+case "$HEADER" in
+  "Merge "* | "Revert "* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
+esac
+
+TYPES='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+SCOPES="$(sed -n 's/^#.*Scope: \([a-z|-]*\) (optional)$/\1/p' .gitmessage)"
+PATTERN="^($TYPES)(\\(($SCOPES)\\))?!?: [^A-Z].*[^.]$"
+
+if [[ ! "$HEADER" =~ $PATTERN ]]; then
+  echo "commit-msg: \"$HEADER\" doesn't match type(scope): summary."
+  echo "Types: ${TYPES//|/, }"
+  echo "Scopes (optional): ${SCOPES//|/, }"
+  echo "The summary is not capitalized and has no period at the end. See .gitmessage."
+  exit 1
+fi

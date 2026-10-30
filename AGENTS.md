@@ -86,8 +86,8 @@ for them and must pass before every commit; unset, it warns and passes.
 - Work one phase of `docs/PLAN.md` at a time. Tick its checkboxes as you go.
 - When a phase's acceptance criteria pass and `task ci` is green, commit, summarize in a
   few lines, and stop. Do not start the next phase until asked.
-- Conventional commits with the types and scopes in `.gitmessage`. Small commits. Branch
-  and PR; never commit to `main`.
+- Conventional commits with the types and scopes in `.gitmessage`, which
+  `.githooks/commit-msg` checks. Small commits. Branch and PR; never commit to `main`.
 - Every `run:` step in this repo's workflows calls `task`. Third-party actions pinned to
   a full SHA with a version comment.
 - Keep this file under 150 lines and `README.md` accurate at the end of every phase.
