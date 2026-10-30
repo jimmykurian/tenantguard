@@ -52,8 +52,10 @@ Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.de
 `task ci` runs everything CI runs; `task --list` shows the rest.
 
 Commits follow [Conventional Commits](https://conventionalcommits.org).
-`git config commit.template .gitmessage` loads a template with the types and scopes, and
-`git config core.hooksPath .githooks` turns on a commit-msg hook that checks them.
+`git config commit.template .gitmessage` loads a template with the types and scopes.
+`task hooks:install` turns on the git hooks in `.githooks/`: pre-commit refuses commits on
+`main` and checks the staged files, commit-msg checks the message, and pre-push runs
+`task lint` and `task test` before code reaches GitHub.
 
 ## License
 

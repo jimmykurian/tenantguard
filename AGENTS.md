@@ -14,13 +14,16 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
 - `task build` restores and builds the solution, warnings as errors
 - `task test` runs every test project; `task test:unit`, `task test:analyzers`,
   `task test:behavior` run one group
-- `task lint` runs `dotnet format --verify-no-changes`, the Roslyn analyzers, and
-  `task lint:api` (PublicAPI.Shipped/Unshipped are up to date)
+- `task lint` runs `dotnet format --verify-no-changes`, the Roslyn analyzers,
+  `task lint:api` (PublicAPI.Shipped/Unshipped are up to date) and `task lint:headers`
+  (YAML files and git hooks start with the copyright line)
 - `task fmt` formats
 - `task pack` builds the NuGet packages into `./artifacts/`
 - `task samples` builds and smoke-tests `samples/`
 - `task scrub` greps the tree for terms in `$SCRUB_TERMS_FILE` (see Clean room)
 - `task ci` runs lint, build, test, pack, samples, scrub
+- `task hooks:install` turns on the git hooks in `.githooks/` (pre-commit, commit-msg,
+  pre-push)
 
 `task ci` must be green before you call any step done.
 
@@ -83,7 +86,8 @@ ticket IDs or internal URLs anywhere in the tree. The README's audit story is to
 generically ("an audit of a SaaS codebase").
 
 `$SCRUB_TERMS_FILE` points at a private term list outside the repo. `task scrub` greps
-for them and must pass before every commit; unset, it warns and passes.
+for them and must pass before every commit (the pre-commit hook runs it); unset, it warns
+and passes.
 
 ## Workflow
 
