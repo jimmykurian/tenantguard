@@ -224,7 +224,7 @@ Checks, per tenant-scoped entity type, using a fresh context per tenant per chec
 fixed-width table of non-passing rows. The probe never touches the model validation; a
 model that fails TGM rules fails before the probe runs, which is the point.
 
-The kit is framework-agnostic; docs show xUnit, NUnit and TUnit usage.
+The kit is framework-agnostic; docs show xUnit, NUnit, MSTest and TUnit usage.
 
 ## 8. Public API (complete for v0.1)
 

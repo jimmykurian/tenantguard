@@ -131,8 +131,8 @@ sample fails startup (TGM001), and with `Enforcement.Log` fails the probe instea
       the analyzer table, the probe snippet, adoption path (`Enforcement.Log` first,
       then `Throw`), comparison table from SPEC 1, FAQ
 - [ ] `docs/reference/` (rules, analyzers, options, exceptions, logging) and
-      `docs/guides/` (hand-rolled, Finbuckle, testing with xUnit/NUnit/TUnit, migrating an
-      existing app)
+      `docs/guides/` (hand-rolled, Finbuckle, testing with xUnit/NUnit/MSTest/TUnit,
+      migrating an existing app)
 - [ ] `release.yml` per SPEC 12: release-please, `task pack`, NuGet Trusted Publishing,
       assets on the GitHub Release; `CHANGELOG.md` seeded
 - [ ] Opt-in Testcontainers job for SQL Server and PostgreSQL running the probe tests
