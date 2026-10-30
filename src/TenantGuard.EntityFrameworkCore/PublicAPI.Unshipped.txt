@@ -14,6 +14,9 @@ static TenantGuard.TenantGuardModel.Validate(Microsoft.EntityFrameworkCore.Metad
 static TenantGuard.TenantGuardServiceCollectionExtensions.AddTenantGuardStartupValidation<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static TenantGuard.TenantViolation.operator !=(TenantGuard.TenantViolation? left, TenantGuard.TenantViolation? right) -> bool
 static TenantGuard.TenantViolation.operator ==(TenantGuard.TenantViolation? left, TenantGuard.TenantViolation? right) -> bool
+TenantGuard.AllowCrossTenantAccessAttribute
+TenantGuard.AllowCrossTenantAccessAttribute.AllowCrossTenantAccessAttribute(string! reason) -> void
+TenantGuard.AllowCrossTenantAccessAttribute.Reason.get -> string!
 TenantGuard.Enforcement
 TenantGuard.Enforcement.Log = 1 -> TenantGuard.Enforcement
 TenantGuard.Enforcement.Throw = 0 -> TenantGuard.Enforcement
