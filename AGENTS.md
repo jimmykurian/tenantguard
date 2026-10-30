@@ -97,4 +97,5 @@ for them and must pass before every commit; unset, it warns and passes.
 - Do not implement anything under Phase 6 (backlog) in `docs/PLAN.md`.
 - Do not add an option, rule or public type the spec does not list. Propose it first.
 - Do not take a dependency on Finbuckle or any tenancy library outside `samples/`.
-- Do not write `CLAUDE.md` content. `CLAUDE.md` contains only `@AGENTS.md`.
+- Do not add a `CLAUDE.md`. Claude Code (2.1.277 or later) reads `AGENTS.md` directly, but
+  only when no `CLAUDE.md` exists.

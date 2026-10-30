@@ -38,7 +38,7 @@ Taskfile.yml  .ci-parity.yml  .github/workflows/{ci,release}.yml
 - [x] `LICENSE` (Apache-2.0), `README.md` with the positioning and the audit paragraph from
       SPEC 1, a "pre-release" notice, and empty headings for Install, Quick start, Rules,
       Analyzers, Testing, FAQ
-- [x] `CLAUDE.md` containing only `@AGENTS.md`
+- [x] No `CLAUDE.md`: Claude Code reads `AGENTS.md` directly
 - [x] `Taskfile.yml` with every task in AGENTS.md; `scrub` warns and passes when unset
 - [x] `.github/workflows/ci.yml` per SPEC 12 with `jimmykurian/ci-parity@v0`; `.ci-parity.yml`
 - [x] `docs/DECISIONS.md` with a short header
