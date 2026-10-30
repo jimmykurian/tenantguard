@@ -1,0 +1,4 @@
+# yaml-language-server: $schema=https://ci-parity.is-a.dev/schemas/config.schema.json
+# Every run: step in .github/workflows calls task.
+runner: taskfile
+taskfile: Taskfile.yml

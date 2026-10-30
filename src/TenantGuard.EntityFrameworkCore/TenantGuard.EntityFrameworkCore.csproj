@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <RootNamespace>TenantGuard</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>TenantGuard.EntityFrameworkCore</PackageId>
+    <Description>Proves an EF Core multi-tenant model leaks nothing: startup model validation, a SaveChanges guard and Roslyn analyzers. Works with Finbuckle, other tenancy packages, or hand-rolled query filters.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="TenantGuard.EntityFrameworkCore.Tests" />
+    <InternalsVisibleTo Include="TenantGuard.Testing" />
+    <InternalsVisibleTo Include="TenantGuard.Testing.Tests" />
+    <InternalsVisibleTo Include="TenantGuard.BehaviorPins" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(TenantGuardAnalyzerTargetFramework)</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>TenantGuard.Analyzers</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>TenantGuard.Analyzers</PackageId>
+    <Description>Roslyn analyzers that flag IgnoreQueryFilters() and raw SQL without a tenant predicate unless the method carries a justification. Bundled in TenantGuard.EntityFrameworkCore; this package ships them standalone.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="TenantGuard.Analyzers.Tests" />
+  </ItemGroup>
+
+</Project>

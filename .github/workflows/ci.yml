@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          # The SDK comes from global.json; the 8.0 runtime runs the net8.0 test builds.
+          global-json-file: global.json
+          dotnet-version: 8.0.x
+
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
+        with:
+          version: 3.x
+
+      - name: Lint
+        run: task lint
+      - name: Build
+        run: task build
+      - name: Unit tests
+        run: task test:unit
+      - name: Analyzer tests
+        run: task test:analyzers
+      - name: Behavior pins
+        run: task test:behavior
+      - name: Pack
+        run: task pack
+      - name: Samples
+        run: task samples
+      - name: Scrub
+        run: task scrub
+
+  ci-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jimmykurian/ci-parity@5f5d62bb19a1a3c63ebe065bfcef6e8dc934d1ed # v0 (v0.10.0)
+        with:
+          # A SHA ref would otherwise resolve to the latest release, which may be a new major.
+          version: v0.10.0

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <RootNamespace>TenantGuard.Testing</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>TenantGuard.Testing</PackageId>
+    <Description>Test kit for TenantGuard: a per-entity tenant isolation probe that seeds every tenant-scoped entity and proves reads, finds, bulk deletes and writes stay inside their tenant.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="TenantGuard.Testing.Tests" />
+  </ItemGroup>
+
+</Project>

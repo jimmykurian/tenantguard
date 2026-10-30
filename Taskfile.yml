@@ -1,0 +1,118 @@
+version: "3"
+
+vars:
+  SOLUTION: TenantGuard.slnx
+  CONFIGURATION: Release
+  SAMPLES: HandRolled.Api Finbuckle.Api
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+tasks:
+  build:
+    desc: Restore and build the solution, warnings as errors
+    cmds:
+      - dotnet build {{.SOLUTION}} -c {{.CONFIGURATION}}
+
+  test:
+    desc: Run every test project
+    cmds:
+      - task: test:unit
+      - task: test:analyzers
+      - task: test:behavior
+
+  test:unit:
+    desc: Run the runtime and test kit unit tests
+    cmds:
+      - dotnet test --project tests/TenantGuard.EntityFrameworkCore.Tests -c {{.CONFIGURATION}}
+      - dotnet test --project tests/TenantGuard.Testing.Tests -c {{.CONFIGURATION}}
+
+  test:analyzers:
+    desc: Run the analyzer tests
+    cmds:
+      - dotnet test --project tests/TenantGuard.Analyzers.Tests -c {{.CONFIGURATION}}
+
+  test:behavior:
+    desc: Run the EF Core behavior pins (SPEC 9)
+    cmds:
+      - dotnet test --project tests/TenantGuard.BehaviorPins -c {{.CONFIGURATION}}
+
+  lint:
+    desc: Check formatting and analyzers, then the public API files
+    cmds:
+      - dotnet format {{.SOLUTION}} --verify-no-changes
+      - for: { var: SAMPLES, split: " " }
+        cmd: dotnet format samples/{{.ITEM}} --verify-no-changes
+      - task: lint:api
+
+  lint:api:
+    desc: Fail when PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt are out of date
+    cmds:
+      - for: [TenantGuard.EntityFrameworkCore, TenantGuard.Testing]
+        cmd: >-
+          dotnet build src/{{.ITEM}} -c {{.CONFIGURATION}} --no-incremental
+          -warnaserror:RS0016,RS0017,RS0024,RS0025,RS0026,RS0036,RS0037
+
+  fmt:
+    desc: Format the solution and the samples
+    cmds:
+      - dotnet format {{.SOLUTION}}
+      - for: { var: SAMPLES, split: " " }
+        cmd: dotnet format samples/{{.ITEM}}
+
+  pack:
+    desc: Build the NuGet packages into ./artifacts/
+    cmds:
+      - rm -rf artifacts
+      - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts
+
+  samples:
+    desc: Build the samples and smoke-test each one
+    cmds:
+      - for: { var: SAMPLES, split: " " }
+        cmd: dotnet build samples/{{.ITEM}} -c {{.CONFIGURATION}}
+      - for: { var: SAMPLES, split: " " }
+        cmd: dotnet run --project samples/{{.ITEM}} -c {{.CONFIGURATION}} --no-build -- --smoke --urls http://127.0.0.1:0
+
+  scrub:
+    desc: Grep the tree for the private terms in $SCRUB_TERMS_FILE
+    silent: true
+    cmds:
+      - |
+        set -eu
+        if [ -z "${SCRUB_TERMS_FILE:-}" ]; then
+          echo "scrub: warning: SCRUB_TERMS_FILE is not set; skipping"
+          exit 0
+        fi
+        if [ ! -r "$SCRUB_TERMS_FILE" ]; then
+          echo "scrub: SCRUB_TERMS_FILE is set but not readable" >&2
+          exit 1
+        fi
+        terms="$(mktemp)"
+        trap 'rm -f "$terms"' EXIT
+        grep -v '^[[:space:]]*$' "$SCRUB_TERMS_FILE" > "$terms" || true
+        if [ ! -s "$terms" ]; then
+          echo "scrub: warning: SCRUB_TERMS_FILE has no terms; skipping"
+          exit 0
+        fi
+        # File names only: the terms themselves must not reach the log.
+        hits="$(grep -rIilF -f "$terms" \
+          --exclude-dir=.git --exclude-dir=bin --exclude-dir=obj \
+          --exclude-dir=artifacts --exclude-dir=TestResults . || true)"
+        if [ -n "$hits" ]; then
+          echo "scrub: private terms found in:" >&2
+          echo "$hits" >&2
+          exit 1
+        fi
+        echo "scrub: clean"
+
+  ci:
+    desc: Run lint, build, test, pack, samples and scrub
+    cmds:
+      - task: lint
+      - task: build
+      - task: test
+      - task: pack
+      - task: samples
+      - task: scrub

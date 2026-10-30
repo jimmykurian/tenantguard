@@ -1,0 +1,44 @@
+<Project>
+
+  <PropertyGroup>
+    <Version>0.1.0-dev</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts</PackageOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Target frameworks">
+    <TenantGuardRuntimeTargetFrameworks>net8.0;net10.0</TenantGuardRuntimeTargetFrameworks>
+    <TenantGuardAnalyzerTargetFramework>netstandard2.0</TenantGuardAnalyzerTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package metadata">
+    <IsPackable>false</IsPackable>
+    <Authors>Jimmy Kurian</Authors>
+    <Copyright>Copyright (c) Jimmy Kurian</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>efcore;entity-framework-core;multi-tenant;multitenancy;tenant-isolation;saas;roslyn-analyzer</PackageTags>
+    <PackageProjectUrl>https://github.com/jimmykurian/tenantguard-kit</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jimmykurian/tenantguard-kit</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)assets/icon.png" Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
+
+</Project>
