@@ -15,10 +15,10 @@ internal sealed class TenantModelConvention(TenantGuardOptions options, ILogger 
     public IModel ProcessModelFinalized(IModel model)
     {
         var check = TenantModelRules.Check(model, options);
-        if (model.FindRuntimeAnnotation(TenantGuardEntities.AnnotationName) is null)
-        {
-            model.AddRuntimeAnnotation(TenantGuardEntities.AnnotationName, new TenantGuardEntities(check.TenantProperties));
-        }
+        model.GetOrAddRuntimeAnnotationValue(
+            TenantGuardEntities.AnnotationName,
+            static arguments => TenantGuardEntities.Create(arguments.Model, arguments.TenantProperties),
+            (Model: model, check.TenantProperties));
 
         var report = check.Report;
         TenantGuardLog.ModelValidated(logger, check.TenantProperties.Count, report.Errors.Count, report.Warnings.Count);
