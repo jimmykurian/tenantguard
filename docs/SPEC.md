@@ -202,12 +202,21 @@ tenantguard.tenant_filter_names = TenantFilter # optional; names of the tenant f
 | TG004 raw-sql-unverifiable | info | Same methods as TG002 with a non-literal SQL argument | `Raw SQL built at runtime cannot be checked for a tenant predicate.` |
 
 `FromSql`, `FromSqlRaw` and `FromSqlInterpolated` on entity types are not flagged: EF
-composes global query filters over them. Phase 1 pins that behavior with a test (SPEC 9);
-if it fails for a provider, they join TG002 and this section changes.
+composes global query filters over them. Behavior pin 3 (SPEC 9) holds EF to that; if it
+fails for a provider, they join TG002 and this section changes.
+
+A constant collection is an array, a collection initializer, or a collection expression
+without a spread, whose items are string constants. SQL the analyzers can read is a
+constant (a literal, a `const`, or constants joined with `+`) or an interpolated string, of
+which the literal parts and the constant holes, such as `nameof(Invoice.TenantId)`, are
+checked; any other SQL argument is TG004. With several `tenant_column` values, `{Column}`
+lists them: `does not mention 'TenantId' or 'OrgId'`.
 
 `AllowCrossTenantAccessAttribute(string reason)` lives in the runtime package
 (`TenantGuard` namespace), valid on methods and classes. The analyzer matches it by full
-name so the standalone analyzer package needs no runtime reference.
+name so the standalone analyzer package needs no runtime reference. It counts on the
+method, on an enclosing lambda or local function, and on any containing class, and clears
+TG001, TG002 and TG004 there. One with a null, empty or whitespace reason clears nothing.
 
 ## 7. Test kit
 

@@ -85,18 +85,18 @@ the database sees it, and the log carries `ViolationBlocked`.
 
 ## Phase 3: analyzers
 
-- [ ] Analyzer project, `Microsoft.CodeAnalysis.CSharp` 4.8.0, `EnforceExtendedAnalyzerRules`,
+- [x] Analyzer project, `Microsoft.CodeAnalysis.CSharp` 4.8.0, `EnforceExtendedAnalyzerRules`,
       `IsRoslynComponent`, release tracking files (`AnalyzerReleases.*.md`)
-- [ ] `.editorconfig` option reading for `tenantguard.tenant_column` and
+- [x] `.editorconfig` option reading for `tenantguard.tenant_column` and
       `tenantguard.tenant_filter_names`
-- [ ] TG001 (`IgnoreQueryFilters`, both overloads), TG002, TG003, TG004 with the exact
+- [x] TG001 (`IgnoreQueryFilters`, both overloads), TG002, TG003, TG004 with the exact
       messages; attribute matched by full name on the method, then the containing type
-- [ ] Bundle the analyzer into `TenantGuard.EntityFrameworkCore` under
+- [x] Bundle the analyzer into `TenantGuard.EntityFrameworkCore` under
       `analyzers/dotnet/cs`, and ship `TenantGuard.Analyzers` standalone
-- [ ] Tests with `CSharpAnalyzerTest`: positive and negative per rule, interpolated SQL,
+- [x] Tests with `CSharpAnalyzerTest`: positive and negative per rule, interpolated SQL,
       SQL in a constant, named filter overload with and without tenant names, attribute on
       class vs method, `Async` variants
-- [ ] Behavior pin 3 (FromSql composes with filters); if it fails, FromSql joins TG002 and
+- [x] Behavior pin 3 (FromSql composes with filters); if it fails, FromSql joins TG002 and
       SPEC 6 is updated in the same PR
 
 Acceptance: `dotnet build` of a sample with an `IgnoreQueryFilters()` reports TG001 at
