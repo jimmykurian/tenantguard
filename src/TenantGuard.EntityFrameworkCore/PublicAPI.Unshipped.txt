@@ -2,12 +2,18 @@
 override TenantGuard.ModelFinding.Equals(object? obj) -> bool
 override TenantGuard.ModelFinding.GetHashCode() -> int
 override TenantGuard.ModelFinding.ToString() -> string!
+override TenantGuard.TenantViolation.Equals(object? obj) -> bool
+override TenantGuard.TenantViolation.GetHashCode() -> int
+override TenantGuard.TenantViolation.ToString() -> string!
 static TenantGuard.ModelFinding.operator !=(TenantGuard.ModelFinding? left, TenantGuard.ModelFinding? right) -> bool
 static TenantGuard.ModelFinding.operator ==(TenantGuard.ModelFinding? left, TenantGuard.ModelFinding? right) -> bool
+static TenantGuard.TenantGuardDbContextExtensions.TenantGuard(this Microsoft.EntityFrameworkCore.DbContext! context) -> TenantGuard.TenantGuardContext!
 static TenantGuard.TenantGuardDbContextOptionsBuilderExtensions.UseTenantGuard(this Microsoft.EntityFrameworkCore.DbContextOptionsBuilder! optionsBuilder, System.Action<TenantGuard.TenantGuardOptionsBuilder!>! configure) -> Microsoft.EntityFrameworkCore.DbContextOptionsBuilder!
 static TenantGuard.TenantGuardDbContextOptionsBuilderExtensions.UseTenantGuard<TContext>(this Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<TContext!>! optionsBuilder, System.Action<TenantGuard.TenantGuardOptionsBuilder!>! configure) -> Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<TContext!>!
 static TenantGuard.TenantGuardModel.Validate(Microsoft.EntityFrameworkCore.Metadata.IModel! model, TenantGuard.TenantGuardOptions! options) -> TenantGuard.ModelReport!
 static TenantGuard.TenantGuardServiceCollectionExtensions.AddTenantGuardStartupValidation<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static TenantGuard.TenantViolation.operator !=(TenantGuard.TenantViolation? left, TenantGuard.TenantViolation? right) -> bool
+static TenantGuard.TenantViolation.operator ==(TenantGuard.TenantViolation? left, TenantGuard.TenantViolation? right) -> bool
 TenantGuard.Enforcement
 TenantGuard.Enforcement.Log = 1 -> TenantGuard.Enforcement
 TenantGuard.Enforcement.Throw = 0 -> TenantGuard.Enforcement
@@ -30,22 +36,49 @@ TenantGuard.ModelReport
 TenantGuard.ModelReport.Errors.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
 TenantGuard.ModelReport.Findings.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
 TenantGuard.ModelReport.Warnings.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
+TenantGuard.NoTenantPolicy
+TenantGuard.NoTenantPolicy.Allow = 1 -> TenantGuard.NoTenantPolicy
+TenantGuard.NoTenantPolicy.Reject = 0 -> TenantGuard.NoTenantPolicy
 TenantGuard.Severity
 TenantGuard.Severity.Error = 1 -> TenantGuard.Severity
 TenantGuard.Severity.Warning = 0 -> TenantGuard.Severity
+TenantGuard.TenantGuardContext
+TenantGuard.TenantGuardContext.Bypass(string! reason) -> System.IDisposable!
+TenantGuard.TenantGuardDbContextExtensions
 TenantGuard.TenantGuardDbContextOptionsBuilderExtensions
 TenantGuard.TenantGuardModel
 TenantGuard.TenantGuardModelException
 TenantGuard.TenantGuardModelException.Report.get -> TenantGuard.ModelReport!
 TenantGuard.TenantGuardOptions
 TenantGuard.TenantGuardOptionsBuilder
+TenantGuard.TenantGuardOptionsBuilder.CurrentTenant(System.Func<Microsoft.EntityFrameworkCore.DbContext!, object?>! resolver) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Enforcement(TenantGuard.Enforcement enforcement) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.IncludeKeysInErrors(bool include = true) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Options.get -> TenantGuard.TenantGuardOptions!
 TenantGuard.TenantGuardOptionsBuilder.RequireAllEntitiesScoped() -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Shared<TEntity>() -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.StampOnAdd(bool stamp = true) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.TenantGuardOptionsBuilder() -> void
 TenantGuard.TenantGuardOptionsBuilder.TenantProperty<TEntity>(System.Linq.Expressions.Expression<System.Func<TEntity!, object?>!>! property) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.TenantPropertyNames(params string![]! names) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.WhenNoCurrentTenant(TenantGuard.NoTenantPolicy policy) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardServiceCollectionExtensions
+TenantGuard.TenantIsolationViolationException
+TenantGuard.TenantIsolationViolationException.Violations.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.TenantViolation!>!
 TenantGuard.TenantKeyAttribute
 TenantGuard.TenantKeyAttribute.TenantKeyAttribute() -> void
+TenantGuard.TenantViolation
+TenantGuard.TenantViolation.<Clone>$() -> TenantGuard.TenantViolation!
+TenantGuard.TenantViolation.Actual.get -> object?
+TenantGuard.TenantViolation.Actual.init -> void
+TenantGuard.TenantViolation.Deconstruct(out string! Entity, out Microsoft.EntityFrameworkCore.EntityState State, out System.Collections.Generic.IReadOnlyDictionary<string!, object?>! Keys, out object? Expected, out object? Actual) -> void
+TenantGuard.TenantViolation.Entity.get -> string!
+TenantGuard.TenantViolation.Entity.init -> void
+TenantGuard.TenantViolation.Equals(TenantGuard.TenantViolation? other) -> bool
+TenantGuard.TenantViolation.Expected.get -> object?
+TenantGuard.TenantViolation.Expected.init -> void
+TenantGuard.TenantViolation.Keys.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+TenantGuard.TenantViolation.Keys.init -> void
+TenantGuard.TenantViolation.State.get -> Microsoft.EntityFrameworkCore.EntityState
+TenantGuard.TenantViolation.State.init -> void
+TenantGuard.TenantViolation.TenantViolation(string! Entity, Microsoft.EntityFrameworkCore.EntityState State, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! Keys, object? Expected, object? Actual) -> void

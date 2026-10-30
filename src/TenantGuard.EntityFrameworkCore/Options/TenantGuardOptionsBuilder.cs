@@ -4,6 +4,7 @@
 
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard;
 
@@ -121,6 +122,65 @@ public sealed class TenantGuardOptionsBuilder
         }
 
         Options = Options.WithEnforcement(enforcement);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets how the write guard finds the tenant a context is operating as. The write guard needs it.
+    /// </summary>
+    /// <param name="resolver">
+    /// Returns the context's current tenant, of the tenant property's type, or null when there is none,
+    /// such as <c>ctx =&gt; ((AppDbContext)ctx).TenantId</c>.
+    /// </param>
+    /// <returns>The same builder, for chaining.</returns>
+    public TenantGuardOptionsBuilder CurrentTenant(Func<DbContext, object?> resolver)
+    {
+        ArgumentNullException.ThrowIfNull(resolver);
+
+        Options = Options.WithCurrentTenant(resolver);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets what the write guard does when <c>CurrentTenant</c> returns null. The default is
+    /// <see cref="NoTenantPolicy.Reject"/>.
+    /// </summary>
+    /// <param name="policy">Reject every tenant-scoped write, or allow them and log.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    public TenantGuardOptionsBuilder WhenNoCurrentTenant(NoTenantPolicy policy)
+    {
+        if (!Enum.IsDefined(policy))
+        {
+            throw new ArgumentOutOfRangeException(nameof(policy), policy, "Unknown policy.");
+        }
+
+        Options = Options.WithNoTenantPolicy(policy);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets whether an added entity whose tenant property is not set, meaning null or the property's
+    /// sentinel (its type's default unless set with <c>HasSentinel</c>), gets the current tenant
+    /// instead of being rejected. The value is set only when the save has no violations. The default
+    /// is off.
+    /// </summary>
+    /// <param name="stamp">True to stamp the current tenant, false to reject the write.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    public TenantGuardOptionsBuilder StampOnAdd(bool stamp = true)
+    {
+        Options = Options.WithStampOnAdd(stamp);
+        return this;
+    }
+
+    /// <summary>
+    /// Sets whether each <see cref="TenantViolation"/> carries the entity's primary key values. The
+    /// default is on.
+    /// </summary>
+    /// <param name="include">True to include the key values, false to leave them out.</param>
+    /// <returns>The same builder, for chaining.</returns>
+    public TenantGuardOptionsBuilder IncludeKeysInErrors(bool include = true)
+    {
+        Options = Options.WithIncludeKeysInErrors(include);
         return this;
     }
 }

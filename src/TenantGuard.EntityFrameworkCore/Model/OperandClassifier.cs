@@ -2,7 +2,6 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
-using System.Globalization;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
@@ -95,20 +94,10 @@ internal static class OperandClassifier
 
         if (type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(Guid))
         {
-            literal = FormatLiteral(value);
+            literal = TenantValueFormatter.Format(value);
             return Kind.Literal;
         }
 
         return Kind.Unclassified;
     }
-
-    private static string FormatLiteral(object value)
-        => value switch
-        {
-            string text => $"\"{text}\"",
-            char character => $"'{character}'",
-            bool flag => flag ? "true" : "false",
-            IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
-            _ => value.ToString() ?? string.Empty,
-        };
 }

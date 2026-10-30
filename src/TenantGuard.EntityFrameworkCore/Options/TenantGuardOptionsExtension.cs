@@ -3,9 +3,11 @@
 // </copyright>
 
 using System.Globalization;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace TenantGuard;
 
@@ -23,7 +25,13 @@ internal sealed class TenantGuardOptionsExtension : IDbContextOptionsExtension
     public DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
 
     public void ApplyServices(IServiceCollection services)
-        => new EntityFrameworkServicesBuilder(services).TryAdd<IConventionSetPlugin, TenantGuardConventionSetPlugin>();
+    {
+        new EntityFrameworkServicesBuilder(services)
+            .TryAdd<IConventionSetPlugin, TenantGuardConventionSetPlugin>()
+            .TryAdd<IInterceptor, TenantGuardSaveChangesInterceptor>()
+            .TryAdd<IResettableService, TenantGuardScope>(provider => provider.GetRequiredService<TenantGuardScope>());
+        services.TryAddScoped<TenantGuardScope>();
+    }
 
     public void Validate(IDbContextOptions options)
     {

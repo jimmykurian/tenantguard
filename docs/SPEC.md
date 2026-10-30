@@ -118,7 +118,8 @@ optionsBuilder.UseTenantGuard(tg => tg
     .Shared<Country>().Shared<Plan>()
     .Enforcement(Enforcement.Throw)                           // or Log
     .WhenNoCurrentTenant(NoTenantPolicy.Reject)               // or Allow
-    .StampOnAdd(false));
+    .StampOnAdd(false)
+    .IncludeKeysInErrors(true));                              // default
 ```
 
 `UseTenantGuard` adds an `IDbContextOptionsExtension` that registers an
@@ -153,17 +154,33 @@ tenant-scoped (owned types skipped):
 
 Current tenant comes from `CurrentTenant(ctx)`. When it returns null:
 `NoTenantPolicy.Reject` makes any tenant-scoped write a violation; `Allow` skips the
-check and logs once per SaveChanges at Information level.
+check and logs once per SaveChanges at Information level. A tenant-scoped write with no
+`CurrentTenant` configured, or a current tenant that is not of the tenant property's type,
+throws `InvalidOperationException` naming the context, or the entity and property.
+
+`StampOnAdd` treats null and the property's sentinel (its type's default unless set with
+`HasSentinel`) as not set. It stamps only when the save has no violations, so a blocked
+save leaves the entities as they were.
 
 Violations throw `TenantIsolationViolationException : InvalidOperationException` before
 anything reaches the database. It carries `Violations`: entity type name, state, key
 values (when `IncludeKeysInErrors`, default true), expected tenant, actual tenant. The
-message lists up to 10 violations and the total.
+message lists up to 10 violations and the total; keys EF has not generated yet are left out:
+
+```text
+TenantGuard blocked 12 writes outside the current tenant "acme":
+- Added Invoice (Id: 7): TenantId is "globex"
+- Modified Invoice (Id: 3): TenantId changes from "acme" to "globex"
+...
+- and 2 more
+Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
+```
 
 Bypass: `using (context.TenantGuard().Bypass("nightly aggregation across tenants"))`
 disables the interceptor for that context instance for the scope and logs a Warning
 `TenantGuard bypass: {Reason} ({Context})`. An empty reason throws `ArgumentException`.
-Bypass does not disable query filters; it only stops the write guard.
+Bypass does not disable query filters; it only stops the write guard. A pooled context
+goes back to the pool with the guard on, even if a bypass was never disposed.
 
 Comparison uses the property's `ValueComparer`. Tenant values may be any type EF maps.
 

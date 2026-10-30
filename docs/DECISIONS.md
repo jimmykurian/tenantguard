@@ -7,6 +7,49 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-10-30: Writes through an owned entity skip the write guard (open)
+
+Decision: the write guard checks "every entry whose entity type is tenant-scoped (owned
+types skipped)" (SPEC 5), and the PLAN test is "owned types skipped".
+
+Problem: EF tracks an owned entity as an entry of its own. Changing only the owned part,
+such as `order.Shipping.Street`, leaves the owner Unchanged and the owned entry Modified,
+and EF writes it to the owner's row (`OwnsOne`) or to rows keyed by the owner
+(`OwnsMany`). The guard skips the owned entry and never looks at the owner, so a context
+for globex that tracks acme's `Order` (read with `IgnoreQueryFilters`, or attached) can
+change acme's shipping address, or add or delete acme's order lines. Reproduced on EF Core
+10.0.14 and 11.0 rc.3: the save went through and acme's row changed.
+
+Proposed change: an Added, Modified or Deleted entry of an owned type is checked through
+its owner. The guard finds the owner's entry from the ownership foreign key (public API,
+built only when an owned entry changed) and requires the owner's original tenant to equal
+the current tenant, walking up through nested owned types. Owned types still have no
+tenant property of their own to check. SPEC 5 says "(owned types are checked through their
+owner)", and the PLAN test becomes "a change to an owned entity of another tenant's row is
+rejected".
+
+## 2026-10-30: No allocations only where the guard can skip DetectChanges (open)
+
+Decision: "The interceptor adds no allocations on a SaveChanges with no tenant-scoped
+entries, and O(entries) otherwise" (SPEC 13), and the PLAN test "a context with no
+tenant-scoped entries allocates nothing".
+
+Problem: `SavingChanges` runs before `SaveChanges` calls `DetectChanges`, so the guard has
+to run it, through `ChangeTracker.Entries()`, to know which entries are Added, Modified or
+Deleted: a changed property, or a new entity reached through a navigation, shows up only
+after it. Both allocate inside EF Core. Measured on EF Core 10.0.14 and 11.0 rc.3: 32 bytes
+with an empty change tracker, and about 490 bytes with one tracked `Country` (360 in
+`DetectChanges`, 128 in `Entries()`). So when the model has tenant-scoped entity types, a
+save whose entries are all shared still allocates. Avoiding that needs EF Core internals
+(`IStateManager`), or `ChangeTracker.Tracked` and `StateChanged` handlers, which make EF
+allocate event arguments for every entity a tracking query returns.
+
+Proposed change: SPEC 13 reads "The interceptor adds no allocations on a SaveChanges when
+the model has no tenant-scoped entity type, nothing is tracked, or a bypass is open, and
+O(entries) otherwise." The guard does that now: it reads the model metadata, then checks
+for an empty change tracker without `DetectChanges`, and three tests pin the three cases.
+The PLAN test item changes to match.
+
 ## 2026-10-30: Startup validation through ValidateOnStart, not a hosted service (accepted)
 
 Decision: `AddTenantGuardStartupValidation<TContext>()` registers an `IHostedService`
