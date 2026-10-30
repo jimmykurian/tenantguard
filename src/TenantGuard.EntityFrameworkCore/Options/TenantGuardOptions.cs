@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Collections.Immutable;
+using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard;
 
@@ -11,53 +12,63 @@ namespace TenantGuard;
 /// </summary>
 public sealed class TenantGuardOptions
 {
-    internal static readonly TenantGuardOptions Default = new(
-        ["TenantId"],
-        ImmutableDictionary<Type, string>.Empty,
-        ImmutableHashSet<Type>.Empty,
-        requireAllEntitiesScoped: false,
-        Enforcement.Throw);
+    internal static readonly TenantGuardOptions Default = new();
 
-    private TenantGuardOptions(
-        ImmutableArray<string> tenantPropertyNames,
-        ImmutableDictionary<Type, string> explicitTenantProperties,
-        ImmutableHashSet<Type> sharedTypes,
-        bool requireAllEntitiesScoped,
-        Enforcement enforcement)
+    private TenantGuardOptions()
     {
-        TenantPropertyNames = tenantPropertyNames;
-        ExplicitTenantProperties = explicitTenantProperties;
-        SharedTypes = sharedTypes;
-        RequireAllEntitiesScoped = requireAllEntitiesScoped;
-        Enforcement = enforcement;
     }
 
-    internal ImmutableArray<string> TenantPropertyNames { get; }
+    internal ImmutableArray<string> TenantPropertyNames { get; private set; } = ["TenantId"];
 
-    internal ImmutableDictionary<Type, string> ExplicitTenantProperties { get; }
+    internal ImmutableDictionary<Type, string> ExplicitTenantProperties { get; private set; } = ImmutableDictionary<Type, string>.Empty;
 
-    internal ImmutableHashSet<Type> SharedTypes { get; }
+    internal ImmutableHashSet<Type> SharedTypes { get; private set; } = ImmutableHashSet<Type>.Empty;
 
-    internal bool RequireAllEntitiesScoped { get; }
+    internal bool RequireAllEntitiesScoped { get; private set; }
 
-    internal Enforcement Enforcement { get; }
+    // Throw, the first value, is the default.
+    internal Enforcement Enforcement { get; private set; }
+
+    // The write guard's settings. EF reads them per context instance, so they stay out of the
+    // equivalence below, and a CurrentTenant lambda that captures state costs no new service provider.
+    internal Func<DbContext, object?>? CurrentTenant { get; private set; }
+
+    // Reject, the first value, is the default.
+    internal NoTenantPolicy NoTenantPolicy { get; private set; }
+
+    internal bool StampOnAdd { get; private set; }
+
+    internal bool IncludeKeysInErrors { get; private set; } = true;
 
     internal TenantGuardOptions WithTenantPropertyNames(ImmutableArray<string> names)
-        => With(tenantPropertyNames: names);
+        => With(options => options.TenantPropertyNames = names);
 
     internal TenantGuardOptions WithTenantProperty(Type entityType, string propertyName)
-        => With(explicitTenantProperties: ExplicitTenantProperties.SetItem(entityType, propertyName));
+        => With(options => options.ExplicitTenantProperties = options.ExplicitTenantProperties.SetItem(entityType, propertyName));
 
     internal TenantGuardOptions WithSharedType(Type entityType)
-        => With(sharedTypes: SharedTypes.Add(entityType));
+        => With(options => options.SharedTypes = options.SharedTypes.Add(entityType));
 
     internal TenantGuardOptions WithRequireAllEntitiesScoped()
-        => With(requireAllEntitiesScoped: true);
+        => With(options => options.RequireAllEntitiesScoped = true);
 
     internal TenantGuardOptions WithEnforcement(Enforcement enforcement)
-        => With(enforcement: enforcement);
+        => With(options => options.Enforcement = enforcement);
 
-    // EF keys its internal service provider, and with it the model cache, on these two.
+    internal TenantGuardOptions WithCurrentTenant(Func<DbContext, object?> resolver)
+        => With(options => options.CurrentTenant = resolver);
+
+    internal TenantGuardOptions WithNoTenantPolicy(NoTenantPolicy policy)
+        => With(options => options.NoTenantPolicy = policy);
+
+    internal TenantGuardOptions WithStampOnAdd(bool stampOnAdd)
+        => With(options => options.StampOnAdd = stampOnAdd);
+
+    internal TenantGuardOptions WithIncludeKeysInErrors(bool includeKeys)
+        => With(options => options.IncludeKeysInErrors = includeKeys);
+
+    // EF keys its internal service provider, and with it the model cache, on these two. Only the
+    // settings that shape the model take part.
     internal bool IsEquivalentTo(TenantGuardOptions other)
         => TenantPropertyNames.SequenceEqual(other.TenantPropertyNames, StringComparer.Ordinal)
             && ExplicitTenantProperties.Count == other.ExplicitTenantProperties.Count
@@ -81,16 +92,10 @@ public sealed class TenantGuardOptions
         return hash.ToHashCode();
     }
 
-    private TenantGuardOptions With(
-        ImmutableArray<string>? tenantPropertyNames = null,
-        ImmutableDictionary<Type, string>? explicitTenantProperties = null,
-        ImmutableHashSet<Type>? sharedTypes = null,
-        bool? requireAllEntitiesScoped = null,
-        Enforcement? enforcement = null)
-        => new(
-            tenantPropertyNames ?? TenantPropertyNames,
-            explicitTenantProperties ?? ExplicitTenantProperties,
-            sharedTypes ?? SharedTypes,
-            requireAllEntitiesScoped ?? RequireAllEntitiesScoped,
-            enforcement ?? Enforcement);
+    private TenantGuardOptions With(Action<TenantGuardOptions> change)
+    {
+        var copy = (TenantGuardOptions)MemberwiseClone();
+        change(copy);
+        return copy;
+    }
 }
