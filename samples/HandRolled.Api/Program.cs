@@ -63,9 +63,7 @@ static async Task BlockMisStampedInsertAsync(IServiceProvider services, TenantGu
 
     using (var scope = services.CreateScope())
     {
-        var globex = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        globex.TenantId = "globex";
-        if (await globex.Invoices.AnyAsync())
+        if (await CountEveryTenantsInvoicesAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>()) != 0)
         {
             throw new InvalidOperationException("Smoke: the mis-stamped insert reached the database.");
         }
@@ -76,6 +74,10 @@ static async Task BlockMisStampedInsertAsync(IServiceProvider services, TenantGu
         throw new InvalidOperationException("Smoke: TenantGuard did not log ViolationBlocked.");
     }
 }
+
+// Reads past the tenant filter on purpose, so analyzer TG001 asks for the reason it carries.
+[AllowCrossTenantAccess("the smoke run checks that no tenant got the blocked invoice")]
+static Task<int> CountEveryTenantsInvoicesAsync(AppDbContext db) => db.Invoices.IgnoreQueryFilters().CountAsync();
 
 internal sealed class Invoice
 {

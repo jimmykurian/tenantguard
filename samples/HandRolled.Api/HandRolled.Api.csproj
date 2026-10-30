@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
+    <!-- The analyzers, which the TenantGuard.EntityFrameworkCore package brings with it. -->
+    <ProjectReference Include="../../src/TenantGuard.Analyzers/TenantGuard.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
   </ItemGroup>
 
