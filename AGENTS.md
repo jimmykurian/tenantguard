@@ -38,8 +38,9 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   StyleCop.Analyzers (settings in `stylecop.json` and `.editorconfig`).
 - Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no
   tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3,
-  `Microsoft.EntityFrameworkCore.Sqlite`, and `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`.
-  Finbuckle appears only in `samples/`.
+  `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`,
+  and the ASP.NET Core shared framework for a generic host. Finbuckle appears only in
+  `samples/`.
 - Model validation runs as an EF convention (`IModelFinalizedConvention` via an
   `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator`.
 - Rule IDs, messages, option names and exception types are fixed by `docs/SPEC.md`.
