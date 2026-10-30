@@ -34,7 +34,8 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   the runtime package under `analyzers/dotnet/cs`.
 - .NET SDK 11 pinned in `global.json` with `rollForward: latestFeature`. C# latest.
 - Central Package Management (`Directory.Packages.props`). Nullable on,
-  `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`.
+  `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`,
+  StyleCop.Analyzers (settings in `stylecop.json` and `.editorconfig`).
 - Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no
   tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3,
   `Microsoft.EntityFrameworkCore.Sqlite`, and `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`.
