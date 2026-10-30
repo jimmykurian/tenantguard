@@ -36,9 +36,9 @@ Closest tools, for the README's comparison table:
 
 | Package | TFMs | Contents |
 |---|---|---|
-| `TenantGuard.EntityFrameworkCore` | net8.0, net10.0 | options, model rules, interceptor, bypass scope, `AllowCrossTenantAccessAttribute`; bundles the analyzer |
+| `TenantGuard.EntityFrameworkCore` | net10.0, net11.0 | options, model rules, interceptor, bypass scope, `AllowCrossTenantAccessAttribute`; bundles the analyzer |
 | `TenantGuard.Analyzers` | netstandard2.0 | TG001 to TG004 (also shipped standalone for projects without EF) |
-| `TenantGuard.Testing` | net8.0, net10.0 | `TenantIsolationProbe`, seeding, `ProbeReport` |
+| `TenantGuard.Testing` | net10.0, net11.0 | `TenantIsolationProbe`, seeding, `ProbeReport` |
 
 Root namespace `TenantGuard`. Name availability (NuGet IDs, GitHub repo) is confirmed in
 Phase 0; fallbacks in order: `TenantProof`, `EFCore.TenantGuard`.
@@ -224,7 +224,7 @@ Checks, per tenant-scoped entity type, using a fresh context per tenant per chec
 fixed-width table of non-passing rows. The probe never touches the model validation; a
 model that fails TGM rules fails before the probe runs, which is the point.
 
-The kit is framework-agnostic; docs show xUnit, NUnit and TUnit usage.
+The kit is framework-agnostic; docs show xUnit, NUnit, MSTest and TUnit usage.
 
 ## 8. Public API (complete for v0.1)
 

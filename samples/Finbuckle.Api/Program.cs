@@ -1,3 +1,7 @@
+// <copyright file="Program.cs" company="Jimmy Kurian">
+// Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+// </copyright>
+
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Finbuckle.MultiTenant.Extensions;

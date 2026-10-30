@@ -1,3 +1,7 @@
+// <copyright file="SmokeTests.cs" company="Jimmy Kurian">
+// Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+// </copyright>
+
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -11,7 +15,7 @@ public sealed class SmokeTests
         var test = new CSharpAnalyzerTest<EmptyDiagnosticAnalyzer, DefaultVerifier>
         {
             TestCode = "public sealed class Invoice { public string TenantId { get; set; } = \"acme\"; }",
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await test.RunAsync(TestContext.Current.CancellationToken);

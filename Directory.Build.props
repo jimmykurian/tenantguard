@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Target frameworks">
-    <TenantGuardRuntimeTargetFrameworks>net8.0;net10.0</TenantGuardRuntimeTargetFrameworks>
+    <TenantGuardRuntimeTargetFrameworks>net10.0;net11.0</TenantGuardRuntimeTargetFrameworks>
     <TenantGuardAnalyzerTargetFramework>netstandard2.0</TenantGuardAnalyzerTargetFramework>
   </PropertyGroup>
 
@@ -27,8 +27,8 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>efcore;entity-framework-core;multi-tenant;multitenancy;tenant-isolation;saas;roslyn-analyzer</PackageTags>
-    <PackageProjectUrl>https://github.com/jimmykurian/tenantguard-kit</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jimmykurian/tenantguard-kit</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/jimmykurian/tenantguard</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jimmykurian/tenantguard</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -39,6 +39,10 @@
   <ItemGroup Condition="'$(IsPackable)' == 'true'">
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)assets/icon.png" Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Visible="false" />
   </ItemGroup>
 
 </Project>

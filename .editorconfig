@@ -64,9 +64,16 @@ dotnet_naming_style.underscore_camel.required_prefix = _
 # Unused usings fail the build (needs GenerateDocumentationFile, set in Directory.Build.props)
 dotnet_diagnostic.IDE0005.severity = warning
 
+# StyleCop (settings in stylecop.json), off where it clashes with the rules above
+# No this. prefix (dotnet_style_qualification_* = false)
+dotnet_diagnostic.SA1101.severity = none
+# Private fields are _camelCase
+dotnet_diagnostic.SA1309.severity = none
+
 [{tests,samples}/**.cs]
 # Test names read as sentences
 dotnet_diagnostic.CA1707.severity = none
 # Tests and samples are not a library: no ConfigureAwait, no XML docs
 dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.CS1591.severity = none
+dotnet_diagnostic.SA1600.severity = none

@@ -10,7 +10,7 @@ Repository layout, fixed from Phase 0:
 TenantGuard.slnx
 Directory.Build.props            Version, TFMs, analyzers, SourceLink, warnings-as-errors
 Directory.Packages.props         Central Package Management
-global.json                      .NET SDK 10, rollForward latestFeature
+global.json                      .NET SDK 11, rollForward latestFeature
 src/TenantGuard.EntityFrameworkCore/
 src/TenantGuard.Analyzers/
 src/TenantGuard.Testing/
@@ -38,7 +38,7 @@ Taskfile.yml  .ci-parity.yml  .github/workflows/{ci,release}.yml
 - [x] `LICENSE` (Apache-2.0), `README.md` with the positioning and the audit paragraph from
       SPEC 1, a "pre-release" notice, and empty headings for Install, Quick start, Rules,
       Analyzers, Testing, FAQ
-- [x] `CLAUDE.md` containing only `@AGENTS.md`
+- [x] No `CLAUDE.md`: Claude Code reads `AGENTS.md` directly
 - [x] `Taskfile.yml` with every task in AGENTS.md; `scrub` warns and passes when unset
 - [x] `.github/workflows/ci.yml` per SPEC 12 with `jimmykurian/ci-parity@v0`; `.ci-parity.yml`
 - [x] `docs/DECISIONS.md` with a short header
@@ -51,8 +51,8 @@ Acceptance: `task ci` green locally and in CI. `dotnet pack` produces three pack
       as an `IDbContextOptionsExtension` with `Info` (debug string, cache key fragment)
 - [ ] Tenant property discovery per SPEC 4.1, including shadow properties and
       `[TenantKey]`; Finbuckle annotation left as a TODO string constant until Phase 4
-- [ ] Filter inspection: find the filter(s) referencing the tenant property. `net10.0`
-      uses `GetDeclaredQueryFilters()`; `net8.0` uses `GetQueryFilter()`
+- [ ] Filter inspection: find the filter(s) referencing the tenant property with
+      `GetDeclaredQueryFilters()`, which EF Core 10 and 11 both have
 - [ ] Operand classification and rules TGM001 to TGM008 with the exact messages
 - [ ] `IModelFinalizedConvention` plugin, `TenantGuardModelException`, `Enforcement`
 - [ ] `TenantGuardModel.Validate` and `ModelReport`
@@ -131,8 +131,8 @@ sample fails startup (TGM001), and with `Enforcement.Log` fails the probe instea
       the analyzer table, the probe snippet, adoption path (`Enforcement.Log` first,
       then `Throw`), comparison table from SPEC 1, FAQ
 - [ ] `docs/reference/` (rules, analyzers, options, exceptions, logging) and
-      `docs/guides/` (hand-rolled, Finbuckle, testing with xUnit/NUnit/TUnit, migrating an
-      existing app)
+      `docs/guides/` (hand-rolled, Finbuckle, testing with xUnit/NUnit/MSTest/TUnit,
+      migrating an existing app)
 - [ ] `release.yml` per SPEC 12: release-please, `task pack`, NuGet Trusted Publishing,
       assets on the GitHub Release; `CHANGELOG.md` seeded
 - [ ] Opt-in Testcontainers job for SQL Server and PostgreSQL running the probe tests

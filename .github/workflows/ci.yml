@@ -1,3 +1,5 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
 name: ci
 
 on:
@@ -24,9 +26,10 @@ jobs:
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          # The SDK comes from global.json; the 8.0 runtime runs the net8.0 test builds.
+          # The SDK comes from global.json; 10.0.x adds the .NET 10 runtimes for the net10.0
+          # test builds and the samples.
           global-json-file: global.json
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
         with:

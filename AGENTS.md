@@ -26,15 +26,16 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
 
 ## Decisions already made (do not relitigate)
 
-- Library targets `net8.0` and `net10.0`. The `net8.0` build references EF Core 8.0.x
-  (works with EF Core 9 at runtime), the `net10.0` build references EF Core 10.x. EF 10
-  only APIs (`GetDeclaredQueryFilters`) sit behind `#if NET10_0_OR_GREATER`.
+- Library targets `net10.0` and `net11.0`. The `net10.0` build references EF Core 10.x,
+  the `net11.0` build references EF Core 11.x. EF 11 only APIs sit behind
+  `#if NET11_0_OR_GREATER`.
 - Analyzer targets `netstandard2.0`, references `Microsoft.CodeAnalysis.CSharp` 4.8.0
   (lowest version that supports what we use; keeps VS 2022 working), and is bundled into
   the runtime package under `analyzers/dotnet/cs`.
-- .NET SDK 10 pinned in `global.json` with `rollForward: latestFeature`. C# latest.
+- .NET SDK 11 pinned in `global.json` with `rollForward: latestFeature`. C# latest.
 - Central Package Management (`Directory.Packages.props`). Nullable on,
-  `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`.
+  `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`,
+  StyleCop.Analyzers (settings in `stylecop.json` and `.editorconfig`).
 - Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no
   tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3,
   `Microsoft.EntityFrameworkCore.Sqlite`, and `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`.
@@ -43,7 +44,9 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator`.
 - Rule IDs, messages, option names and exception types are fixed by `docs/SPEC.md`.
   Changing one is a spec change.
-- License Apache-2.0. One LICENSE at the root; no per-file headers.
+- License Apache-2.0, one LICENSE at the root. C# files start with the StyleCop copyright
+  header set in `stylecop.json`; YAML files and scripts start with the same copyright line
+  as a `#` comment. Other files have no header.
 
 If a decision turns out to be wrong, write the problem and the proposed change in
 `docs/DECISIONS.md`, then stop and ask. Do not quietly work around it.
@@ -86,7 +89,8 @@ for them and must pass before every commit; unset, it warns and passes.
 - Work one phase of `docs/PLAN.md` at a time. Tick its checkboxes as you go.
 - When a phase's acceptance criteria pass and `task ci` is green, commit, summarize in a
   few lines, and stop. Do not start the next phase until asked.
-- Conventional commits. Small commits. Branch and PR; never commit to `main`.
+- Conventional commits with the types and scopes in `.gitmessage`, which
+  `.githooks/commit-msg` checks. Small commits. Branch and PR; never commit to `main`.
 - Every `run:` step in this repo's workflows calls `task`. Third-party actions pinned to
   a full SHA with a version comment.
 - Keep this file under 150 lines and `README.md` accurate at the end of every phase.
@@ -96,4 +100,5 @@ for them and must pass before every commit; unset, it warns and passes.
 - Do not implement anything under Phase 6 (backlog) in `docs/PLAN.md`.
 - Do not add an option, rule or public type the spec does not list. Propose it first.
 - Do not take a dependency on Finbuckle or any tenancy library outside `samples/`.
-- Do not write `CLAUDE.md` content. `CLAUDE.md` contains only `@AGENTS.md`.
+- Do not add a `CLAUDE.md`. Claude Code (2.1.277 or later) reads `AGENTS.md` directly, but
+  only when no `CLAUDE.md` exists.
