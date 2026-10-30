@@ -1,0 +1,61 @@
+#!/bin/bash
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+set -eo pipefail
+
+# Refuses commits on main, then checks the staged files. A check whose tool isn't
+# installed is skipped with a warning; CI runs the lint and the scrub anyway. The checks
+# read files as they are on disk, so a partly staged file is checked whole. Install with
+# `task hooks:install`. Skip once with `git commit --no-verify`.
+
+cd "$(git rev-parse --show-toplevel)"
+FAILED=0
+
+if [[ "$(git symbolic-ref --short -q HEAD)" == "main" ]]; then
+  echo "pre-commit: main takes changes only through pull requests. Create a branch first"
+  echo "(git switch -c <branch>), or bypass once with git commit --no-verify."
+  exit 1
+fi
+
+# Sets FILES to the staged (added, copied, modified or renamed) files matching a
+# regex, and fails when there are none.
+stage() {
+  FILES=()
+  while IFS= read -r file; do FILES+=("$file"); done < <(git diff --cached --name-only --diff-filter=ACMR | grep -E "$1" || true)
+  [[ ${#FILES[@]} -gt 0 ]]
+}
+
+# Runs a check, or skips it when its tool isn't installed.
+check() {
+  local name="$1" tool="$2"
+  shift 2
+  if ! command -v "$tool" > /dev/null; then
+    echo "pre-commit: $name skipped ($tool not installed)"
+    return 0
+  fi
+  "$@" || { echo "pre-commit: $name failed"; FAILED=1; }
+}
+
+check "secrets" gitleaks gitleaks git --pre-commit --staged --no-banner --log-level warn --redact .
+# AGENTS.md: the scrub must pass before every commit.
+check "scrub" task task --silent scrub
+
+if stage '\.cs$'; then
+  # Whitespace only, from .editorconfig without a build; the analyzers run in the build.
+  check "C# whitespace" dotnet dotnet format whitespace . --folder --verify-no-changes --include "${FILES[@]}"
+fi
+if stage '\.ya?ml$|^\.githooks/'; then
+  HEADER_FILES="$(mktemp)"
+  printf '%s\n' "${FILES[@]}" > "$HEADER_FILES"
+  check "copyright headers" task env HEADER_FILES="$HEADER_FILES" task --silent lint:headers
+  rm -f "$HEADER_FILES"
+fi
+if stage '\.sh$|^\.githooks/'; then
+  check "shell" shellcheck shellcheck "${FILES[@]}"
+fi
+if stage '^\.github/workflows/'; then
+  check "actionlint" actionlint actionlint "${FILES[@]}"
+  check "zizmor" zizmor zizmor --offline --quiet "${FILES[@]}"
+fi
+
+exit "$FAILED"

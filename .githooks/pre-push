@@ -1,0 +1,58 @@
+#!/bin/bash
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+set -eo pipefail
+
+# Refuses pushes to main (and deleting it), then runs the lint and the tests when the
+# pushed commits change C# code, project or build files, the Taskfile, the workflows or
+# the ci-parity config. They run on the working tree, so the pushed commit must be the
+# clean checkout. Without dotnet or task the run is skipped with a warning; CI runs it
+# anyway. Install with `task hooks:install`. Skip once with `git push --no-verify`.
+
+cd "$(git rev-parse --show-toplevel)"
+ZERO=0000000000000000000000000000000000000000
+CHANGED=""
+# Pushed commits other than HEAD, which the working tree doesn't hold.
+OTHER=""
+
+while read -r _local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" == "refs/heads/main" ]]; then
+    echo "pre-push: main takes changes only through pull requests. Push a branch and open a PR,"
+    echo "or bypass once with git push --no-verify."
+    exit 1
+  fi
+  # Branch deletions push nothing to test.
+  [[ "$local_sha" == "$ZERO" ]] && continue
+  if [[ "$local_sha" != "$(git rev-parse HEAD)" ]]; then OTHER+="${remote_ref#refs/heads/} "; fi
+  if [[ "$remote_sha" == "$ZERO" ]]; then
+    # A new branch: everything since it left main.
+    CHANGED+="$(git diff --name-only "origin/main...$local_sha")"$'\n'
+  else
+    CHANGED+="$(git diff --name-only "$remote_sha..$local_sha")"$'\n'
+  fi
+done
+
+if ! grep -qE '\.cs$|\.csproj$|\.props$|\.targets$|\.slnx$|PublicAPI\.(Shipped|Unshipped)\.txt$|^(global|stylecop)\.json$|^\.editorconfig$|^Taskfile\.yml$|^\.github/workflows/|^\.ci-parity\.yml$' <<< "$CHANGED"; then
+  exit 0
+fi
+
+for tool in dotnet task; do
+  if ! command -v "$tool" > /dev/null; then
+    echo "pre-push: lint and tests skipped ($tool not installed)"
+    exit 0
+  fi
+done
+
+DIRTY="$(git status --porcelain)"
+if [[ -n "$OTHER" || -n "$DIRTY" ]]; then
+  [[ -n "$OTHER" ]] && echo "pre-push: pushing ${OTHER% }, which isn't the checked-out commit."
+  [[ -n "$DIRTY" ]] && echo "pre-push: uncommitted changes:" && echo "$DIRTY"
+  echo "The lint and tests would check different code from the push. Check out the branch, or"
+  echo "commit or stash the changes (git stash -u), then push again; or skip once with --no-verify."
+  exit 1
+fi
+
+FAILED=0
+task lint || { echo "pre-push: lint failed"; FAILED=1; }
+task test || { echo "pre-push: tests failed"; FAILED=1; }
+exit "$FAILED"

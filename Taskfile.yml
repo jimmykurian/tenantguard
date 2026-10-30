@@ -44,12 +44,13 @@ tasks:
       - dotnet test --project "{{.TESTS}}/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
 
   lint:
-    desc: Check formatting and analyzers, then the public API files
+    desc: Check formatting and analyzers, then the public API files and the copyright headers
     cmds:
       - dotnet format {{.SOLUTION}} --verify-no-changes
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet format samples/{{.ITEM}} --verify-no-changes
       - task: lint:api
+      - task: lint:headers
 
   lint:api:
     desc: Fail when PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt are out of date
@@ -58,6 +59,29 @@ tasks:
         cmd: >-
           dotnet build src/{{.ITEM}} -c {{.CONFIGURATION}} --no-incremental
           -warnaserror:RS0016,RS0017,RS0024,RS0025,RS0026,RS0036,RS0037
+
+  lint:headers:
+    desc: Check the YAML files and git hooks start with the copyright line (StyleCop checks C#)
+    silent: true
+    cmds:
+      - |
+        set -eu
+        tmp="$(mktemp -d)"
+        trap 'rm -rf "$tmp"' EXIT
+        # HEADER_FILES names a file listing paths one per line (the pre-commit hook's staged
+        # files); the paths are read as data, never expanded by the shell.
+        if [ -n "${HEADER_FILES:-}" ]; then cat "$HEADER_FILES"; else git ls-files; fi > "$tmp/all"
+        # grep exits 1 when no path matches; that isn't a failure.
+        grep -E '\.ya?ml$|^\.githooks/' "$tmp/all" > "$tmp/files" || [ $? -eq 1 ]
+        status=0
+        while IFS= read -r file; do
+          [ -f "$file" ] || continue
+          if ! head -n 3 "$file" | grep -qE '^# Copyright \(c\) Jimmy Kurian 20[0-9]{2}\. Licensed under the Apache License, Version 2\.0\.$'; then
+            echo "lint:headers: $file: no copyright line in its first three lines"
+            status=1
+          fi
+        done < "$tmp/files"
+        exit $status
 
   fmt:
     desc: Format the solution and the samples
@@ -111,6 +135,11 @@ tasks:
           exit 1
         fi
         echo "scrub: clean"
+
+  hooks:install:
+    desc: Use the git hooks in .githooks/ (pre-commit, commit-msg, pre-push)
+    cmds:
+      - git config core.hooksPath .githooks
 
   ci:
     desc: Run lint, build, test, pack, samples and scrub
