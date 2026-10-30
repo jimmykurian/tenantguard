@@ -51,6 +51,9 @@ It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query 
 Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.dev).
 `task ci` runs everything CI runs; `task --list` shows the rest.
 
+Commits follow [Conventional Commits](https://conventionalcommits.org).
+`git config commit.template .gitmessage` loads a template with the types and scopes.
+
 ## License
 
 [Apache-2.0](LICENSE)
