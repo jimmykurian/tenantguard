@@ -69,8 +69,6 @@ dotnet_diagnostic.IDE0005.severity = warning
 dotnet_diagnostic.SA1101.severity = none
 # Private fields are _camelCase
 dotnet_diagnostic.SA1309.severity = none
-# No per-file license headers (AGENTS.md)
-dotnet_diagnostic.SA1633.severity = none
 
 [{tests,samples}/**.cs]
 # Test names read as sentences

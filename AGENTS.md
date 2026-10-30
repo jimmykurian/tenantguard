@@ -44,7 +44,9 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator`.
 - Rule IDs, messages, option names and exception types are fixed by `docs/SPEC.md`.
   Changing one is a spec change.
-- License Apache-2.0. One LICENSE at the root; no per-file headers.
+- License Apache-2.0, one LICENSE at the root. C# files start with the StyleCop copyright
+  header set in `stylecop.json`; YAML files and scripts start with the same copyright line
+  as a `#` comment. Other files have no header.
 
 If a decision turns out to be wrong, write the problem and the proposed change in
 `docs/DECISIONS.md`, then stop and ask. Do not quietly work around it.

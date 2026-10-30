@@ -7,6 +7,20 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-10-30: Per-file copyright headers instead of none (accepted)
+
+Decision: one LICENSE at the root and no per-file headers (AGENTS.md).
+
+Problem: the owner wants the same per-file headers as their other .NET services, which
+put StyleCop's XML copyright header in C# files and a `#` copyright line in YAML.
+
+Proposed change: C# files start with the StyleCop header built from `companyName` and
+`copyrightText` in `stylecop.json`, enforced by SA1633 and the rules that follow it. YAML
+files and the commit-msg hook start with the same copyright line as a `#` comment.
+Markdown, JSON, MSBuild and ignore files have none. The text names Apache-2.0 instead of
+"All rights reserved". SA1636 matches the text exactly, so changing the year means
+changing `copyrightText` and every header together.
+
 ## 2026-10-30: Target net10.0 and net11.0 instead of net8.0 and net10.0 (accepted)
 
 Decision: the library targets `net8.0` (EF Core 8.0.x, also serving EF Core 9) and
