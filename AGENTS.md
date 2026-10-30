@@ -26,13 +26,13 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
 
 ## Decisions already made (do not relitigate)
 
-- Library targets `net8.0` and `net10.0`. The `net8.0` build references EF Core 8.0.x
-  (works with EF Core 9 at runtime), the `net10.0` build references EF Core 10.x. EF 10
-  only APIs (`GetDeclaredQueryFilters`) sit behind `#if NET10_0_OR_GREATER`.
+- Library targets `net10.0` and `net11.0`. The `net10.0` build references EF Core 10.x,
+  the `net11.0` build references EF Core 11.x. EF 11 only APIs sit behind
+  `#if NET11_0_OR_GREATER`.
 - Analyzer targets `netstandard2.0`, references `Microsoft.CodeAnalysis.CSharp` 4.8.0
   (lowest version that supports what we use; keeps VS 2022 working), and is bundled into
   the runtime package under `analyzers/dotnet/cs`.
-- .NET SDK 10 pinned in `global.json` with `rollForward: latestFeature`. C# latest.
+- .NET SDK 11 pinned in `global.json` with `rollForward: latestFeature`. C# latest.
 - Central Package Management (`Directory.Packages.props`). Nullable on,
   `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`.
 - Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no

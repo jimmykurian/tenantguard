@@ -11,7 +11,7 @@ public sealed class SmokeTests
         var test = new CSharpAnalyzerTest<EmptyDiagnosticAnalyzer, DefaultVerifier>
         {
             TestCode = "public sealed class Invoice { public string TenantId { get; set; } = \"acme\"; }",
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
         };
 
         await test.RunAsync(TestContext.Current.CancellationToken);

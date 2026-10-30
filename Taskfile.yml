@@ -4,6 +4,9 @@ vars:
   SOLUTION: TenantGuard.slnx
   CONFIGURATION: Release
   SAMPLES: HandRolled.Api Finbuckle.Api
+  # Absolute: `dotnet test` in the .NET 11 RC SDK resolves a relative --project against the
+  # project's own directory.
+  TESTS: "{{.ROOT_DIR}}/tests"
 
 env:
   DOTNET_NOLOGO: "1"
@@ -25,18 +28,18 @@ tasks:
   test:unit:
     desc: Run the runtime and test kit unit tests
     cmds:
-      - dotnet test --project tests/TenantGuard.EntityFrameworkCore.Tests -c {{.CONFIGURATION}}
-      - dotnet test --project tests/TenantGuard.Testing.Tests -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/TenantGuard.EntityFrameworkCore.Tests" -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/TenantGuard.Testing.Tests" -c {{.CONFIGURATION}}
 
   test:analyzers:
     desc: Run the analyzer tests
     cmds:
-      - dotnet test --project tests/TenantGuard.Analyzers.Tests -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/TenantGuard.Analyzers.Tests" -c {{.CONFIGURATION}}
 
   test:behavior:
     desc: Run the EF Core behavior pins (SPEC 9)
     cmds:
-      - dotnet test --project tests/TenantGuard.BehaviorPins -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
 
   lint:
     desc: Check formatting and analyzers, then the public API files

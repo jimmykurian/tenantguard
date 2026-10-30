@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Target frameworks">
-    <TenantGuardRuntimeTargetFrameworks>net8.0;net10.0</TenantGuardRuntimeTargetFrameworks>
+    <TenantGuardRuntimeTargetFrameworks>net10.0;net11.0</TenantGuardRuntimeTargetFrameworks>
     <TenantGuardAnalyzerTargetFramework>netstandard2.0</TenantGuardAnalyzerTargetFramework>
   </PropertyGroup>
 

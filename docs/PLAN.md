@@ -10,7 +10,7 @@ Repository layout, fixed from Phase 0:
 TenantGuard.slnx
 Directory.Build.props            Version, TFMs, analyzers, SourceLink, warnings-as-errors
 Directory.Packages.props         Central Package Management
-global.json                      .NET SDK 10, rollForward latestFeature
+global.json                      .NET SDK 11, rollForward latestFeature
 src/TenantGuard.EntityFrameworkCore/
 src/TenantGuard.Analyzers/
 src/TenantGuard.Testing/
@@ -51,8 +51,8 @@ Acceptance: `task ci` green locally and in CI. `dotnet pack` produces three pack
       as an `IDbContextOptionsExtension` with `Info` (debug string, cache key fragment)
 - [ ] Tenant property discovery per SPEC 4.1, including shadow properties and
       `[TenantKey]`; Finbuckle annotation left as a TODO string constant until Phase 4
-- [ ] Filter inspection: find the filter(s) referencing the tenant property. `net10.0`
-      uses `GetDeclaredQueryFilters()`; `net8.0` uses `GetQueryFilter()`
+- [ ] Filter inspection: find the filter(s) referencing the tenant property with
+      `GetDeclaredQueryFilters()`, which EF Core 10 and 11 both have
 - [ ] Operand classification and rules TGM001 to TGM008 with the exact messages
 - [ ] `IModelFinalizedConvention` plugin, `TenantGuardModelException`, `Enforcement`
 - [ ] `TenantGuardModel.Validate` and `ModelReport`

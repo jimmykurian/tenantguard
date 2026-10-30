@@ -30,9 +30,9 @@ It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query 
 
 | Package | Targets | Contents |
 |---|---|---|
-| `TenantGuard.EntityFrameworkCore` | net8.0, net10.0 | Model validation, SaveChanges guard, bypass scope; bundles the analyzers |
+| `TenantGuard.EntityFrameworkCore` | net10.0, net11.0 | Model validation, SaveChanges guard, bypass scope; bundles the analyzers |
 | `TenantGuard.Analyzers` | netstandard2.0 | The analyzers on their own, for projects without EF Core |
-| `TenantGuard.Testing` | net8.0, net10.0 | `TenantIsolationProbe`, seeding, `ProbeReport` |
+| `TenantGuard.Testing` | net10.0, net11.0 | `TenantIsolationProbe`, seeding, `ProbeReport` |
 
 ## Install
 
@@ -48,8 +48,8 @@ It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query 
 
 ## Building from source
 
-Requires the .NET 10 SDK and [Task](https://taskfile.dev). `task ci` runs everything CI
-runs; `task --list` shows the rest.
+Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.dev).
+`task ci` runs everything CI runs; `task --list` shows the rest.
 
 ## License
 
