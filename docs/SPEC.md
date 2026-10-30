@@ -127,13 +127,17 @@ rules on the finalized `IModel`, stores the per-entity metadata as a model annot
 (`TenantGuard:Entities`), and throws or logs per `Enforcement`.
 
 Because EF builds the model lazily, `services.AddTenantGuardStartupValidation<TContext>()`
-registers an `IHostedService` that resolves `TContext` in a scope and touches `.Model`
-during `StartAsync`, so a bad model fails the host before it serves a request, like
-`ValidateOnStart`. It also works with `IDbContextFactory<TContext>`.
+registers a startup check through `ValidateOnStart` (in `Microsoft.Extensions.Options`,
+which EF Core already brings in). When the host starts, before any hosted service, the
+check resolves `TContext` in a scope, or creates one from `IDbContextFactory<TContext>`, and
+touches `.Model`, so a bad model fails the host before it serves a request. A context that
+is not registered, or does not use `UseTenantGuard`, fails the check with a message saying so.
 
 `TenantGuardModel.Validate(IModel model, TenantGuardOptions options) : ModelReport` runs
-the rules on any model without a context, for unit tests and tooling. `ModelReport` lists
-`Findings` (rule, severity, entity, property, message) and exposes `Errors`, `Warnings`.
+the rules on any model without a context, for unit tests and tooling. The options come from
+`new TenantGuardOptionsBuilder()`, configured as in `UseTenantGuard`, through its `Options`
+property. `ModelReport` lists `Findings` (rule, severity, entity, property, message) and
+exposes `Errors`, `Warnings`.
 
 ## 5. SaveChanges guard
 
@@ -234,7 +238,9 @@ public sealed class TenantKeyAttribute : Attribute;
 public sealed class AllowCrossTenantAccessAttribute(string reason) : Attribute;
 public enum Enforcement { Throw, Log }
 public enum NoTenantPolicy { Reject, Allow }
-public sealed class TenantGuardOptionsBuilder { /* methods in SPEC 4.3 */ }
+public enum Severity { Warning, Error }
+public sealed class TenantGuardOptions;   // opaque; from TenantGuardOptionsBuilder.Options
+public sealed class TenantGuardOptionsBuilder { TenantGuardOptionsBuilder(); TenantGuardOptions Options; /* methods in SPEC 4.3 */ }
 public static class TenantGuardDbContextOptionsBuilderExtensions { UseTenantGuard(...) }
 public static class TenantGuardServiceCollectionExtensions { AddTenantGuardStartupValidation<TContext>() }
 public static class TenantGuardDbContextExtensions { TenantGuard(this DbContext) : TenantGuardContext }
