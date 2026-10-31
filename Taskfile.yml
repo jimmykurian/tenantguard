@@ -97,10 +97,18 @@ tasks:
         cmd: dotnet format samples/{{.ITEM}}
 
   pack:
-    desc: Build the NuGet packages into ./artifacts/
+    desc: Build the NuGet packages into ./artifacts/ and validate them
     cmds:
       - rm -rf artifacts
-      - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts
+      # ContinuousIntegrationBuild maps source paths to /_/, so the symbols match on any machine.
+      - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts -p:ContinuousIntegrationBuild=true
+      - dotnet tool restore
+      # PackageIdAvailableOnNuGetOrg fails once a version is on nuget.org. The repository is
+      # private, so its URLs (52) and the sources SourceLink points at (119) answer 404 to
+      # anonymous requests; stop excluding those two when it goes public.
+      - >-
+        dotnet meziantou.validate-nuget-package artifacts/*.nupkg
+        --excluded-rules PackageIdAvailableOnNuGetOrg --excluded-rule-ids 52 --excluded-rule-ids 119
 
   samples:
     desc: Build the samples, smoke-test each one and run their isolation probe tests
