@@ -1,0 +1,10 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue
+    url: https://github.com/jimmykurian/tenantguard/blob/main/SECURITY.md
+    about: Please don't open an issue for a vulnerability; follow the security policy.
+  - name: What TenantGuard does
+    url: https://github.com/jimmykurian/tenantguard/blob/main/docs/SPEC.md
+    about: The spec covers the model rules, the write guard, the analyzers and the isolation probe.

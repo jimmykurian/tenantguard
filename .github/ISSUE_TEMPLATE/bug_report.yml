@@ -1,0 +1,97 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+name: Bug Report
+description: TenantGuard crashes, rejects a valid model or write, or behaves wrongly
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a crash, an exception on a valid model or write, or wrong behavior. If a
+        model rule, an analyzer, the write guard or the isolation probe reported the wrong
+        thing, or missed one, use the "Wrong Finding" template instead. Security issues go
+        through SECURITY.md.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - TenantGuard.EntityFrameworkCore (model rules, write guard)
+        - TenantGuard.Analyzers (TG001 to TG004)
+        - TenantGuard.Testing (isolation probe)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The package version, from your project file or `dotnet list package`.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: .NET, EF Core and Provider
+      description: The target framework, the EF Core version and the database provider.
+      placeholder: "net10.0, EF Core 10.0.14, Microsoft.EntityFrameworkCore.SqlServer"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tenancy
+    attributes:
+      label: Tenancy
+      options:
+        - Hand-rolled query filters
+        - Finbuckle.MultiTenant
+        - Another tenancy package
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Minimal Code
+      description: |
+        The smallest model, UseTenantGuard configuration and code that show the problem.
+        Use invented names like acme and globex; don't paste private code.
+      render: csharp
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should TenantGuard have done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What it did, with the exception message and stack trace or the output.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "ubuntu-latest, macOS 26 arm64, Windows 11"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+    validations:
+      required: false

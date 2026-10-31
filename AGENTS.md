@@ -96,6 +96,7 @@ and passes.
   few lines, and stop. Do not start the next phase until asked.
 - Conventional commits with the types and scopes in `.gitmessage`, which
   `.githooks/commit-msg` checks. Small commits. Branch and PR; never commit to `main`.
+- Fill in `.github/PULL_REQUEST_TEMPLATE.md` in every pull request description.
 - Every `run:` step in this repo's workflows calls `task`. Third-party actions pinned to
   a full SHA with a version comment.
 - Keep this file under 150 lines and `README.md` accurate at the end of every phase.

@@ -1,0 +1,76 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+name: Subtask
+description: One piece of work that is part of a larger issue
+title: "[Subtask]: "
+labels: ["subtask"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for one piece of work that belongs to a parent
+        issue.
+
+  - type: input
+    id: parent
+    attributes:
+      label: Parent
+      description: The parent issue.
+      placeholder: "#123"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - options (UseTenantGuard and its builder)
+        - model (rules and their convention)
+        - interception (write guard)
+        - diagnostics (logging, AllowCrossTenantAccess)
+        - analyzers
+        - probe, seeding or report (test kit)
+        - pins (behavior pins)
+        - samples
+        - Packaging or releases
+        - Build, CI or tooling
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] A positive and a negative test cover the behavior
+        - [ ] `task ci` passes
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to Modify
+      placeholder: |
+        - `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs`
+        - `tests/TenantGuard.EntityFrameworkCore.Tests/Models/`
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      placeholder: "Blocked by #124"
+    validations:
+      required: false
