@@ -1,4 +1,24 @@
 # Changelog
 
+## 0.1.0-preview.1 (2026-10-31)
+
+
+### Features
+
+* **analyzers:** flag IgnoreQueryFilters and raw SQL without a tenant predicate ([#6](https://github.com/jimmykurian/tenantguard/issues/6)) ([2d2e9ea](https://github.com/jimmykurian/tenantguard/commit/2d2e9eaa2e53f80ee2a043860cac958bdfb41a74))
+* **interception:** block cross-tenant writes in SaveChanges ([#5](https://github.com/jimmykurian/tenantguard/issues/5)) ([80f158d](https://github.com/jimmykurian/tenantguard/commit/80f158d2fbf1228bfc25fd4f8c9817f549f47992))
+* **model:** check the model against rules TGM001 to TGM008 ([dba3a5b](https://github.com/jimmykurian/tenantguard/commit/dba3a5b706394a0b2c22be12a7e7489dea3c4107))
+* **model:** check the model against the tenant rules ([2ea5e45](https://github.com/jimmykurian/tenantguard/commit/2ea5e45d3c60c57c25261703ce43c4207ee61e5d))
+* **probe:** prove tenant isolation per entity and finish both samples ([#7](https://github.com/jimmykurian/tenantguard/issues/7)) ([afae2b3](https://github.com/jimmykurian/tenantguard/commit/afae2b33ba4308dad4fa6dec43a81cdd1062a1f4))
+
+
+### Documentation
+
+* add MSTest to the test kit's documented frameworks ([c91358c](https://github.com/jimmykurian/tenantguard/commit/c91358c88be220bdb14480ae8bb0eec773d07cd5))
+* record the startup check and options API decisions ([a3855f0](https://github.com/jimmykurian/tenantguard/commit/a3855f0afcf902afc31a1b0d2f1a9820986dc1d3))
+* tick the model validation items in the plan ([d463dbf](https://github.com/jimmykurian/tenantguard/commit/d463dbff067f37788849dd70d6ef5ff6102a9bbc))
+
+## Changelog
+
 Release Please writes this file from the Conventional Commits on `main`; don't edit it by
 hand. Each version's packages are on nuget.org and attached to its GitHub Release.
