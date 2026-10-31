@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard.Testing;
 
-// The entity types to seed and their order (SPEC 7): the probed types and, through every required
+// The entity types to seed and their order: the probed types and, through every required
 // relationship, the principals they need, each after its principals. A type in a cycle of required
 // relationships, or one whose principal cannot be seeded, gets the reason instead of a place.
 internal sealed class SeedPlan

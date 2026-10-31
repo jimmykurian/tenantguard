@@ -7,7 +7,7 @@ using System.Text;
 
 namespace TenantGuard.Testing;
 
-// The fixed-width table in TenantIsolationProbeException's message (SPEC 7). The detail column is
+// The fixed-width table in TenantIsolationProbeException's message. The detail column is
 // last and not padded.
 internal static class ProbeTable
 {

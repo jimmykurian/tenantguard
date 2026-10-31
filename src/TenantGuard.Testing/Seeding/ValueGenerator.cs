@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard.Testing;
 
-// Deterministic values for the properties the default seeder fills (SPEC 7). A counter runs through
+// Deterministic values for the properties the default seeder fills. A counter runs through
 // every value, so no two rows collide on a unique index. A property whose type it cannot fill is
 // filled through its value converter's provider type when it has one.
 internal sealed class ValueGenerator

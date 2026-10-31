@@ -79,7 +79,7 @@ internal static class Tgm001Models
             });
     }
 
-    // Positive: Post is scoped through its principal, p => p.Blog.TenantId == ... (SPEC 4.2).
+    // Positive: Post is scoped through its principal, p => p.Blog.TenantId == ...
     internal sealed class ThroughNavigation(DbContextOptions options) : DbContext(options)
     {
         public string CurrentTenant { get; set; } = "acme";

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Pin 5 (SPEC 9): a filter that references a field of the context is evaluated per context instance,
+// A filter that references a field of the context is evaluated per context instance,
 // so two contexts for two tenants each see only their own rows. TGM003 relies on this being the
 // safe pattern.
 // https://learn.microsoft.com/ef/core/querying/filters

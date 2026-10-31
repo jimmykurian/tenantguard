@@ -10,7 +10,7 @@ using TenantGuard.EntityFrameworkCore.Tests.Support;
 
 namespace TenantGuard.EntityFrameworkCore.Tests;
 
-// UseTenantGuard: the convention runs the rules when EF finalizes the model (SPEC 4.2, 4.3, 11).
+// UseTenantGuard: the convention runs the rules when EF finalizes the model.
 public sealed class ConventionTests
 {
     [Fact]

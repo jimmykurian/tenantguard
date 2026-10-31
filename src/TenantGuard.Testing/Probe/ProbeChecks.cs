@@ -4,7 +4,7 @@
 
 namespace TenantGuard.Testing;
 
-// The six checks of SPEC 7, by the names ProbeRow.Check carries.
+// The probe's six checks, by the names ProbeRow.Check carries.
 internal static class ProbeChecks
 {
     public const string ReadIsolation = "ReadIsolation";

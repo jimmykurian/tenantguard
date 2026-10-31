@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.EntityFrameworkCore.Tests.Models;
 
-// Tenant property discovery (SPEC 4.1). None of these have a filter, so TGM001 names the property
+// Tenant property discovery. None of these have a filter, so TGM001 names the property
 // discovery picked.
 internal static class DiscoveryModels
 {

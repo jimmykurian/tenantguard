@@ -8,7 +8,7 @@ using Verify = TenantGuard.Analyzers.Tests.AnalyzerVerifier<TenantGuard.Analyzer
 
 namespace TenantGuard.Analyzers.Tests;
 
-// TG001 (SPEC 6).
+// Analyzer TG001 against code that should and shouldn't report it.
 public sealed class IgnoreQueryFiltersTests
 {
     private const string TenantFilterNames = "tenantguard.tenant_filter_names = TenantFilter";

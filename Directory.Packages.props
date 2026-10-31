@@ -35,7 +35,7 @@
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
   </ItemGroup>
 
-  <!-- The opt-in probe runs on SQL Server and PostgreSQL (SPEC 12), net10.0 only. -->
+  <!-- The opt-in probe runs on SQL Server and PostgreSQL, net10.0 only. -->
   <ItemGroup Label="Provider tests">
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />

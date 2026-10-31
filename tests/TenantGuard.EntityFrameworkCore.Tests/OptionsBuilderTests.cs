@@ -7,7 +7,7 @@ using TenantGuard.EntityFrameworkCore.Tests.Models;
 
 namespace TenantGuard.EntityFrameworkCore.Tests;
 
-// TenantGuardOptionsBuilder and UseTenantGuard (SPEC 4.3).
+// TenantGuardOptionsBuilder and UseTenantGuard.
 public sealed class OptionsBuilderTests
 {
     [Fact]

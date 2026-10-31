@@ -10,13 +10,13 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace TenantGuard.Analyzers;
 
-// TG004 (SPEC 6): raw SQL built at runtime, which no analyzer can check for a tenant predicate.
+// TG004: raw SQL built at runtime, which no analyzer can check for a tenant predicate.
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 internal sealed class UnverifiableRawSqlAnalyzer : DiagnosticAnalyzer
 {
     public const string Id = "TG004";
 
-    [SuppressMessage("MicrosoftCodeAnalysisDesign", "RS1032:Define diagnostic message correctly", Justification = "SPEC 6 fixes the message, period included.")]
+    [SuppressMessage("MicrosoftCodeAnalysisDesign", "RS1032:Define diagnostic message correctly", Justification = "The documented message ends with a period.")]
     public static readonly DiagnosticDescriptor Rule = new(
         Id,
         title: "Raw SQL that cannot be checked for a tenant predicate",

@@ -14,7 +14,7 @@ internal static class Tgm004Models
         public static string Current { get; set; } = "acme";
     }
 
-    // Positive: a static member is rooted at a static, so it is OK (SPEC 4.2).
+    // Positive: a static member is rooted at a static, so it is OK.
     internal sealed class StaticMember(DbContextOptions options) : DbContext(options)
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)

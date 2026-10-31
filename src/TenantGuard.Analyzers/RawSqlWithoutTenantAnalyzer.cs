@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace TenantGuard.Analyzers;
 
-// TG002 (SPEC 6): raw SQL the compiler can read, a literal, a constant or an interpolated string,
+// TG002: raw SQL the compiler can read, a literal, a constant or an interpolated string,
 // that mentions none of the tenant columns.
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 internal sealed class RawSqlWithoutTenantAnalyzer : DiagnosticAnalyzer

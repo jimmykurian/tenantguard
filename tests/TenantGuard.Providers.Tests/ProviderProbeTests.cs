@@ -8,7 +8,7 @@ using static TenantGuard.Testing.Tests.Models.ProbeModels;
 
 namespace TenantGuard.Providers.Tests;
 
-// The isolation probe on a real database server (SPEC 12), with its transactions and ExecuteDelete: a
+// The isolation probe on a real database server, with its transactions and ExecuteDelete: a
 // guarded model passes, an unfiltered entity fails its reads and bulk delete, and a context without the
 // write guard fails the guard checks. Each test gets its own database.
 public abstract class ProviderProbeTests

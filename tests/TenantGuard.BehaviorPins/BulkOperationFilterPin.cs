@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Pin 2 (SPEC 9): query filters apply to ExecuteUpdate and ExecuteDelete, so a bulk statement only
+// Query filters apply to ExecuteUpdate and ExecuteDelete, so a bulk statement only
 // touches the current tenant's rows.
 // https://learn.microsoft.com/ef/core/saving/execute-insert-update-delete
 public sealed class BulkOperationFilterPin

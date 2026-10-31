@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace TenantGuard;
 
-// Registered by UseTenantGuard, one per context instance (SPEC 5). Both paths run the same check,
+// Registered by UseTenantGuard, one per context instance. Both paths run the same check,
 // which is synchronous because it does no I/O.
 internal sealed class TenantGuardSaveChangesInterceptor(TenantGuardScope scope) : SaveChangesInterceptor
 {

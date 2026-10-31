@@ -12,7 +12,7 @@ using static TenantGuard.EntityFrameworkCore.Tests.Models.WriteGuardModels;
 
 namespace TenantGuard.EntityFrameworkCore.Tests;
 
-// The SaveChanges guard (SPEC 5): every state and policy, before anything reaches the database.
+// The SaveChanges guard: every state and policy, before anything reaches the database.
 public sealed class WriteGuardTests
 {
     [Fact]

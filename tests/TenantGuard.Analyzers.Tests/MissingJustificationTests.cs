@@ -8,7 +8,7 @@ using Verify = TenantGuard.Analyzers.Tests.AnalyzerVerifier<TenantGuard.Analyzer
 
 namespace TenantGuard.Analyzers.Tests;
 
-// TG003 (SPEC 6).
+// Analyzer TG003 against code that should and shouldn't report it.
 public sealed class MissingJustificationTests
 {
     [Theory]

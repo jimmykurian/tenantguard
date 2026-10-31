@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
-// A tenant property with what the write guard needs at save time: its comparer (SPEC 5), and the
+// A tenant property with what the write guard needs at save time: its comparer, and the
 // sentinel EF treats as "not set".
 internal readonly record struct TenantPropertyMetadata(IProperty Property, ValueComparer Comparer, object? Sentinel)
 {

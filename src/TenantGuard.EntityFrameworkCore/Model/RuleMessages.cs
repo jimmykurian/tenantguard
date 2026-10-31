@@ -4,7 +4,7 @@
 
 namespace TenantGuard;
 
-// The rule IDs, severities and messages are normative (SPEC 4.2). Changing one is a spec change.
+// The rule IDs, severities and messages are public and documented. Changing one is a breaking change.
 internal static class RuleMessages
 {
     public static ModelFinding UnguardedEntity(string entity, string property)

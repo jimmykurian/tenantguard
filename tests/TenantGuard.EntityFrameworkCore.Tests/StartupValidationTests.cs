@@ -10,7 +10,7 @@ using TenantGuard.EntityFrameworkCore.Tests.Models;
 
 namespace TenantGuard.EntityFrameworkCore.Tests;
 
-// AddTenantGuardStartupValidation: a bad model stops the host at start (SPEC 4.3, Phase 1 acceptance).
+// AddTenantGuardStartupValidation: a bad model stops the host at start.
 public sealed class StartupValidationTests
 {
     [Fact]

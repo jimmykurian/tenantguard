@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- The analyzers ship inside this package too (SPEC 2), built first and packed under analyzers/. -->
+  <!-- The analyzers ship inside this package too, built first and packed under analyzers/. -->
   <ItemGroup>
     <ProjectReference Include="../TenantGuard.Analyzers/TenantGuard.Analyzers.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <None Include="../TenantGuard.Analyzers/bin/$(Configuration)/$(TenantGuardAnalyzerTargetFramework)/TenantGuard.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />

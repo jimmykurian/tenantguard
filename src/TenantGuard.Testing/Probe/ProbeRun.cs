@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard.Testing;
 
-// One run of the probe (SPEC 7): read the model through a context for the first tenant, seed a row per
+// One run of the probe: read the model through a context for the first tenant, seed a row per
 // tenant for every tenant-scoped entity type, then run every check for every ordered pair of tenants.
 internal sealed class ProbeRun<TContext>(
     Func<string, TContext> createContext,

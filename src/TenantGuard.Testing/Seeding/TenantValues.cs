@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard.Testing;
 
-// The probe's tenants are strings (SPEC 7). This turns one into a value of a tenant property's type:
+// The probe's tenants are strings. This turns one into a value of a tenant property's type:
 // through the property's value converter when it stores strings, otherwise with the type's TypeConverter,
 // so "6f9619ff-8b86-d011-b42d-00c04fc964ff" stamps a Guid tenant and "42" an int one.
 internal static class TenantValues

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Pin 6 (SPEC 9): IgnoreQueryFilters() returns every tenant's rows, which is why analyzer TG001
+// IgnoreQueryFilters() returns every tenant's rows, which is why analyzer TG001
 // flags it.
 // https://learn.microsoft.com/ef/core/querying/filters
 public sealed class IgnoreQueryFiltersPin

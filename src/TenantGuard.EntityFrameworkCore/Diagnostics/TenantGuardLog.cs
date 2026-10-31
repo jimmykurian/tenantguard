@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace TenantGuard;
 
-// SPEC 11 events.
+// TenantGuard's log events.
 internal static partial class TenantGuardLog
 {
     [LoggerMessage(
