@@ -79,6 +79,12 @@ dotnet_diagnostic.SA1101.severity = none
 # Private fields are _camelCase
 dotnet_diagnostic.SA1309.severity = none
 
+[src/{TenantGuard.EntityFrameworkCore,TenantGuard.Testing}/**.cs]
+# The public namespaces are fixed by SPEC 2 (TenantGuard, TenantGuard.Testing); the
+# folders only group files. IDE0130 off here, and the .csproj.DotSettings files tell
+# ReSharper the same.
+dotnet_style_namespace_match_folder = false
+
 [{tests,samples}/**.cs]
 # Test names read as sentences
 dotnet_diagnostic.CA1707.severity = none
