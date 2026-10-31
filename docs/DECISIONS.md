@@ -26,6 +26,12 @@ a GitHub prerelease. Release Please gets `release-as` and `prerelease` in
 (changes a recorded decision) and suppressing NU5104 (a stable package that pulls in a
 release candidate).
 
+Follow-up, the same day: `release-as` kept naming `0.1.0-preview.1` after it shipped, so
+Release Please opened a second release PR for it (#15), and merging it failed because the
+tag already existed. The config now uses `"versioning": "prerelease"` with
+`"prerelease-type": "preview"`, which bumps the preview number on each release, and the
+duplicate `CHANGELOG.md` entry is removed.
+
 ## 2026-10-30: TGM003 reads an operand EF swaps for the context as the context (open)
 
 Decision: SPEC 4.2 classifies a tenant filter's operand by the root of its member chain,

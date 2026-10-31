@@ -22,7 +22,8 @@
   "packages": {
     ".": {
       "package-name": "TenantGuard",
-      "release-as": "0.1.0-preview.1",
+      "versioning": "prerelease",
+      "prerelease-type": "preview",
       "prerelease": true,
       "extra-files": [
         { "type": "xml", "path": "Directory.Build.props", "xpath": "//Project/PropertyGroup/Version" }
