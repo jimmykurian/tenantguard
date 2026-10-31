@@ -1,12 +1,5 @@
 # Changelog
 
-## [0.1.0-preview.1](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.1...v0.1.0-preview.1) (2026-10-31)
-
-
-### Documentation
-
-* tick the preview release item in the plan ([#14](https://github.com/jimmykurian/tenantguard/issues/14)) ([bbc5c49](https://github.com/jimmykurian/tenantguard/commit/bbc5c49371b5ec1fd13218cfcab8ddc7f02fd8a8))
-
 ## 0.1.0-preview.1 (2026-10-31)
 
 
