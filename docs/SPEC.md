@@ -61,8 +61,10 @@ For each entity type in the model, the tenant property is the first match of:
 
 1. An explicit registration: `tg.TenantProperty<TEntity>(e => e.OrgId)`.
 2. A property carrying `[TenantKey]` (attribute shipped in the runtime package).
-3. Finbuckle's multi-tenant annotation on the entity type (name verified against
-   Finbuckle's source in Phase 4; matched by string, no package reference).
+3. Finbuckle's multi-tenant annotation on the entity type, `Finbuckle:MultiTenant`
+   (Finbuckle's `Constants.MultiTenantAnnotationName`; matched by string, no package
+   reference; `samples/Finbuckle.Api.Tests` checks it against the sample's Finbuckle
+   version), with Finbuckle's `TenantId` property.
 4. A property (CLR or shadow) whose name is in `TenantPropertyNames`
    (default `["TenantId"]`).
 
@@ -93,6 +95,12 @@ and method calls (`Equals`, `Contains`) involving a `MemberExpression` on the fi
 parameter, or `EF.Property<T>(parameter, "{Property}")`, that resolves to the tenant
 property. For the other operand, find the root of its member/call chain:
 
+- Any expression on the chain, other than an `object`, whose type the context type derives
+  from or implements: OK. EF puts the current context in its place, which is how
+  Finbuckle's filter reaches the context through a captured null `IMultiTenantDbContext`.
+  The startup check knows the context type. `TenantGuardModel.Validate` does not, so it
+  counts a captured value that is a context, or a captured null of an interface or
+  `DbContext` type, as the context.
 - `ConstantExpression` whose type derives from `DbContext`: OK (EF parameterizes
   context-instance members per query).
 - `ConstantExpression` whose type is compiler-generated (`CompilerGeneratedAttribute`, or
@@ -238,6 +246,17 @@ required FK to an entity with a user seeder that was not provided, is reported a
 `Skipped (needs a seeder)` for that entity, never a silent pass. `Seed<T>` overrides the
 default for `T`.
 
+Tenants are strings, at least two. The probe converts each to the tenant property's type,
+through a value converter that stores strings or the type's `TypeConverter`, so a `Guid`
+tenant is passed as its text. Every context the factory creates has to use the same
+database, with the schema in place. Seeding runs per tenant through that tenant's
+context, one entity type per `SaveChanges`, so the write guard checks it too. The probe
+always sets the tenant property, and any required foreign key left unset, even on a row
+from `Seed<T>`. The default seeder also creates required owned references. It needs a
+parameterless constructor and reports a required complex property as needing a seeder.
+Keyless entity types, and types that share a CLR type, are reported as skipped. A model
+with no tenant-scoped entity type gets a single skipped `(model)` row.
+
 Checks, per tenant-scoped entity type, using a fresh context per tenant per check:
 
 | Check | Expectation |
@@ -249,10 +268,27 @@ Checks, per tenant-scoped entity type, using a fresh context per tenant per chec
 | InsertGuard | As tenant B, add a new row stamped with A, `SaveChangesAsync` throws. |
 | DeleteGuard | As tenant B, remove A's row (attached), `SaveChangesAsync` throws. |
 
+Each check runs for every ordered pair of tenants and gives one row per entity type: failed
+when any pair failed. The read checks run for every entity type before any check writes.
+On a relational provider, each check that writes runs in a transaction that is rolled
+back, so a leak cannot change what a later check sees. BulkIsolation deletes by A's key,
+which removes nothing when the filter holds. ReadIsolation is skipped when tenant B
+cannot read its own row, because then it proves nothing.
+
 `ProbeReport.Rows` is `(Entity, Check, Outcome, Detail)` with outcomes `Passed`, `Failed`,
 `Skipped`. `AssertAllPassed()` throws `TenantIsolationProbeException` whose message is a
 fixed-width table of non-passing rows. The probe never touches the model validation; a
 model that fails TGM rules fails before the probe runs, which is the point.
+
+```text
+TenantGuard isolation probe: 3 of 12 checks did not pass.
+
+Entity    Check          Outcome  Detail
+--------  -------------  -------  ------
+Customer  ReadIsolation  Failed   As acme, Set<Customer>() returned globex's row (Id: 2). ...
+Customer  FindIsolation  Failed   As acme, FindAsync(Id: 2) returned globex's row. ...
+Customer  BulkIsolation  Failed   As acme, ExecuteDelete removed globex's row (Id: 2). ...
+```
 
 The kit is framework-agnostic; docs show xUnit, NUnit, MSTest and TUnit usage.
 
@@ -299,7 +335,8 @@ assumes. Each is one test with the EF docs link in a comment.
 3. Query filters compose over `FromSqlRaw` on an entity type.
 4. A filter that captures a local in `OnModelCreating` returns the first tenant's rows to
    a second context constructed for another tenant (the bug TGM003 exists for).
-5. A filter referencing a context field is evaluated per context instance.
+5. A filter referencing a context field, or a captured null of an interface the context
+   implements (Finbuckle's pattern), is evaluated per context instance.
 6. `IgnoreQueryFilters()` returns other tenants' rows (so TG001 matters).
 7. Filters on a required principal drop dependents via inner join (documented caveat).
 
