@@ -34,6 +34,7 @@ approach.
 - [Task](https://taskfile.dev).
 - For the git hooks: gitleaks, shellcheck, actionlint and zizmor. A hook check whose tool
   isn't installed is skipped with a warning.
+- For `task test:providers` only: Docker.
 
 **Setup:**
 
@@ -55,11 +56,14 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | `task test:unit` | the runtime and test kit unit tests |
 | `task test:analyzers` | the analyzer tests |
 | `task test:behavior` | the EF Core behavior pins (SPEC 9) |
+| `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
 | `task lint` | `dotnet format --verify-no-changes` on the solution and the samples, then `lint:api` and `lint:headers` |
 | `task lint:api` | fails when `PublicAPI.Shipped.txt` or `PublicAPI.Unshipped.txt` is out of date |
 | `task lint:headers` | checks the YAML files and git hooks start with the copyright line; StyleCop checks C# |
 | `task fmt` | formats the solution and the samples |
-| `task pack` | builds the NuGet packages into `./artifacts/` |
+| `task pack` | builds the NuGet packages into `./artifacts/`, then checks their metadata, symbols and docs with Meziantou's NuGet package validator |
+| `task release:push` | pushes the packages to nuget.org with the key in `$NUGET_API_KEY`; the release workflow runs it |
+| `task release:attach -- vX.Y.Z` | attaches the packages to that GitHub Release; the release workflow runs it |
 | `task samples` | builds the samples, smoke-tests each one and runs their isolation probe tests |
 | `task scrub` | greps the tree for the private terms in `$SCRUB_TERMS_FILE`; warns and passes when it isn't set |
 | `task ci` | lint, build, test, pack, samples and scrub, in order |
@@ -79,8 +83,8 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 - `samples/`: a hand-rolled app and a Finbuckle app, each with a probe test project.
 
 The public surface is small and documented with XML docs; everything else is `internal`,
-with `InternalsVisibleTo` for the test projects. `PublicAPI.Unshipped.txt` lists every
-public API change.
+with `InternalsVisibleTo` for the test projects. `PublicAPI.Shipped.txt` holds the
+released API, and `PublicAPI.Unshipped.txt` every change since.
 
 ## Tests
 
@@ -94,6 +98,10 @@ public API change.
 - **The test kit is tested against itself:** a deliberately leaky model must make the
   probe fail with the expected rows.
 - **The samples** run the probe against their own models in `task samples`.
+- **Provider tests** in `tests/TenantGuard.Providers.Tests` run the probe on SQL Server
+  and PostgreSQL in Testcontainers, so they need Docker. `task test` leaves them out;
+  `providers.yml` runs them on demand, nightly, and on pull requests that change them,
+  and they are never required to merge.
 
 Use synthetic names in tests and samples, with tenants such as `acme`, `globex` and
 `initech`.
@@ -164,8 +172,28 @@ tree. `task scrub` checks the tree against a private list of terms when
 
 ## Releases
 
-Releases aren't automated yet. SPEC 12 describes the release workflow to come:
-release-please, `task pack`, and NuGet Trusted Publishing.
+[Release Please](https://github.com/googleapis/release-please) cuts releases from the
+Conventional Commits on `main` (`.github/workflows/release.yml`):
+
+1. Each push to `main` opens or updates a release pull request. It bumps `<Version>` in
+   `Directory.Build.props` and adds the release to `CHANGELOG.md`. `feat` commits raise
+   the minor version and `fix` commits the patch, until 1.0.
+2. Merging it tags `vX.Y.Z` and creates the GitHub Release.
+3. The publish job then runs `task pack`, signs in to nuget.org with GitHub's OIDC token
+   through `NuGet/login`, which needs no stored API key, and runs `task release:push` and
+   `task release:attach`.
+
+Publishing needs a trusted publishing policy on nuget.org for this repository and
+`release.yml`, and the repository variable `NUGET_USER` set to the nuget.org account that
+owns it.
+
+Before the first release:
+
+- Move `global.json` and the EF Core 11 packages off the release candidate, and drop
+  `allowPrerelease`. A stable package can't depend on a prerelease one.
+- Remove the pre-release note at the top of `README.md`, which nuget.org shows.
+- Once the repository is public, stop excluding validator rules 52 and 119 in
+  `task pack`.
 
 ## License
 
