@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Pin 1 (SPEC 9): query filters apply to FindAsync when the entity is not already tracked, so one
+// Query filters apply to FindAsync when the entity is not already tracked, so one
 // tenant cannot load another tenant's row by its key.
 // https://learn.microsoft.com/ef/core/querying/filters
 public sealed class FindAsyncFilterPin

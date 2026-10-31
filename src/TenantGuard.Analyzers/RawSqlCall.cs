@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace TenantGuard.Analyzers;
 
-// The raw SQL methods of SPEC 6, all in RelationalDatabaseFacadeExtensions, and the SQL text the
+// The raw SQL methods the analyzers check, all in RelationalDatabaseFacadeExtensions, and the SQL text the
 // compiler can see in a call to one. TG002 checks that text; TG004 reports a call without any.
 internal static class RawSqlCall
 {

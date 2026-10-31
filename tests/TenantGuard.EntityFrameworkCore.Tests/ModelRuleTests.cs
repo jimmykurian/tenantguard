@@ -6,7 +6,7 @@ using TenantGuard.EntityFrameworkCore.Tests.Models;
 
 namespace TenantGuard.EntityFrameworkCore.Tests;
 
-// Each rule (SPEC 4.2) against its positive and negative models, with the exact normative message.
+// Each rule against its positive and negative models, with the exact documented message.
 public sealed class ModelRuleTests
 {
     [Fact]

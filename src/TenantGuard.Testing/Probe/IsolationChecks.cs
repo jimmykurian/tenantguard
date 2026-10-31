@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace TenantGuard.Testing;
 
-// The six checks of SPEC 7 for one entity type, as the viewer against the owner's row, each with a fresh
+// The probe's six checks for one entity type, as the viewer against the owner's row, each with a fresh
 // context for the viewer. The four that write run in a transaction that is rolled back when the provider
 // has transactions, so a write that leaks does not change what the next check sees.
 internal sealed class IsolationChecks<TContext>(

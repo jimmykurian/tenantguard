@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace TenantGuard;
 
 // Walks an entity type's query filters for references to its tenant property and the operands it
-// is compared to (SPEC 4.2).
+// is compared to.
 internal sealed class QueryFilterAnalysis
 {
     private QueryFilterAnalysis()

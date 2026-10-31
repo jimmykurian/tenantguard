@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
-// Runs rules TGM001 to TGM008 (SPEC 4.2) over every entity type in name order, so the findings are
+// Runs rules TGM001 to TGM008 over every entity type in name order, so the findings are
 // deterministic.
 internal static class TenantModelRules
 {

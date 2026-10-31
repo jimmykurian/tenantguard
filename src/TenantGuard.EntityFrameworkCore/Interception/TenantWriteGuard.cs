@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 namespace TenantGuard;
 
 // Checks every Added, Modified and Deleted entry of a tenant-scoped entity type against the current
-// tenant (SPEC 5), and throws before SaveChanges reaches the database.
+// tenant, and throws before SaveChanges reaches the database.
 internal static class TenantWriteGuard
 {
     public static void Check(DbContext? context, TenantGuardScope scope)
@@ -19,7 +19,7 @@ internal static class TenantWriteGuard
             return;
         }
 
-        // Nothing allocates while the model has no tenant-scoped entity type or nothing is tracked (SPEC 13).
+        // Nothing allocates while the model has no tenant-scoped entity type or nothing is tracked.
         var entities = scope.GetEntities(context);
         if (entities.IsEmpty || !HasEntries(context.ChangeTracker))
         {

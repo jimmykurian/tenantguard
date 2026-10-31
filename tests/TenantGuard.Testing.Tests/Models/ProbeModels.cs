@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.Testing.Tests.Models;
 
-// Models for the probe (SPEC 7). Every context takes its current tenant in the constructor.
+// Models for the probe. Every context takes its current tenant in the constructor.
 internal static class ProbeModels
 {
     internal enum InvoiceStatus

@@ -9,7 +9,7 @@ using Verify = TenantGuard.Analyzers.Tests.AnalyzerVerifier<TenantGuard.Analyzer
 
 namespace TenantGuard.Analyzers.Tests;
 
-// TG002 (SPEC 6).
+// Analyzer TG002 against code that should and shouldn't report it.
 public sealed class RawSqlWithoutTenantTests
 {
     [Fact]

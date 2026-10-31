@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace TenantGuard.Analyzers;
 
-// [AllowCrossTenantAccess("why")] (SPEC 6), matched by full name, so the analyzers need no reference
+// [AllowCrossTenantAccess("why")], matched by full name, so the analyzers need no reference
 // to the runtime package and a project can declare the attribute itself. It counts only with a
 // reason; TG003 reports one without.
 internal static class CrossTenantAccess

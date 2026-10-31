@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard;
 
-// SPEC 4.2: classifies the operand a tenant property is compared to by the root of its member and
+// Classifies the operand a tenant property is compared to by the root of its member and
 // call chain.
 internal static class OperandClassifier
 {

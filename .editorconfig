@@ -15,7 +15,7 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 [*.cs]
-# TenantGuard analyzer options (SPEC 6)
+# TenantGuard analyzer options
 tenantguard.tenant_column = TenantId
 # tenantguard.tenant_filter_names = TenantFilter
 
@@ -80,7 +80,7 @@ dotnet_diagnostic.SA1101.severity = none
 dotnet_diagnostic.SA1309.severity = none
 
 [src/{TenantGuard.EntityFrameworkCore,TenantGuard.Testing}/**.cs]
-# The public namespaces are fixed by SPEC 2 (TenantGuard, TenantGuard.Testing); the
+# The public namespaces are TenantGuard and TenantGuard.Testing, whatever the folder; the
 # folders only group files. IDE0130 off here, and the .csproj.DotSettings files tell
 # ReSharper the same.
 dotnet_style_namespace_match_folder = false

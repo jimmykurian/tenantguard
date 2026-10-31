@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace TenantGuard;
 
-// SPEC 11: the application's ILoggerFactory when there is one, else NullLogger. Category TenantGuard.
+// Logs through the application's ILoggerFactory when there is one, else NullLogger. Category TenantGuard.
 internal static class TenantGuardLogging
 {
     public const string Category = "TenantGuard";

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Pin 4 (SPEC 9): a filter that captures a local in OnModelCreating freezes the first tenant into the
+// A filter that captures a local in OnModelCreating freezes the first tenant into the
 // model, and EF caches the model per context type, so a context built for another tenant still sees
 // the first tenant's rows. This is the leak TGM003 exists for.
 // https://learn.microsoft.com/ef/core/querying/filters

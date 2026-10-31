@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard.Testing;
 
-// Creates one row of an entity type for a tenant (SPEC 7): with the seeder Seed<T> set, else with every
+// Creates one row of an entity type for a tenant: with the seeder Seed<T> set, else with every
 // required value the database does not generate filled. Either way the tenant property gets the tenant,
 // and a required foreign key left unset points at the principal row seeded for the same tenant, or at
 // the one shared row of a principal that is not tenant-scoped.

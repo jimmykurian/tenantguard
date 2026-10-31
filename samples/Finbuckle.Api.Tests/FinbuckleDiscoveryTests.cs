@@ -8,7 +8,7 @@ using TenantGuard;
 
 namespace Finbuckle.Api.Tests;
 
-// TenantGuard finds the tenant property of a Finbuckle entity by Finbuckle's annotation (SPEC 4.1 step 3),
+// TenantGuard finds the tenant property of a Finbuckle entity by Finbuckle's annotation,
 // matching the annotation by name because the runtime package does not reference Finbuckle.
 public sealed class FinbuckleDiscoveryTests
 {

@@ -12,7 +12,7 @@ using static TenantGuard.EntityFrameworkCore.Tests.Models.WriteGuardModels;
 
 namespace TenantGuard.EntityFrameworkCore.Tests;
 
-// context.TenantGuard().Bypass(reason) (SPEC 5).
+// context.TenantGuard().Bypass(reason).
 public sealed class BypassTests
 {
     [Fact]

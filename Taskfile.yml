@@ -41,11 +41,11 @@ tasks:
       - dotnet test --project "{{.TESTS}}/TenantGuard.Analyzers.Tests" -c {{.CONFIGURATION}}
 
   test:behavior:
-    desc: Run the EF Core behavior pins (SPEC 9)
+    desc: Run the EF Core behavior pins
     cmds:
       - dotnet test --project "{{.TESTS}}/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
 
-  # Opt-in (SPEC 12): needs Docker, so test leaves it out and providers.yml runs it.
+  # Opt-in: needs Docker, so test leaves it out and providers.yml runs it.
   test:providers:
     desc: Run the isolation probe on SQL Server and PostgreSQL in Testcontainers (needs Docker)
     cmds:

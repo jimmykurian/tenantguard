@@ -8,7 +8,7 @@ using static TenantGuard.Testing.Tests.Models.ProbeModels;
 
 namespace TenantGuard.Testing.Tests;
 
-// The probe against itself (SPEC 7): a guarded model passes, and each kind of leak fails the rows it should.
+// The probe against itself: a guarded model passes, and each kind of leak fails the rows it should.
 public sealed class ProbeTests
 {
     private static readonly string[] _shopEntities = ["Customer", "Invoice", "Note", "Order"];

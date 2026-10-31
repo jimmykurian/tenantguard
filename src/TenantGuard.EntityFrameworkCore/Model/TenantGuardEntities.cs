@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
-// The per-entity metadata stored on the finalized model (SPEC 4.3), so the write guard reads it
+// The per-entity metadata stored on the finalized model, so the write guard reads it
 // instead of reflecting over user types at save time.
 internal sealed class TenantGuardEntities
 {
@@ -53,7 +53,7 @@ internal sealed class TenantGuardEntities
         return new TenantGuardEntities(tenantProperties, byEntityType);
     }
 
-    // Owned types are absent, so the write guard skips them (SPEC 5).
+    // Owned types are absent, so the write guard skips them.
     public bool TryGet(IReadOnlyEntityType entityType, out TenantPropertyMetadata tenant)
         => _byEntityType.TryGetValue(entityType, out tenant);
 }

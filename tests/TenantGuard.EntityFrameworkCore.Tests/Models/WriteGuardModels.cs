@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.EntityFrameworkCore.Tests.Models;
 
-// Models for the write guard (SPEC 5).
+// Models for the write guard.
 internal static class WriteGuardModels
 {
     // A tenant-scoped Invoice, a Note with a shadow TenantId, an Order that owns an Address with a

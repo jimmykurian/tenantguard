@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
-// SPEC 4.1: the tenant property is the first match of an explicit registration, [TenantKey],
+// The tenant property is the first match of an explicit registration, [TenantKey],
 // Finbuckle's annotation, then the configured property names.
 internal static class TenantPropertyDiscovery
 {

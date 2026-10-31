@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Pin 3 (SPEC 9): query filters compose over FromSqlRaw on an entity type, so analyzer TG002 leaves
-// FromSql, FromSqlRaw and FromSqlInterpolated alone. If this fails, they join TG002 (SPEC 6).
+// Query filters compose over FromSqlRaw on an entity type, so analyzer TG002 leaves
+// FromSql, FromSqlRaw and FromSqlInterpolated alone. If this fails, they join TG002.
 // https://learn.microsoft.com/ef/core/querying/sql-queries
 public sealed class FromSqlFilterPin
 {

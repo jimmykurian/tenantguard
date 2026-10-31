@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace TenantGuard.Analyzers;
 
-// TG001 (SPEC 6): IgnoreQueryFilters() turns off the tenant filter. The named overload is fine when
+// TG001: IgnoreQueryFilters() turns off the tenant filter. The named overload is fine when
 // tenantguard.tenant_filter_names is set and the names are constants that leave every tenant filter on.
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 internal sealed class IgnoreQueryFiltersAnalyzer : DiagnosticAnalyzer

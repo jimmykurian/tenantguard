@@ -12,13 +12,13 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace TenantGuard.Analyzers;
 
-// TG003 (SPEC 6): [AllowCrossTenantAccess] with a null, empty or whitespace reason, or with none.
+// TG003: [AllowCrossTenantAccess] with a null, empty or whitespace reason, or with none.
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 internal sealed class MissingJustificationAnalyzer : DiagnosticAnalyzer
 {
     public const string Id = "TG003";
 
-    [SuppressMessage("MicrosoftCodeAnalysisDesign", "RS1032:Define diagnostic message correctly", Justification = "SPEC 6 fixes the message, period included.")]
+    [SuppressMessage("MicrosoftCodeAnalysisDesign", "RS1032:Define diagnostic message correctly", Justification = "The documented message ends with a period.")]
     public static readonly DiagnosticDescriptor Rule = new(
         Id,
         title: "AllowCrossTenantAccess without a reason",

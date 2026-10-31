@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace TenantGuard.Analyzers;
 
-// The .editorconfig keys of SPEC 6, read for the file being analyzed. Both take a comma-separated list.
+// The analyzers' .editorconfig keys, read for the file being analyzed. Both take a comma-separated list.
 internal static class AnalyzerSettings
 {
     public const string TenantColumnKey = "tenantguard.tenant_column";

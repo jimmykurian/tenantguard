@@ -2,7 +2,7 @@
 
 name: providers
 
-# Runs the isolation probe tests on SQL Server and PostgreSQL in Testcontainers (SPEC 12). It
+# Runs the isolation probe tests on SQL Server and PostgreSQL in Testcontainers. It
 # is opt-in and never required for merge: it runs on demand, nightly, and on pull requests
 # that change those tests or this workflow.
 on:

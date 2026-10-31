@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Pin 7 (SPEC 9): a query that reaches a filtered principal through a required navigation joins it with
+// A query that reaches a filtered principal through a required navigation joins it with
 // an inner join, so dependents of rows the filter hides drop out of the result, a documented caveat.
 // https://learn.microsoft.com/ef/core/querying/filters#accessing-entity-with-query-filter-using-required-navigation
 public sealed class RequiredNavigationFilterPin
