@@ -1,0 +1,48 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+name: Pull request assignee
+
+# Assigns each new pull request to whoever opened it, unless someone is already
+# assigned. Pull requests from bots go to the repository owner. Reviews are requested
+# by .github/CODEOWNERS, not here. Runs on pull_request, not pull_request_target, so
+# the token never acts on code from a fork.
+on:
+  pull_request:
+    types: [opened, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-assign-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  assign:
+    name: Assign
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write # adds the assignee
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (pr.assignees.length > 0) {
+              core.info('Already assigned; leaving it.');
+              return;
+            }
+            const assignee = pr.user.type === 'Bot' ? context.repo.owner : pr.user.login;
+            const { data } = await github.rest.issues.addAssignees({
+              ...context.repo,
+              issue_number: pr.number,
+              assignees: [assignee],
+            });
+            // GitHub silently drops an assignee it won't accept.
+            if (!data.assignees.some((a) => a.login === assignee)) {
+              core.setFailed(`Couldn't assign ${assignee}`);
+              return;
+            }
+            core.info(`Assigned ${assignee}`);

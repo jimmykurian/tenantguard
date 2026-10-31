@@ -1,0 +1,63 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+name: Feature Request
+description: Suggest a new capability or an improvement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check docs/PLAN.md and docs/DECISIONS.md for ideas already on the list, and add
+        your use case to an existing issue if there is one.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature Area
+      options:
+        - Model rules (TGM001 to TGM008)
+        - Analyzers (TG001 to TG004)
+        - Write guard (SaveChanges)
+        - Isolation probe and seeding
+        - Options and registration (UseTenantGuard)
+        - Finbuckle or another tenancy package
+        - EF Core versions and providers
+        - Logging
+        - Packages and releases
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What can't you do today, or what's awkward?
+      placeholder: "Our tenant key is an organization id on every row, so..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the behavior you'd like, with an example model or configuration if it helps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Including what you do today, such as a Bypass scope or an AllowCrossTenantAccess attribute.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+    validations:
+      required: false

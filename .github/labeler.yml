@@ -1,0 +1,94 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+# Labels for pull requests by the paths they change (actions/labeler, run by
+# .github/workflows/labeler.yml). A pull request can get several.
+
+# Code, by package
+
+runtime:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/TenantGuard.EntityFrameworkCore/**"
+
+analyzers:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/TenantGuard.Analyzers/**"
+
+test kit:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/TenantGuard.Testing/**"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/**"
+          - "samples/*.Tests/**"
+
+pins:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "tests/TenantGuard.BehaviorPins/**"
+
+samples:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "samples/**"
+
+# Contracts and docs
+
+spec:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/SPEC.md"
+          - "docs/DECISIONS.md"
+          - "**/PublicAPI.*.txt"
+          - "src/TenantGuard.Analyzers/AnalyzerReleases.*.md"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+
+agents:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/AGENTS.md"
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "SECURITY.md"
+          - ".githooks/**"
+
+# Repository plumbing
+
+ci/cd:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+
+configuration:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".editorconfig"
+          - ".gitignore"
+          - ".gitattributes"
+          - ".gitmessage"
+          - "stylecop.json"
+          - "global.json"
+          - "Directory.Build.props"
+          - "TenantGuard.slnx"
+          - "Taskfile.yml"
+
+hooks:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".githooks/**"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Directory.Packages.props"
+          - "global.json"

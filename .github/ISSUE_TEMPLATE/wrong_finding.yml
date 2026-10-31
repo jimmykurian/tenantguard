@@ -1,0 +1,87 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+name: Wrong Finding
+description: A model rule, an analyzer, the write guard or the isolation probe reported the wrong thing, or missed one
+title: "[Finding]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a false positive, a false negative, a wrong location or a wrong message. If
+        the cross-tenant read or write is deliberate, `[AllowCrossTenantAccess("why")]` or
+        `context.TenantGuard().Bypass("why")` may be the fix rather than a rule change. If
+        a missed finding lets one tenant reach another tenant's rows in a running app,
+        report it through SECURITY.md instead.
+
+  - type: dropdown
+    id: rule
+    attributes:
+      label: Rule or Check
+      options:
+        - TGM001 unguarded-entity
+        - TGM002 unscoped-entity
+        - TGM003 captured-value
+        - TGM004 literal-tenant
+        - TGM005 nullable-tenant
+        - TGM006 tenant-on-derived
+        - TGM007 filter-not-parameterized
+        - TGM008 owned-tenant
+        - TG001 ignore-query-filters
+        - TG002 raw-sql-without-tenant
+        - TG003 missing-justification
+        - TG004 raw-sql-unverifiable
+        - Write guard (TenantIsolationViolationException)
+        - Isolation probe row
+        - None (a finding was expected)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What's Wrong
+      options:
+        - False positive (reported code that's fine)
+        - False negative (missed code that should be reported)
+        - Wrong location
+        - Wrong message
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The TenantGuard package version, and the EF Core version.
+      placeholder: "TenantGuard.EntityFrameworkCore 0.1.0, EF Core 10.0.14"
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code
+      description: The entity configuration, query filter, query or write as written. Use invented names.
+      render: csharp
+      placeholder: |
+        modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == CurrentTenant);
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The model report, analyzer diagnostic, exception message or probe table.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Finding
+      description: What TenantGuard should report, and why.
+    validations:
+      required: true
