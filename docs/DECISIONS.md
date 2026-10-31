@@ -7,6 +7,30 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-10-30: TGM003 reads an operand EF swaps for the context as the context (open)
+
+Decision: SPEC 4.2 classifies a tenant filter's operand by the root of its member chain,
+and a root that is a compiler-generated closure is TGM003.
+
+Problem: Finbuckle 10's `IsMultiTenant()` filter is
+`EF.Property<string>(e, "TenantId") == dummyContext.TenantInfo.Id`, where `dummyContext` is
+a captured null `IMultiTenantDbContext`. In a query filter, EF Core replaces every
+expression whose type the context type derives from or implements with the current
+context (`ContextParameterReplacer` in EF's `ExpressionTreeFuncletizer`), so that filter
+is evaluated per context and is correct. TGM003 still reported it, so a Finbuckle app
+with `UseTenantGuard` under `Enforcement.Throw` failed at startup. SPEC 1 says the library
+works on Finbuckle, and the Finbuckle sample could not start.
+
+Proposed change: count an expression on the operand's chain as the context when it is not
+an `object` and the context type derives from or implements its type, which is how EF
+treats it. The startup check reads the context type from `ICurrentDbContext`.
+`TenantGuardModel.Validate` has no context, so it counts a captured value that is a
+context, or a captured null of an interface or `DbContext` type, as the context. On both
+paths, a captured tenant service that is not the context is still TGM003. Behavior pin 5
+also pins EF's replacement, and SPEC 4.2 and 9 say so. The change is in this branch
+because the Finbuckle sample cannot run without it; reverting it means the sample has to
+leave `UseTenantGuard` out.
+
 ## 2026-10-30: Writes through an owned entity skip the write guard (open)
 
 Decision: the write guard checks "every entry whose entity type is tenant-scoped (owned

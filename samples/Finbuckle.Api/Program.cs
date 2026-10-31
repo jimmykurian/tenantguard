@@ -5,9 +5,13 @@
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Finbuckle.MultiTenant.Extensions;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using TenantGuard;
 
-// Skeleton: Finbuckle resolves the tenant from a header against an in-memory store. The
-// multi-tenant DbContext and TenantGuard registration arrive in Phase 4.
+// Finbuckle tenancy: Finbuckle resolves the tenant from the X-Tenant header against an in-memory store
+// and filters every IsMultiTenant() entity on its shadow TenantId. TenantGuard checks the model at
+// startup and guards writes. Finbuckle.Api.Tests runs the isolation probe against the same model.
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMultiTenant<TenantInfo>()
@@ -20,10 +24,22 @@ builder.Services.AddMultiTenant<TenantInfo>()
         }
     });
 
+var connection = new SqliteConnection("DataSource=:memory:");
+connection.Open();
+builder.Services.AddSingleton(connection);
+builder.Services.AddDbContext<AppDbContext>(options => options.UseAppDatabase(connection));
+builder.Services.AddTenantGuardStartupValidation<AppDbContext>();
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
+}
 
 app.UseMultiTenant();
 app.MapGet("/tenant", (HttpContext context) => context.GetMultiTenantContext<TenantInfo>()?.TenantInfo?.Identifier);
+app.MapGet("/invoices", (AppDbContext db) => db.Invoices.ToListAsync());
 
 if (args.Contains("--smoke"))
 {
@@ -34,8 +50,3 @@ if (args.Contains("--smoke"))
 }
 
 await app.RunAsync();
-
-internal static class Tenants
-{
-    public static readonly string[] All = ["acme", "globex", "initech"];
-}

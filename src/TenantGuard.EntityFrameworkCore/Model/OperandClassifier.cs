@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,13 +34,19 @@ internal static class OperandClassifier
         Unclassified,
     }
 
-    public static Kind Classify(Expression operand, out string? literal)
+    // contextType is the type of the context the model belongs to, or null when it is not known.
+    public static Kind Classify(Expression operand, Type? contextType, out string? literal)
     {
         literal = null;
         var start = StripConversions(operand);
         var current = start;
         while (true)
         {
+            if (IsContextReference(current, contextType))
+            {
+                return Kind.Context;
+            }
+
             switch (current)
             {
                 case ConstantExpression constant:
@@ -71,6 +78,26 @@ internal static class OperandClassifier
 
     private static bool IsConversion(ExpressionType nodeType)
         => nodeType is ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.TypeAs or ExpressionType.Quote;
+
+    // In a query filter, EF replaces with the current context any expression, other than an object,
+    // whose type the context type derives from or implements: Finbuckle's filter reaches the context
+    // through a captured null IMultiTenantDbContext that way. Without the context type, a captured
+    // value that is a context, or is null and of a type a context can have, stands in for that test.
+    private static bool IsContextReference(Expression expression, Type? contextType)
+    {
+        if (contextType is not null)
+        {
+            return expression.Type != typeof(object) && expression.Type.IsAssignableFrom(contextType);
+        }
+
+        return expression is MemberExpression { Expression: ConstantExpression { Value: { } closure }, Member: FieldInfo field }
+            && field.GetValue(closure) switch
+            {
+                DbContext => true,
+                null => field.FieldType.IsInterface || typeof(DbContext).IsAssignableFrom(field.FieldType),
+                _ => false,
+            };
+    }
 
     private static Kind ClassifyConstant(ConstantExpression constant, bool isOperand, out string? literal)
     {

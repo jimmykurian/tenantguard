@@ -105,21 +105,21 @@ TG003.
 
 ## Phase 4: test kit and samples
 
-- [ ] `TenantIsolationProbe<TContext>`: tenants, context factory, `Seed<T>` overrides
-- [ ] Default seeder: value generator, required-FK topological seeding, shared principals
+- [x] `TenantIsolationProbe<TContext>`: tenants, context factory, `Seed<T>` overrides
+- [x] Default seeder: value generator, required-FK topological seeding, shared principals
       seeded once, `Skipped (needs a seeder)` on cycles or missing seeders
-- [ ] Six checks per SPEC 7 with fresh contexts; provider capability detection for
+- [x] Six checks per SPEC 7 with fresh contexts; provider capability detection for
       `ExecuteDelete`
-- [ ] `ProbeReport`, `AssertAllPassed`, fixed-width failure table
-- [ ] Tests: a guarded model passes every row; a model with one unfiltered entity fails
-      `ReadIsolation` and `FindIsolation` for that entity only; a context without the
-      interceptor fails the three `*Guard` rows; a cycle reports `Skipped`
-- [ ] Behavior pin 7
-- [ ] `samples/HandRolled.Api` complete: own `ITenantContext` from a header, filters via
+- [x] `ProbeReport`, `AssertAllPassed`, fixed-width failure table
+- [x] Tests: a guarded model passes every row; a model with one unfiltered entity fails
+      `ReadIsolation`, `FindIsolation` and `BulkIsolation` for that entity only; a context
+      without the interceptor fails the three `*Guard` rows; a cycle reports `Skipped`
+- [x] Behavior pin 7
+- [x] `samples/HandRolled.Api` complete: own `ITenantContext` from a header, filters via
       context member, `UseTenantGuard`, startup validation, a probe test project
-- [ ] `samples/Finbuckle.Api` complete: `IsMultiTenant()`, shadow `TenantId`; confirm the
+- [x] `samples/Finbuckle.Api` complete: `IsMultiTenant()`, shadow `TenantId`; confirm the
       Finbuckle annotation name and wire it into discovery (SPEC 4.1 step 3)
-- [ ] `task samples` builds both and runs their probe tests
+- [x] `task samples` builds both and runs their probe tests
 
 Acceptance: both samples pass the probe; removing one `HasQueryFilter` in the hand-rolled
 sample fails startup (TGM001), and with `Enforcement.Log` fails the probe instead.

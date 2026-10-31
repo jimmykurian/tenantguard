@@ -6,6 +6,8 @@ vars:
   SOLUTION: TenantGuard.slnx
   CONFIGURATION: Release
   SAMPLES: HandRolled.Api Finbuckle.Api
+  # Each sample's isolation probe tests.
+  SAMPLE_TESTS: HandRolled.Api.Tests Finbuckle.Api.Tests
   # Absolute: `dotnet test` in the .NET 11 RC SDK resolves a relative --project against the
   # project's own directory.
   TESTS: "{{.ROOT_DIR}}/tests"
@@ -49,6 +51,8 @@ tasks:
       - dotnet format {{.SOLUTION}} --verify-no-changes
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet format samples/{{.ITEM}} --verify-no-changes
+      - for: { var: SAMPLE_TESTS, split: " " }
+        cmd: dotnet format samples/{{.ITEM}} --verify-no-changes
       - task: lint:api
       - task: lint:headers
 
@@ -89,6 +93,8 @@ tasks:
       - dotnet format {{.SOLUTION}}
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet format samples/{{.ITEM}}
+      - for: { var: SAMPLE_TESTS, split: " " }
+        cmd: dotnet format samples/{{.ITEM}}
 
   pack:
     desc: Build the NuGet packages into ./artifacts/
@@ -97,12 +103,14 @@ tasks:
       - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts
 
   samples:
-    desc: Build the samples and smoke-test each one
+    desc: Build the samples, smoke-test each one and run their isolation probe tests
     cmds:
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet build samples/{{.ITEM}} -c {{.CONFIGURATION}}
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet run --project samples/{{.ITEM}} -c {{.CONFIGURATION}} --no-build -- --smoke --urls http://127.0.0.1:0
+      - for: { var: SAMPLE_TESTS, split: " " }
+        cmd: dotnet test --project "{{.ROOT_DIR}}/samples/{{.ITEM}}" -c {{.CONFIGURATION}}
 
   scrub:
     desc: Grep the tree for the private terms in $SCRUB_TERMS_FILE

@@ -90,6 +90,34 @@ public sealed class ModelRuleTests
             Assert.Single(TestModels.Validate<Tgm003Models.CapturedInConfiguration>().Findings));
 
     [Fact]
+    public void Captured_null_of_an_interface_the_context_implements_passes()
+        => Assert.Empty(TestModels.Validate<Tgm003Models.ContextInterface>().Findings);
+
+    [Fact]
+    public void Captured_tenant_source_is_TGM003()
+        => Assert.Equal(
+            Captured("Invoice", "TenantId"),
+            Assert.Single(TestModels.Validate<Tgm003Models.CapturedSource>().Findings));
+
+    [Fact]
+    public void Startup_check_reads_an_interface_the_context_implements_as_the_context()
+    {
+        using var context = TestModels.Create<Tgm003Models.ContextInterface>(options => options.UseTenantGuard(_ => { }));
+
+        Assert.NotNull(context.Model);
+    }
+
+    [Fact]
+    public void Startup_check_reports_a_captured_tenant_source()
+    {
+        using var context = TestModels.Create<Tgm003Models.CapturedSource>(options => options.UseTenantGuard(_ => { }));
+
+        var exception = Assert.Throws<TenantGuardModelException>(() => context.Model);
+
+        Assert.Equal(Captured("Invoice", "TenantId"), Assert.Single(exception.Report.Findings));
+    }
+
+    [Fact]
     public void Static_member_passes()
         => Assert.Empty(TestModels.Validate<Tgm004Models.StaticMember>().Findings);
 
