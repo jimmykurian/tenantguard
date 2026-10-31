@@ -116,6 +116,26 @@ tasks:
         dotnet meziantou.validate-nuget-package artifacts/*.nupkg
         --excluded-rules PackageIdAvailableOnNuGetOrg --excluded-rule-ids 52 --excluded-rule-ids 119
 
+  # The release workflow (release.yml) runs these two after task pack.
+  release:push:
+    desc: Push the packages in ./artifacts/ to nuget.org with the key in $NUGET_API_KEY
+    preconditions:
+      - sh: '[ -n "${NUGET_API_KEY:-}" ]'
+        msg: NUGET_API_KEY is not set; the release workflow gets it from NuGet/login.
+    cmds:
+      # The .snupkg symbol packages go up with their .nupkg. A rerun skips what's already there.
+      - >-
+        dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY"
+        --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  release:attach:
+    desc: "Attach the packages in ./artifacts/ to a GitHub Release: task release:attach -- vX.Y.Z"
+    preconditions:
+      - sh: '[ -n "{{.CLI_ARGS}}" ]'
+        msg: Pass the release tag, as in task release:attach -- v0.1.0.
+    cmds:
+      - gh release upload "{{.CLI_ARGS}}" artifacts/*.nupkg artifacts/*.snupkg --clobber
+
   samples:
     desc: Build the samples, smoke-test each one and run their isolation probe tests
     cmds:

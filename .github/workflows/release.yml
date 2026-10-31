@@ -1,0 +1,92 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+name: release
+
+# On every push to main, Release Please opens or updates one release PR that bumps the
+# Version in Directory.Build.props and CHANGELOG.md from the Conventional Commits since the
+# last release. Merging that PR creates the vX.Y.Z tag and the GitHub Release; the publish
+# job then packs the three packages, pushes them to nuget.org with NuGet Trusted Publishing
+# (a short-lived key from GitHub's OIDC token, no stored API key), and attaches them to the
+# release.
+#
+# It runs with GITHUB_TOKEN, so the release PR doesn't start the other workflows: close and
+# reopen it to run its checks before merging. A tag created with GITHUB_TOKEN doesn't start
+# workflows either, which is why publishing happens here rather than on a tag push.
+#
+# Publishing needs a trusted publishing policy on nuget.org for this repository and
+# workflow, and the repository variable NUGET_USER set to the nuget.org account name.
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # the release commit, tag and GitHub Release
+      pull-requests: write # the release PR
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ github.token }}
+          config-file: .github/release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+
+  publish:
+    name: Publish
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # attaches the packages to the GitHub Release
+      id-token: write # exchanged for a short-lived nuget.org API key
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+          dotnet-version: 10.0.x
+
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
+        with:
+          version: 3.x
+
+      - name: Pack
+        run: task pack
+
+      - id: nuget
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
+        run: task release:push
+
+      - name: Attach to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: task release:attach -- "$TAG"
