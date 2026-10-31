@@ -126,17 +126,17 @@ sample fails startup (TGM001), and with `Enforcement.Log` fails the probe instea
 
 ## Phase 5: docs, packaging, v0.1.0
 
-- [ ] `PublicAPI.Shipped.txt` populated from Unshipped; `task lint:api` enforced
-- [ ] README complete: install, quick start (five lines of registration), the rules table,
+- [x] `PublicAPI.Shipped.txt` populated from Unshipped; `task lint:api` enforced
+- [x] README complete: install, quick start (five lines of registration), the rules table,
       the analyzer table, the probe snippet, adoption path (`Enforcement.Log` first,
       then `Throw`), comparison table from SPEC 1, FAQ
-- [ ] `docs/reference/` (rules, analyzers, options, exceptions, logging) and
+- [x] `docs/reference/` (rules, analyzers, options, exceptions, logging) and
       `docs/guides/` (hand-rolled, Finbuckle, testing with xUnit/NUnit/MSTest/TUnit,
       migrating an existing app)
-- [ ] `release.yml` per SPEC 12: release-please, `task pack`, NuGet Trusted Publishing,
+- [x] `release.yml` per SPEC 12: release-please, `task pack`, NuGet Trusted Publishing,
       assets on the GitHub Release; `CHANGELOG.md` seeded
-- [ ] Opt-in Testcontainers job for SQL Server and PostgreSQL running the probe tests
-- [ ] Package icon, `PackageReadmeFile`, tags, `PackageProjectUrl`; validate with
+- [x] Opt-in Testcontainers job for SQL Server and PostgreSQL running the probe tests
+- [x] Package icon, `PackageReadmeFile`, tags, `PackageProjectUrl`; validate with
       `dotnet-validate` or `meziantou.framework.nuget-packages-validation`
 - [ ] Tag `v0.1.0` and confirm the three packages install into a fresh console app
 

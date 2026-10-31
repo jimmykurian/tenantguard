@@ -45,6 +45,12 @@ tasks:
     cmds:
       - dotnet test --project "{{.TESTS}}/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
 
+  # Opt-in (SPEC 12): needs Docker, so test leaves it out and providers.yml runs it.
+  test:providers:
+    desc: Run the isolation probe on SQL Server and PostgreSQL in Testcontainers (needs Docker)
+    cmds:
+      - dotnet test --project "{{.TESTS}}/TenantGuard.Providers.Tests" -c {{.CONFIGURATION}}
+
   lint:
     desc: Check formatting and analyzers, then the public API files and the copyright headers
     cmds:
@@ -97,10 +103,38 @@ tasks:
         cmd: dotnet format samples/{{.ITEM}}
 
   pack:
-    desc: Build the NuGet packages into ./artifacts/
+    desc: Build the NuGet packages into ./artifacts/ and validate them
     cmds:
       - rm -rf artifacts
-      - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts
+      # ContinuousIntegrationBuild maps source paths to /_/, so the symbols match on any machine.
+      - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts -p:ContinuousIntegrationBuild=true
+      - dotnet tool restore
+      # PackageIdAvailableOnNuGetOrg fails once a version is on nuget.org. The repository is
+      # private, so its URLs (52) and the sources SourceLink points at (119) answer 404 to
+      # anonymous requests; stop excluding those two when it goes public.
+      - >-
+        dotnet meziantou.validate-nuget-package artifacts/*.nupkg
+        --excluded-rules PackageIdAvailableOnNuGetOrg --excluded-rule-ids 52 --excluded-rule-ids 119
+
+  # The release workflow (release.yml) runs these two after task pack.
+  release:push:
+    desc: Push the packages in ./artifacts/ to nuget.org with the key in $NUGET_API_KEY
+    preconditions:
+      - sh: '[ -n "${NUGET_API_KEY:-}" ]'
+        msg: NUGET_API_KEY is not set; the release workflow gets it from NuGet/login.
+    cmds:
+      # The .snupkg symbol packages go up with their .nupkg. A rerun skips what's already there.
+      - >-
+        dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY"
+        --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  release:attach:
+    desc: "Attach the packages in ./artifacts/ to a GitHub Release: task release:attach -- vX.Y.Z"
+    preconditions:
+      - sh: '[ -n "{{.CLI_ARGS}}" ]'
+        msg: Pass the release tag, as in task release:attach -- v0.1.0.
+    cmds:
+      - gh release upload "{{.CLI_ARGS}}" artifacts/*.nupkg artifacts/*.snupkg --clobber
 
   samples:
     desc: Build the samples, smoke-test each one and run their isolation probe tests

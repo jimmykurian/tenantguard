@@ -14,11 +14,15 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
 - `task build` restores and builds the solution, warnings as errors
 - `task test` runs every test project; `task test:unit`, `task test:analyzers`,
   `task test:behavior` run one group
+- `task test:providers` runs the probe on SQL Server and PostgreSQL in Testcontainers;
+  it needs Docker, so `task test` leaves it out and `providers.yml` runs it
 - `task lint` runs `dotnet format --verify-no-changes`, the Roslyn analyzers,
   `task lint:api` (PublicAPI.Shipped/Unshipped are up to date) and `task lint:headers`
   (YAML files and git hooks start with the copyright line)
 - `task fmt` formats
-- `task pack` builds the NuGet packages into `./artifacts/`
+- `task pack` builds the NuGet packages into `./artifacts/` and validates them
+- `task release:push` and `task release:attach` publish the packages; only `release.yml`
+  runs them
 - `task samples` builds and smoke-tests `samples/`
 - `task scrub` greps the tree for terms in `$SCRUB_TERMS_FILE` (see Clean room)
 - `task ci` runs lint, build, test, pack, samples, scrub
@@ -42,8 +46,9 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
 - Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no
   tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3,
   `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`,
-  and the ASP.NET Core shared framework for a generic host. Finbuckle appears only in
-  `samples/`.
+  and the ASP.NET Core shared framework for a generic host; the opt-in provider tests
+  (SPEC 12) add Testcontainers and the SQL Server and PostgreSQL providers. Finbuckle
+  appears only in `samples/`.
 - Model validation runs as an EF convention (`IModelFinalizedConvention` via an
   `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator`.
 - Rule IDs, messages, option names and exception types are fixed by `docs/SPEC.md`.

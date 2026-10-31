@@ -12,6 +12,8 @@
     <!-- An analyzer package: the assembly goes under analyzers/, with no lib/ and no dependencies. -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <IncludeSymbols>false</IncludeSymbols>
+    <!-- No symbol package for an analyzer, so its symbols travel inside the assembly. -->
+    <DebugType>embedded</DebugType>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <DevelopmentDependency>true</DevelopmentDependency>
   </PropertyGroup>

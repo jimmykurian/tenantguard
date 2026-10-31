@@ -1,0 +1,175 @@
+# Model rules
+
+`UseTenantGuard` adds a convention that runs these rules when EF Core finalizes the model,
+the first time a context of that type is used. An error throws
+`TenantGuardModelException`, listing every error, under `Enforcement.Throw` (the default),
+and is logged at Error level under `Enforcement.Log`. A warning is always logged.
+
+EF Core builds the model lazily, so register `AddTenantGuardStartupValidation<TContext>()`
+to build it when the host starts: a model that breaks a rule then stops the host before it
+serves a request. `TenantGuardModel.Validate(model, options)` runs the same rules and
+returns the findings without throwing, for tests and tooling. See [options](options.md).
+
+A compiled model, passed to `UseModel`, isn't built at runtime, so the rules don't run on
+it and report nothing. The write guard still works: it finds the tenant-scoped entity
+types itself.
+
+## Which entity types are tenant-scoped
+
+For each entity type, the tenant property is the first match of:
+
+1. An explicit registration: `tg.TenantProperty<Invoice>(invoice => invoice.OrgId)`.
+2. A property marked `[TenantKey]`.
+3. Finbuckle's `Finbuckle:MultiTenant` annotation, which `IsMultiTenant()` adds, with
+   Finbuckle's `TenantId` property.
+4. A CLR or shadow property named in `TenantPropertyNames`, `TenantId` by default.
+
+An entity type with a tenant property is tenant-scoped. Only the root of an inheritance
+hierarchy is examined, because EF Core allows query filters only on the root; derived
+types share it. Owned types are skipped: their rows belong to their owner (TGM008).
+Keyless entity types are examined like any other. `Shared<TEntity>()` declares an entity
+type tenant-free on purpose, which matters under `RequireAllEntitiesScoped` (TGM002). It
+applies only to a type with no tenant property: one that has a tenant property stays
+tenant-scoped, and TGM001 still applies to it.
+
+## Rules
+
+| ID | Name | Severity | Reported when |
+|---|---|---|---|
+| TGM001 | unguarded-entity | error | A tenant-scoped entity type has no query filter that references its tenant property |
+| TGM002 | unscoped-entity | error, only with `RequireAllEntitiesScoped` | An entity type has no tenant property and isn't declared shared |
+| TGM003 | captured-value | error | The tenant filter compares the tenant property to a value captured when the model was built |
+| TGM004 | literal-tenant | error | The tenant filter compares the tenant property to a constant |
+| TGM005 | nullable-tenant | warning | The tenant property is nullable |
+| TGM006 | tenant-on-derived | error | A derived type declares a tenant property and its root has none |
+| TGM007 | filter-not-parameterized | warning | The tenant filter's other operand can't be classified, or the filter never compares the tenant property |
+| TGM008 | owned-tenant | warning | An owned type has a tenant property |
+
+### TGM001 unguarded-entity
+
+```text
+{Entity} has tenant property '{Property}' but no query filter references it. Add HasQueryFilter(e => e.{Property} == <current tenant>) on the root type.
+```
+
+Without a filter, every query returns every tenant's rows. A filter that reaches the
+tenant property through a navigation, such as `post => post.Blog.TenantId == TenantId`,
+counts: the row is scoped through its principal. So do named filters.
+
+```csharp
+// TGM001
+modelBuilder.Entity<Invoice>();
+
+// Passes: the filter reads a member of the context, evaluated for each query.
+modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == TenantId);
+```
+
+### TGM002 unscoped-entity
+
+```text
+{Entity} has no tenant property and is not declared shared. Add '{Property}', or declare it with Shared<{Entity}>().
+```
+
+Only under `RequireAllEntitiesScoped()`, which asks for every entity type to be either
+tenant-scoped or shared on purpose. `{Property}` is the first of `TenantPropertyNames`.
+
+```csharp
+options.UseTenantGuard(tg => tg
+    .RequireAllEntitiesScoped()
+    .Shared<Country>());   // a lookup table every tenant reads
+```
+
+### TGM003 captured-value
+
+```text
+{Entity}: the tenant filter captures a local value. The model is cached per context type, so every tenant will see the first tenant's rows. Reference a DbContext member instead.
+```
+
+EF Core builds the model once per context type and caches it. A filter that reads a local
+variable, from `OnModelCreating` or an `IEntityTypeConfiguration`, keeps the value it had
+for the first context, so every later tenant gets the first tenant's rows. Behavior pin 4
+shows the leak.
+
+```csharp
+// TGM003: tenant is read once, when the model is built.
+var tenant = TenantId;
+modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == tenant);
+
+// Passes: EF Core reads TenantId from the context running each query.
+modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == TenantId);
+```
+
+A captured variable whose type the context implements, such as the
+`IMultiTenantDbContext` Finbuckle's filter captures, isn't TGM003: EF Core puts the
+current context in its place, so it is read per query (behavior pin 5).
+
+### TGM004 literal-tenant
+
+```text
+{Entity}: the tenant filter compares '{Property}' to the constant {Value}. Reference a DbContext member instead.
+```
+
+A filter fixed to one tenant, such as `invoice.TenantId == "acme"`, shows that tenant's
+rows to everyone. `{Value}` is the constant, with strings quoted.
+
+### TGM005 nullable-tenant
+
+```text
+{Entity}.{Property} is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.
+```
+
+A row whose tenant is null matches no tenant's filter, and the write guard has no tenant
+to compare it with. Make the property required unless rows without a tenant are meant.
+
+### TGM006 tenant-on-derived
+
+```text
+{Entity} declares '{Property}' but filters can only be defined on the root type {Root}. Move the property to the root.
+```
+
+EF Core puts query filters on the root of a hierarchy only, so a tenant property on a
+derived type can't be filtered.
+
+### TGM007 filter-not-parameterized
+
+```text
+{Entity}: the tenant filter's operand could not be classified; confirm it is evaluated per query.
+```
+
+The filter references the tenant property, but TenantGuard can't tell where the value it
+is compared with comes from. Check that it is read per query, from the context or a static
+member, and not frozen when the model was built. It is also reported when the filter
+reads the tenant property without comparing it with anything but `null`, as
+`e => e.TenantId != null` alone does.
+
+### TGM008 owned-tenant
+
+```text
+{Owned} is owned by {Owner}; its '{Property}' is ignored, isolation follows the owner.
+```
+
+An owned type is stored with its owner and filtered through it, so its own tenant
+property plays no part. The write guard skips owned entries, so it checks the owner's
+tenant only when the owner's own row is written: a save that changes only the owned part
+of another tenant's row isn't blocked yet.
+
+## How the operand is classified
+
+TGM003, TGM004 and TGM007 look at what the tenant property is compared with: in `==`,
+`!=`, `Equals` and `Contains`, against a member of the filter's parameter, or
+`EF.Property<T>(e, "{Property}")`, that resolves to the tenant property. Then TenantGuard
+follows the other operand's member and call chain to its root:
+
+- An expression whose type the context type derives from or implements, other than
+  `object`: the context, which passes. EF Core puts the current context in its place.
+  `TenantGuardModel.Validate` doesn't know the context type, so it counts a captured value
+  that is a context, or a captured null of an interface or `DbContext` type, as the
+  context.
+- A constant that is a `DbContext`: the context, which passes.
+- A constant of a compiler-generated closure type: a captured local, TGM003.
+- A constant primitive, string, `Guid` or enum: TGM004.
+- A static member, or a static method call, extension methods included: passes. The
+  call's arguments aren't examined.
+- Anything else: TGM007.
+
+A comparison with `null`, such as `e.TenantId != null`, isn't a tenant comparison, so it
+is skipped; a filter that has no other comparison of the tenant property is TGM007.

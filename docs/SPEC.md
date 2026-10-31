@@ -205,7 +205,7 @@ tenantguard.tenant_filter_names = TenantFilter # optional; names of the tenant f
 | ID | Severity | Trigger | Message |
 |---|---|---|---|
 | TG001 ignore-query-filters | warning | `IgnoreQueryFilters()` with no arguments, or `IgnoreQueryFilters(names)` where `names` is not a constant collection or contains a name in `tenant_filter_names` (when set; when unset, any names), in a method or type without `[AllowCrossTenantAccess]` | `IgnoreQueryFilters disables the tenant filter. Add [AllowCrossTenantAccess("why")] to the method, or ignore only the non-tenant filters by name.` |
-| TG002 raw-sql-without-tenant | warning | `ExecuteSqlRaw`, `ExecuteSqlInterpolated`, `ExecuteSql`, `SqlQueryRaw`, `SqlQuery` and their `Async` forms whose SQL argument is a literal or interpolated string that contains none of `tenant_column` (case-insensitive), in a method or type without `[AllowCrossTenantAccess]` | `Raw SQL bypasses query filters and does not mention '{Column}'. Add a tenant predicate, or [AllowCrossTenantAccess("why")].` |
+| TG002 raw-sql-without-tenant | warning | `ExecuteSqlRaw`, `ExecuteSqlInterpolated` and `ExecuteSql`, their `Async` forms, `SqlQueryRaw` and `SqlQuery`, whose SQL argument is a literal or interpolated string that contains none of `tenant_column` (case-insensitive), in a method or type without `[AllowCrossTenantAccess]` | `Raw SQL bypasses query filters and does not mention '{Column}'. Add a tenant predicate, or [AllowCrossTenantAccess("why")].` |
 | TG003 missing-justification | error | `[AllowCrossTenantAccess]` with a null, empty or whitespace reason | `AllowCrossTenantAccess needs a reason.` |
 | TG004 raw-sql-unverifiable | info | Same methods as TG002 with a non-literal SQL argument | `Raw SQL built at runtime cannot be checked for a tenant predicate.` |
 
@@ -362,7 +362,8 @@ Through `ILoggerFactory` from the application service provider when present, els
   (`NuGet/login` OIDC, no stored API key), then attach `.nupkg` and `.snupkg` to the
   GitHub Release.
 - SQL Server and PostgreSQL runs of the probe tests via Testcontainers are a separate
-  opt-in job (`workflow_dispatch` and nightly), not required for merge.
+  opt-in job (`workflow_dispatch`, nightly, and pull requests that change those
+  tests), not required for merge.
 
 ## 13. Non-functional
 
