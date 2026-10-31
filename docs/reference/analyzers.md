@@ -27,10 +27,11 @@ tenantguard.tenant_column = TenantId           # the default
 tenantguard.tenant_filter_names = TenantFilter # optional: the names of your tenant filters
 ```
 
-- `tenantguard.tenant_column`: the columns raw SQL has to mention (TG002). The default is
-  `TenantId`.
+- `tenantguard.tenant_column`: the columns raw SQL has to mention (TG002), matched
+  ignoring case. The default is `TenantId`.
 - `tenantguard.tenant_filter_names`: the names of the query filters that hold the tenant
-  predicate (TG001). Set it if you use EF Core's named filters.
+  predicate (TG001), matched exactly, case included. Set it if you use EF Core's named
+  filters.
 
 ## Justifying cross-tenant code
 
@@ -76,8 +77,8 @@ The diagnostic underlines the call, from the method name to its closing parenthe
 Raw SQL bypasses query filters and does not mention '{Column}'. Add a tenant predicate, or [AllowCrossTenantAccess("why")].
 ```
 
-Reported on the SQL passed to `ExecuteSqlRaw`, `ExecuteSqlInterpolated`, `ExecuteSql`,
-`SqlQueryRaw`, `SqlQuery`, and their `Async` forms, when the SQL is one the compiler can
+Reported on the SQL passed to `ExecuteSqlRaw`, `ExecuteSqlInterpolated` and `ExecuteSql`,
+their `Async` forms, `SqlQueryRaw` and `SqlQuery`, when the SQL is one the compiler can
 read and it mentions none of `tenantguard.tenant_column`, ignoring case. Readable SQL is a
 constant (a literal, a `const`, or constants joined with `+`) or an interpolated string,
 whose literal parts and constant holes, such as `nameof(Invoice.TenantId)`, are checked.

@@ -9,9 +9,10 @@ services.AddDbContext<AppDbContext>(options => options
         .CurrentTenant(context => ((AppDbContext)context).TenantId)));
 ```
 
-`UseTenantGuard(this DbContextOptionsBuilder, Action<TenantGuardOptionsBuilder>)` turns on
-the model rules and the write guard for the context. The callback is required, even if it
-sets nothing.
+`UseTenantGuard` turns on the model rules and the write guard for the context. It extends
+both `DbContextOptionsBuilder` and `DbContextOptionsBuilder<TContext>`, and takes an
+`Action<TenantGuardOptionsBuilder>`, which is required even if it sets nothing. A second
+call builds on the settings of the first.
 
 | Method | Default | What it does |
 |---|---|---|
@@ -26,11 +27,12 @@ sets nothing.
 | `IncludeKeysInErrors(bool include = true)` | on | Each `TenantViolation` carries the row's primary key values |
 
 `CurrentTenant` returns a value of the tenant property's type, or null when the context
-has no tenant. It runs once per `SaveChanges` that writes a tenant-scoped row.
+has no tenant. It runs once per `SaveChanges` that writes a tenant-scoped row, unless a
+bypass is open.
 
 `StampOnAdd` treats null and the property's sentinel, its type's default unless set with
-`HasSentinel`, as no tenant. It sets the tenant only when the save has no violations, so a
-blocked save leaves your entities as they were.
+`HasSentinel`, as no tenant. It stamps only when there is a current tenant, and only once
+the save has no violations, so a blocked save leaves your entities as they were.
 
 The first five settings shape the model, and EF Core builds and caches a model, and an
 internal service provider, for each combination. The last four are read from each
@@ -55,10 +57,11 @@ var options = new TenantGuardOptionsBuilder().TenantPropertyNames("OrgId").Optio
 ModelReport report = TenantGuardModel.Validate(context.Model, options);
 ```
 
-Runs the rules on any model and returns a `ModelReport` with every `Finding` (rule ID,
-severity, entity, property, message) and its `Errors` and `Warnings`. It never throws and
-logs nothing, so a test can assert on the findings. Configure a `TenantGuardOptionsBuilder`
-the way you would in `UseTenantGuard`, and pass its `Options`.
+Runs the rules on any model and returns a `ModelReport`. Its `Findings` lists every
+`ModelFinding` (rule ID, severity, entity, property, message), and `Errors` and `Warnings`
+split them by severity. Apart from null arguments, it never throws, and it logs nothing,
+so a test can assert on the findings. Configure a `TenantGuardOptionsBuilder` the way you
+would in `UseTenantGuard`, and pass its `Options`.
 
 ## The bypass scope
 
@@ -71,8 +74,9 @@ using (context.TenantGuard().Bypass("nightly aggregation across tenants"))
 
 `context.TenantGuard()` returns the context's TenantGuard controls; it throws if the
 context doesn't use `UseTenantGuard`. `Bypass(reason)` turns off the write guard for that
-context instance until the scope is disposed, and logs a warning with the reason. An empty
-reason throws `ArgumentException`. Query filters stay on. A pooled context goes back to
+context instance until the scope is disposed, and logs a warning with the reason. A null,
+empty or whitespace reason throws: `ArgumentNullException` for null, `ArgumentException`
+otherwise. Query filters stay on. A pooled context goes back to
 the pool with the guard on, even if a bypass was never disposed.
 
 ## Attributes

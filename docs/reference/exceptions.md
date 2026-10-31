@@ -26,8 +26,9 @@ moves or deletes a row outside the current tenant:
 | Modified | The row's original tenant isn't the current tenant, or the update changes it |
 | Deleted | The row's original tenant isn't the current tenant |
 
-Tenants are compared with the tenant property's `ValueComparer`. Owned types aren't
-checked: their rows belong to their owner.
+Tenants are compared with the tenant property's `ValueComparer`. Entries of owned types
+are skipped, so a save that changes only the owned part of another tenant's row isn't
+blocked yet.
 
 `Violations` lists every blocked write as a `TenantViolation`:
 
@@ -75,18 +76,26 @@ Customer  BulkIsolation  Failed   As acme, ExecuteDelete removed globex's row (I
 
 ## Configuration errors
 
-These are mistakes in the setup rather than in the data, so they say what to change.
+These are mistakes in the setup rather than in the data, so they say what to change. The
+message of an argument exception ends with the parameter's name, as in
+`(Parameter 'tenants')`.
 
 | Thrown by | Exception and message |
 |---|---|
-| `SaveChanges`, with no `CurrentTenant` configured | `InvalidOperationException`: `TenantGuard checks the writes of {Context} against its current tenant, but no CurrentTenant is configured. Add CurrentTenant(ctx => ...) to UseTenantGuard.` |
-| `SaveChanges`, when `CurrentTenant` returns another type | `InvalidOperationException`: `CurrentTenant returned a {Type}, but {Entity}.{Property} is a {Type}. Return a value of the tenant property's type.` |
+| `TenantPropertyNames()` with no names | `ArgumentException`: `Pass at least one tenant property name.` A null or blank name throws `ArgumentNullException` or `ArgumentException`. |
+| `TenantProperty<TEntity>(...)`, with anything but a property or field of `TEntity` itself | `ArgumentException`: `Pass a property of {Entity} itself, such as e => e.TenantId.` |
+| `Enforcement(...)` or `WhenNoCurrentTenant(...)`, with a value the enum doesn't define | `ArgumentOutOfRangeException`: `Unknown enforcement.` or `Unknown policy.` |
+| `SaveChanges` that writes a tenant-scoped row, with no `CurrentTenant` configured | `InvalidOperationException`: `TenantGuard checks the writes of {Context} against its current tenant, but no CurrentTenant is configured. Add CurrentTenant(ctx => ...) to UseTenantGuard.` |
+| `SaveChanges`, when `CurrentTenant` returns another type | `InvalidOperationException`: `CurrentTenant returned a {ReturnedType}, but {Entity}.{Property} is a {PropertyType}. Return a value of the tenant property's type.` |
 | `context.TenantGuard()`, without `UseTenantGuard` | `InvalidOperationException`: `{Context} does not use TenantGuard. Add UseTenantGuard to its options.` |
-| `Bypass(reason)`, with a null, empty or whitespace reason | `ArgumentNullException` or `ArgumentException` |
+| `Bypass(reason)`, with a null, empty or whitespace reason | `ArgumentNullException` for null, `ArgumentException` otherwise |
 | Host start, from `AddTenantGuardStartupValidation`, when the context isn't registered | `OptionsValidationException`: `AddTenantGuardStartupValidation<{Context}>() found neither {Context} nor IDbContextFactory<{Context}>. Register the context before the host starts.` |
 | Host start, from `AddTenantGuardStartupValidation`, without `UseTenantGuard` | `OptionsValidationException`: `AddTenantGuardStartupValidation<{Context}>() needs {Context} configured with UseTenantGuard; without it there are no rules to run.` |
-| `WithTenants`, with fewer than two tenants, a repeat or an empty one | `ArgumentException`: `Pass at least two tenants, distinct and not empty.` |
+| `WithTenants`, with fewer than two tenants, a repeat, or a null, empty or whitespace one | `ArgumentException`: `Pass at least two tenants, distinct and not empty.` |
 | `RunAsync`, before `WithTenants` | `InvalidOperationException`: `Call WithTenants with at least two tenants before RunAsync.` |
 | `RunAsync`, when `Seed<T>` names a type the model doesn't have | `InvalidOperationException`: `Seed<{Type}> names a type that is not an entity type of {Context}.` |
 | `RunAsync`, when a tenant doesn't fit a tenant property | `InvalidOperationException`: `The tenant "{Tenant}" is not a {Type}, the type of {Entity}.{Property}. Pass WithTenants values the tenant property can hold.` |
 | `RunAsync`, when the write guard blocks the probe's own seeding | `InvalidOperationException`: `The write guard blocked seeding {Entity} as {Tenant}. Does the context factory make {Tenant} the context's current tenant?` |
+
+A null argument to `UseTenantGuard`, `CurrentTenant`, `TenantGuardModel.Validate`, the
+probe's constructor, `WithTenants` or `Seed<T>` throws `ArgumentNullException`.

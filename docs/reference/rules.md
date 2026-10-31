@@ -10,6 +10,10 @@ to build it when the host starts: a model that breaks a rule then stops the host
 serves a request. `TenantGuardModel.Validate(model, options)` runs the same rules and
 returns the findings without throwing, for tests and tooling. See [options](options.md).
 
+A compiled model, passed to `UseModel`, isn't built at runtime, so the rules don't run on
+it and report nothing. The write guard still works: it finds the tenant-scoped entity
+types itself.
+
 ## Which entity types are tenant-scoped
 
 For each entity type, the tenant property is the first match of:
@@ -24,7 +28,9 @@ An entity type with a tenant property is tenant-scoped. Only the root of an inhe
 hierarchy is examined, because EF Core allows query filters only on the root; derived
 types share it. Owned types are skipped: their rows belong to their owner (TGM008).
 Keyless entity types are examined like any other. `Shared<TEntity>()` declares an entity
-type tenant-free on purpose, which matters under `RequireAllEntitiesScoped` (TGM002).
+type tenant-free on purpose, which matters under `RequireAllEntitiesScoped` (TGM002). It
+applies only to a type with no tenant property: one that has a tenant property stays
+tenant-scoped, and TGM001 still applies to it.
 
 ## Rules
 
@@ -36,7 +42,7 @@ type tenant-free on purpose, which matters under `RequireAllEntitiesScoped` (TGM
 | TGM004 | literal-tenant | error | The tenant filter compares the tenant property to a constant |
 | TGM005 | nullable-tenant | warning | The tenant property is nullable |
 | TGM006 | tenant-on-derived | error | A derived type declares a tenant property and its root has none |
-| TGM007 | filter-not-parameterized | warning | The tenant filter's other operand can't be classified |
+| TGM007 | filter-not-parameterized | warning | The tenant filter's other operand can't be classified, or the filter never compares the tenant property |
 | TGM008 | owned-tenant | warning | An owned type has a tenant property |
 
 ### TGM001 unguarded-entity
@@ -131,7 +137,9 @@ derived type can't be filtered.
 
 The filter references the tenant property, but TenantGuard can't tell where the value it
 is compared with comes from. Check that it is read per query, from the context or a static
-member, and not frozen when the model was built.
+member, and not frozen when the model was built. It is also reported when the filter
+reads the tenant property without comparing it with anything but `null`, as
+`e => e.TenantId != null` alone does.
 
 ### TGM008 owned-tenant
 
@@ -140,8 +148,9 @@ member, and not frozen when the model was built.
 ```
 
 An owned type is stored with its owner and filtered through it, so its own tenant
-property plays no part. The write guard checks the owner's tenant property, not the owned
-type's.
+property plays no part. The write guard skips owned entries, so it checks the owner's
+tenant only when the owner's own row is written: a save that changes only the owned part
+of another tenant's row isn't blocked yet.
 
 ## How the operand is classified
 
@@ -158,8 +167,9 @@ follows the other operand's member and call chain to its root:
 - A constant that is a `DbContext`: the context, which passes.
 - A constant of a compiler-generated closure type: a captured local, TGM003.
 - A constant primitive, string, `Guid` or enum: TGM004.
-- A static member, or a call on a static or on the context: passes.
+- A static member, or a static method call, extension methods included: passes. The
+  call's arguments aren't examined.
 - Anything else: TGM007.
 
-A comparison with `null`, such as `e.TenantId != null`, isn't a tenant comparison and is
-ignored.
+A comparison with `null`, such as `e.TenantId != null`, isn't a tenant comparison, so it
+is skipped; a filter that has no other comparison of the tenant property is TGM007.
