@@ -10,7 +10,7 @@ namespace TenantGuard;
 // deterministic.
 internal static class TenantModelRules
 {
-    public static TenantModelCheck Check(IReadOnlyModel model, TenantGuardOptions options)
+    public static TenantModelCheck Check(IReadOnlyModel model, TenantGuardOptions options, Type? contextType = null)
     {
         var findings = new List<ModelFinding>();
         var tenantProperties = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -27,7 +27,7 @@ internal static class TenantModelRules
             }
             else
             {
-                CheckRoot(entityType, options, findings, tenantProperties);
+                CheckRoot(entityType, options, findings, tenantProperties, contextType);
             }
         }
 
@@ -38,7 +38,8 @@ internal static class TenantModelRules
         IReadOnlyEntityType entityType,
         TenantGuardOptions options,
         List<ModelFinding> findings,
-        Dictionary<string, string> tenantProperties)
+        Dictionary<string, string> tenantProperties,
+        Type? contextType)
     {
         var entity = entityType.DisplayName();
         var tenantProperty = TenantPropertyDiscovery.Find(entityType, options);
@@ -55,7 +56,7 @@ internal static class TenantModelRules
         var property = tenantProperty.Name;
         tenantProperties[entityType.Name] = property;
 
-        var filters = QueryFilterAnalysis.Analyze(entityType, tenantProperty);
+        var filters = QueryFilterAnalysis.Analyze(entityType, tenantProperty, contextType);
         if (!filters.ReferencesTenantProperty)
         {
             findings.Add(RuleMessages.UnguardedEntity(entity, property));

@@ -38,6 +38,31 @@ internal static class Tgm003Models
             => modelBuilder.ApplyConfiguration(new InvoiceConfiguration("acme"));
     }
 
+    // Positive: Finbuckle's pattern. The filter reads a captured null of an interface the context
+    // implements, which EF replaces with the current context in every query.
+    internal sealed class ContextInterface(DbContextOptions options) : DbContext(options), ITenantSource
+    {
+        public string? TenantId { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            ITenantSource? context = null;
+            modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == context!.TenantId);
+        }
+    }
+
+    // Negative: a captured tenant source the context does not implement, frozen at model build.
+    internal sealed class CapturedSource(DbContextOptions options) : DbContext(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+#pragma warning disable CA1859 // Typed as the interface on purpose, the way a tenant service from DI is.
+            ITenantSource source = new FixedSource("acme");
+#pragma warning restore CA1859
+            modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == source.TenantId);
+        }
+    }
+
     internal sealed class InvoiceConfiguration(string tenant) : IEntityTypeConfiguration<Invoice>
     {
         public void Configure(EntityTypeBuilder<Invoice> builder)
@@ -45,6 +70,11 @@ internal static class Tgm003Models
             var current = tenant;
             builder.HasQueryFilter(invoice => invoice.TenantId == current);
         }
+    }
+
+    internal sealed class FixedSource(string tenant) : ITenantSource
+    {
+        public string? TenantId { get; } = tenant;
     }
 
     internal sealed class Invoice

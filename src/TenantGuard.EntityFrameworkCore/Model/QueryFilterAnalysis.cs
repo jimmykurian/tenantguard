@@ -27,14 +27,14 @@ internal sealed class QueryFilterAnalysis
 
     public List<string> Literals { get; } = [];
 
-    public static QueryFilterAnalysis Analyze(IReadOnlyEntityType entityType, IReadOnlyProperty tenantProperty)
+    public static QueryFilterAnalysis Analyze(IReadOnlyEntityType entityType, IReadOnlyProperty tenantProperty, Type? contextType)
     {
         var analysis = new QueryFilterAnalysis();
         foreach (var filter in entityType.GetDeclaredQueryFilters())
         {
             if (filter.Expression is { Parameters.Count: 1 } lambda)
             {
-                new Visitor(analysis, lambda.Parameters[0], tenantProperty).Visit(lambda.Body);
+                new Visitor(analysis, lambda.Parameters[0], tenantProperty, contextType).Visit(lambda.Body);
             }
         }
 
@@ -63,7 +63,7 @@ internal sealed class QueryFilterAnalysis
         }
     }
 
-    private sealed class Visitor(QueryFilterAnalysis analysis, ParameterExpression parameter, IReadOnlyProperty tenantProperty)
+    private sealed class Visitor(QueryFilterAnalysis analysis, ParameterExpression parameter, IReadOnlyProperty tenantProperty, Type? contextType)
         : ExpressionVisitor
     {
         protected override Expression VisitMember(MemberExpression node)
@@ -129,11 +129,11 @@ internal sealed class QueryFilterAnalysis
         {
             if (IsTenantAccess(left))
             {
-                analysis.Record(OperandClassifier.Classify(right, out var literal), literal);
+                analysis.Record(OperandClassifier.Classify(right, contextType, out var literal), literal);
             }
             else if (IsTenantAccess(right))
             {
-                analysis.Record(OperandClassifier.Classify(left, out var literal), literal);
+                analysis.Record(OperandClassifier.Classify(left, contextType, out var literal), literal);
             }
         }
 
