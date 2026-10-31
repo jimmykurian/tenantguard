@@ -6,7 +6,7 @@ insert over or delete another's. It works with any test framework: `AssertAllPas
 throws when a check didn't pass, and every framework fails a test that throws.
 
 ```sh
-dotnet add package TenantGuard.Testing
+dotnet add package TenantGuard.Testing --prerelease
 ```
 
 ## The probe
