@@ -57,6 +57,9 @@ Commits follow [Conventional Commits](https://conventionalcommits.org).
 `main` and checks the staged files, commit-msg checks the message, and pre-push runs
 `task lint` and `task test` before code reaches GitHub.
 
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the tasks, the tests, the hooks and how to send
+a change. Report a vulnerability through [SECURITY.md](SECURITY.md), not an issue.
+
 ## License
 
 [Apache-2.0](LICENSE)
