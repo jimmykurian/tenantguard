@@ -10,8 +10,8 @@ namespace TenantGuard;
 // Finbuckle's annotation, then the configured property names.
 internal static class TenantPropertyDiscovery
 {
-    // TODO: confirm against Finbuckle's source in Phase 4 (SPEC 4.1 step 3). Matched by string, so
-    // there is no package reference.
+    // Finbuckle's Constants.MultiTenantAnnotationName, matched by string so there is no package
+    // reference. samples/Finbuckle.Api.Tests checks it against the Finbuckle version the sample uses.
     internal const string FinbuckleMultiTenantAnnotation = "Finbuckle:MultiTenant";
 
     internal const string FinbuckleTenantPropertyName = "TenantId";
