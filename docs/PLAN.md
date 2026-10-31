@@ -138,7 +138,7 @@ sample fails startup (TGM001), and with `Enforcement.Log` fails the probe instea
 - [x] Opt-in Testcontainers job for SQL Server and PostgreSQL running the probe tests
 - [x] Package icon, `PackageReadmeFile`, tags, `PackageProjectUrl`; validate with
       `dotnet-validate` or `meziantou.framework.nuget-packages-validation`
-- [ ] Tag `v0.1.0-preview.1` and confirm the three packages install into a fresh console
+- [x] Tag `v0.1.0-preview.1` and confirm the three packages install into a fresh console
       app (stable `v0.1.0` waits for EF Core 11 GA; see `docs/DECISIONS.md`)
 
 Acceptance: a fresh project adds `TenantGuard.EntityFrameworkCore` from nuget.org
