@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-preview.3](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.2...v0.1.0-preview.3) (2026-10-31)
+
+
+### Documentation
+
+* drop spec section numbers from code comments ([#18](https://github.com/jimmykurian/tenantguard/issues/18)) ([ee02ee2](https://github.com/jimmykurian/tenantguard/commit/ee02ee2e77af26fcf6e61b4bee68a23d68278c39))
+
 ## [0.1.0-preview.2](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.1...v0.1.0-preview.2) (2026-10-31)
 
 
