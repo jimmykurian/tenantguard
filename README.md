@@ -1,7 +1,8 @@
 # TenantGuard
 
-> **Pre-release.** Nothing is on NuGet yet. The first release, v0.1.0, follows .NET 11
-> and EF Core 11 general availability. Until then, build from source.
+> **Preview.** The 0.1.0 previews build their net11.0 target against the EF Core 11
+> release candidate, so they are prereleases on NuGet. The stable v0.1.0 follows .NET 11
+> and EF Core 11 general availability.
 
 Multi-tenant EF Core apps isolate tenants with global query filters and a `TenantId`
 column. A dozen packages ship that mechanism (Finbuckle.MultiTenant, TenancyKit,
@@ -40,8 +41,8 @@ dependency is `Microsoft.EntityFrameworkCore`, so it works with any provider.
 ## Install
 
 ```sh
-dotnet add package TenantGuard.EntityFrameworkCore
-dotnet add package TenantGuard.Testing   # in the test project
+dotnet add package TenantGuard.EntityFrameworkCore --prerelease
+dotnet add package TenantGuard.Testing --prerelease   # in the test project
 ```
 
 ## Quick start

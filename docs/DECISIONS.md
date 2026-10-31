@@ -7,6 +7,25 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-10-31: The first release is a preview until EF Core 11 is stable (accepted)
+
+Decision: "The `net11.0` build references EF Core 11.x" (AGENTS.md), and the first release
+is `v0.1.0` (PLAN).
+
+Problem: EF Core 11 has no stable version yet, so the `net11.0` build references
+`11.0.0-rc.3`. NuGet rejects a stable package that depends on a prerelease (NU5104, an
+error under `TreatWarningsAsErrors`). Release Please cut `v0.1.0` on 2026-10-31, and the
+publish job then failed in `task pack`, so the tag and GitHub Release existed with nothing
+on nuget.org.
+
+Proposed change: ship `0.1.0-preview.1` now, with both targets, as a NuGet prerelease and
+a GitHub prerelease. Release Please gets `release-as` and `prerelease` in
+`release-please-config.json`; the empty `v0.1.0` tag and Release are deleted and the
+`0.1.0` entry is taken out of `CHANGELOG.md`, since that version never shipped. Stable
+`v0.1.0` follows EF Core 11 GA. Rejected alternatives: dropping `net11.0` from the release
+(changes a recorded decision) and suppressing NU5104 (a stable package that pulls in a
+release candidate).
+
 ## 2026-10-30: TGM003 reads an operand EF swaps for the context as the context (open)
 
 Decision: SPEC 4.2 classifies a tenant filter's operand by the root of its member chain,

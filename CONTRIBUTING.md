@@ -187,11 +187,17 @@ Publishing needs a trusted publishing policy on nuget.org for this repository an
 `release.yml`, and the repository variable `NUGET_USER` set to the nuget.org account that
 owns it.
 
-Before the first release:
+Until EF Core 11 is generally available, releases are previews: `release-please-config.json`
+sets `release-as` to the next preview version and `prerelease` to true, so the GitHub
+Release is marked as a prerelease. Bump `release-as` for each further preview.
 
+Before the first stable release:
+
+- Remove `release-as` and `prerelease` from `.github/release-please-config.json`.
 - Move `global.json` and the EF Core 11 packages off the release candidate, and drop
   `allowPrerelease`. A stable package can't depend on a prerelease one.
-- Remove the pre-release note at the top of `README.md`, which nuget.org shows.
+- Remove the preview note at the top of `README.md`, which nuget.org shows, and the
+  `--prerelease` flags from the install commands in `README.md` and `docs/guides/`.
 - Once the repository is public, stop excluding validator rules 52 and 119 in
   `task pack`.
 

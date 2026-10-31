@@ -8,7 +8,7 @@ makes each check binding.
 ## 1. Install, and read the build
 
 ```sh
-dotnet add package TenantGuard.EntityFrameworkCore
+dotnet add package TenantGuard.EntityFrameworkCore --prerelease
 ```
 
 The analyzers run from the next build. Each `IgnoreQueryFilters()` is TG001, and raw SQL

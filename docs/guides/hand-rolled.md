@@ -35,7 +35,7 @@ service that middleware sets from a header, a claim or the host name.
 ## Turn TenantGuard on
 
 ```sh
-dotnet add package TenantGuard.EntityFrameworkCore
+dotnet add package TenantGuard.EntityFrameworkCore --prerelease
 ```
 
 ```csharp
