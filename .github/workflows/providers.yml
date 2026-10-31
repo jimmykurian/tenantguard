@@ -1,0 +1,49 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+name: providers
+
+# Runs the isolation probe tests on SQL Server and PostgreSQL in Testcontainers (SPEC 12). It
+# is opt-in and never required for merge: it runs on demand, nightly, and on pull requests
+# that change those tests or this workflow.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+  pull_request:
+    paths:
+      - tests/TenantGuard.Providers.Tests/**
+      - .github/workflows/providers.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: providers-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  providers:
+    name: SQL Server and PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          # The SDK comes from global.json; 10.0.x adds the .NET 10 runtime the tests run on.
+          global-json-file: global.json
+          dotnet-version: 10.0.x
+
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
+        with:
+          version: 3.x
+
+      - name: Provider tests
+        run: task test:providers

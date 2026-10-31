@@ -8,6 +8,7 @@
     <Project Path="tests/TenantGuard.Analyzers.Tests/TenantGuard.Analyzers.Tests.csproj" />
     <Project Path="tests/TenantGuard.BehaviorPins/TenantGuard.BehaviorPins.csproj" />
     <Project Path="tests/TenantGuard.EntityFrameworkCore.Tests/TenantGuard.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="tests/TenantGuard.Providers.Tests/TenantGuard.Providers.Tests.csproj" />
     <Project Path="tests/TenantGuard.Testing.Tests/TenantGuard.Testing.Tests.csproj" />
   </Folder>
 </Solution>

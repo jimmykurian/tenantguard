@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The providers' EF Core 10 builds. -->
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <!-- Transitive from the SQL Server client; pinned past the advisories on 9.0.x. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
+  <!-- The test kit's own models, run here against real database servers. -->
+  <ItemGroup>
+    <Compile Include="../TenantGuard.Testing.Tests/Models/ProbeModels.cs" Link="Models/ProbeModels.cs" />
+  </ItemGroup>
+
+</Project>

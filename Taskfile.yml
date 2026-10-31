@@ -45,6 +45,12 @@ tasks:
     cmds:
       - dotnet test --project "{{.TESTS}}/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
 
+  # Opt-in (SPEC 12): needs Docker, so test leaves it out and providers.yml runs it.
+  test:providers:
+    desc: Run the isolation probe on SQL Server and PostgreSQL in Testcontainers (needs Docker)
+    cmds:
+      - dotnet test --project "{{.TESTS}}/TenantGuard.Providers.Tests" -c {{.CONFIGURATION}}
+
   lint:
     desc: Check formatting and analyzers, then the public API files and the copyright headers
     cmds:
