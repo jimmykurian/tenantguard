@@ -2,6 +2,7 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using Bogus;
 using Microsoft.EntityFrameworkCore;
 using TenantGuard.Testing.Tests.Support;
 using static TenantGuard.Testing.Tests.Models.ProbeModels;
@@ -168,6 +169,36 @@ public sealed class ProbeTests
 
         // The table is the probe's output to the user; the snapshot is next to this file.
         await Verify(exception.Message);
+    }
+
+    [Fact]
+    public async Task The_report_names_no_seeded_entity_values()
+    {
+        // Bogus fills every value but the keys and tenants, with text that can't turn up by chance.
+        var faker = new Faker { Random = new Randomizer(7) };
+        var values = new List<string>();
+        string Fake(Func<Faker, string> realistic)
+        {
+            lock (values)
+            {
+                var value = $"{realistic(faker)} {faker.Random.AlphaNumeric(12)}";
+                values.Add(value);
+                return value;
+            }
+        }
+
+        await using var database = await ProbeDatabase<LeakyShop>.CreateAsync(
+            (options, tenant) => new LeakyShop(options, tenant),
+            Guard<ShopBase>(shop => shop.CurrentTenant, tg => tg.Enforcement(Enforcement.Log)));
+        var report = await database.Probe()
+            .Seed<Customer>((_, _) => new Customer { Name = Fake(f => f.Name.FullName()) })
+            .Seed<Invoice>((_, _) => new Invoice { Number = Fake(f => f.Commerce.ProductName()), Memo = Fake(f => f.Lorem.Sentence()) })
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        report.Rows.Should().Contain(row => row.Outcome == ProbeOutcome.Failed);
+        values.Should().NotBeEmpty();
+        var table = FluentActions.Invoking(report.AssertAllPassed).Should().ThrowExactly<TenantIsolationProbeException>().Which.Message;
+        string.Join("\n", report.Rows.Select(row => row.Detail).Append(table)).Should().NotContainAny(values);
     }
 
     [Fact]

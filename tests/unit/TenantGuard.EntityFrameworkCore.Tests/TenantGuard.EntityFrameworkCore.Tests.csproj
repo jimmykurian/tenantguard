@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="../../../src/TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Bogus" />
     <PackageReference Include="FsCheck" />
   </ItemGroup>
 

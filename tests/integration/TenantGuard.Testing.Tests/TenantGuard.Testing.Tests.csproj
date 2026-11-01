@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="../../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Bogus" />
     <PackageReference Include="FsCheck" />
     <PackageReference Include="Verify.XunitV3" />
   </ItemGroup>

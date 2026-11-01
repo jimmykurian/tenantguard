@@ -33,10 +33,14 @@ Change, all test-only:
   snapshots the probe's failure table, the one long user-facing output. Verify charges a
   maintenance fee, and the build fails without a declaration: the test kit's test project
   claims the OpenSource exemption until 2027-11. Renew it before then, or the build fails.
-- **Bogus, AutoFixture and AutoFixture.AutoNSubstitute are not used.** Tests use the
-  synthetic tenants `acme`, `globex` and `initech` and assert exact messages, the probe
-  seeds its own deterministic rows, and each test's EF model is the point of the test, so
-  random or anonymous data has nothing to replace.
+- **Bogus** (MIT) for one rule nothing tested before: exceptions and logs name tenant ids
+  and key values and no other entity value (AGENTS.md). `NoValueLeakTests` fills every
+  other value through Bogus, with fixed seeds so runs repeat, then makes each kind of
+  cross-tenant write and checks the exceptions and logs; a probe test does the same for
+  the report and its table. Elsewhere tests keep fixed values: only the tenant and the key
+  matter to them.
+- **AutoFixture and AutoFixture.AutoNSubstitute are not used.** Each test's EF model is the
+  point of the test, so anonymous objects have nothing to fill.
 
 xUnit stays the test framework.
 
