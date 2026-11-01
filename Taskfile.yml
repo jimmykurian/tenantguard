@@ -109,12 +109,10 @@ tasks:
       # ContinuousIntegrationBuild maps source paths to /_/, so the symbols match on any machine.
       - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts -p:ContinuousIntegrationBuild=true
       - dotnet tool restore
-      # PackageIdAvailableOnNuGetOrg fails once a version is on nuget.org. The repository is
-      # private, so its URLs (52) and the sources SourceLink points at (119) answer 404 to
-      # anonymous requests; stop excluding those two when it goes public.
+      # PackageIdAvailableOnNuGetOrg fails once a version is on nuget.org.
       - >-
         dotnet meziantou.validate-nuget-package artifacts/*.nupkg
-        --excluded-rules PackageIdAvailableOnNuGetOrg --excluded-rule-ids 52 --excluded-rule-ids 119
+        --excluded-rules PackageIdAvailableOnNuGetOrg
 
   # The release workflow (release.yml) runs these two after task pack.
   release:push:

@@ -203,8 +203,6 @@ Before the first stable release:
   `allowPrerelease`. A stable package can't depend on a prerelease one.
 - Remove the preview note at the top of `README.md`, which nuget.org shows, and the
   `--prerelease` flags from the install commands in `README.md` and `docs/guides/`.
-- Once the repository is public, stop excluding validator rules 52 and 119 in
-  `task pack`.
 
 ## License
 
