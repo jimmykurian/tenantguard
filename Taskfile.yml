@@ -103,7 +103,7 @@ tasks:
       - |
         # LightBDD.XUnit3 3.12.1 does not load on xunit.v3 4, so a [Scenario] test is dropped
         # without a word (LightBDD#409). Remove this check once LightBDD supports xunit.v3 4.
-        if git grep -nE '\[Scenario[](,]' -- 'tests/*.cs'; then
+        if git grep -nE '^[[:space:]]*\[Scenario[](,]' -- 'tests/*.cs'; then
           echo "lint:scenarios: run the scenario from [Fact]; xunit.v3 4 skips [Scenario] (LightBDD#409)" >&2
           exit 1
         fi
