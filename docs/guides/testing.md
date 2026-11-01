@@ -170,7 +170,7 @@ SQLite catches a missing or frozen filter as well as any database, since the fil
 EF Core's. Your provider adds its own SQL, its `ExecuteDelete` and its transactions; to
 cover those, run the probe on it too. This repo runs it on SQL Server and PostgreSQL in
 Testcontainers, one database per test (see
-[TenantGuard.Providers.Tests](../../tests/TenantGuard.Providers.Tests)):
+[TenantGuard.Providers.Tests](../../tests/integration/TenantGuard.Providers.Tests)):
 
 ```csharp
 var database = new NpgsqlConnectionStringBuilder(container.GetConnectionString()) { Database = $"probe_{Guid.NewGuid():N}" };

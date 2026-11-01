@@ -4,11 +4,14 @@
     <Project Path="src/TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
     <Project Path="src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/TenantGuard.Analyzers.Tests/TenantGuard.Analyzers.Tests.csproj" />
-    <Project Path="tests/TenantGuard.BehaviorPins/TenantGuard.BehaviorPins.csproj" />
-    <Project Path="tests/TenantGuard.EntityFrameworkCore.Tests/TenantGuard.EntityFrameworkCore.Tests.csproj" />
-    <Project Path="tests/TenantGuard.Providers.Tests/TenantGuard.Providers.Tests.csproj" />
-    <Project Path="tests/TenantGuard.Testing.Tests/TenantGuard.Testing.Tests.csproj" />
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/integration/">
+    <Project Path="tests/integration/TenantGuard.BehaviorPins/TenantGuard.BehaviorPins.csproj" />
+    <Project Path="tests/integration/TenantGuard.Providers.Tests/TenantGuard.Providers.Tests.csproj" />
+    <Project Path="tests/integration/TenantGuard.Testing.Tests/TenantGuard.Testing.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/unit/">
+    <Project Path="tests/unit/TenantGuard.Analyzers.Tests/TenantGuard.Analyzers.Tests.csproj" />
+    <Project Path="tests/unit/TenantGuard.EntityFrameworkCore.Tests/TenantGuard.EntityFrameworkCore.Tests.csproj" />
   </Folder>
 </Solution>

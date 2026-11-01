@@ -7,6 +7,21 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-11-01: End-to-end tests live in tests/e2e, Finbuckle with them (accepted)
+
+Decision: "Do not take a dependency on Finbuckle or any tenancy library outside
+`samples/`" (AGENTS.md), and each sample's tests sit beside it in `samples/`.
+
+Problem: the test projects are being split into `tests/unit/`, `tests/integration/` and
+`tests/e2e/`, and the end-to-end tests are the sample tests, which drive each sample app
+through its host. `Finbuckle.Api.Tests` uses Finbuckle directly (`FixedTenant` implements
+Finbuckle's context accessor) and references `samples/Finbuckle.Api`, so moving it to
+`tests/e2e/` puts a Finbuckle dependency outside `samples/`.
+
+Proposed change: the rule becomes "outside `samples/` and `tests/e2e/`". Its purpose holds:
+no shipped package and no unit or integration test depends on a tenancy library.
+`tests/e2e/` holds only tests of the sample apps. The sample apps stay in `samples/`.
+
 ## 2026-10-31: The first release is a preview until EF Core 11 is stable (accepted)
 
 Decision: "The `net11.0` build references EF Core 11.x" (AGENTS.md), and the first release

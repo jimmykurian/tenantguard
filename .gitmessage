@@ -33,7 +33,7 @@
 #   options, model, interception, diagnostics   src/TenantGuard.EntityFrameworkCore
 #   analyzers                                   src/TenantGuard.Analyzers
 #   probe, seeding, report                      src/TenantGuard.Testing
-#   pins                                        tests/TenantGuard.BehaviorPins
+#   pins                                        tests/integration/TenantGuard.BehaviorPins
 #   samples                                     samples/
 #   release, deps, docs, tooling                packaging, dependencies, docs, repo setup
 #

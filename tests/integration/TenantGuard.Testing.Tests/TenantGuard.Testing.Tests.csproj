@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="../../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
   </ItemGroup>
 

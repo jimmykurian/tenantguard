@@ -63,7 +63,7 @@ body:
       label: Files to Modify
       placeholder: |
         - `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs`
-        - `tests/TenantGuard.EntityFrameworkCore.Tests/Models/`
+        - `tests/unit/TenantGuard.EntityFrameworkCore.Tests/Models/`
     validations:
       required: false
 
