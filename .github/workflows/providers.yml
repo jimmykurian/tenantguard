@@ -4,14 +4,19 @@ name: providers
 
 # Runs the isolation probe tests on SQL Server and PostgreSQL in Testcontainers. It
 # is opt-in and never required for merge: it runs on demand, nightly, and on pull requests
-# that change those tests or this workflow.
+# that change what it exercises: the runtime and test kit packages, the shared probe test
+# models, the package versions, those tests or this workflow.
 on:
   workflow_dispatch:
   schedule:
     - cron: "17 4 * * *"
   pull_request:
     paths:
+      - src/TenantGuard.EntityFrameworkCore/**
+      - src/TenantGuard.Testing/**
+      - tests/integration/TenantGuard.Testing.Tests/Models/**
       - tests/integration/TenantGuard.Providers.Tests/**
+      - Directory.Packages.props
       - .github/workflows/providers.yml
 
 permissions:

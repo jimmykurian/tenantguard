@@ -362,8 +362,9 @@ Through `ILoggerFactory` from the application service provider when present, els
   (`NuGet/login` OIDC, no stored API key), then attach `.nupkg` and `.snupkg` to the
   GitHub Release.
 - SQL Server and PostgreSQL runs of the probe tests via Testcontainers are a separate
-  opt-in job (`workflow_dispatch`, nightly, and pull requests that change those
-  tests), not required for merge.
+  opt-in job (`workflow_dispatch`, nightly, and pull requests that change the runtime or
+  test kit packages, the shared probe test models, the package versions or those tests),
+  not required for merge.
 
 ## 13. Non-functional
 

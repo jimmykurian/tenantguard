@@ -111,8 +111,9 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
   model and registration, in `task test:e2e`.
 - **Provider tests** in `tests/integration/TenantGuard.Providers.Tests` run the probe on SQL Server
   and PostgreSQL in Testcontainers, so they need Docker. `task test` leaves them out;
-  `providers.yml` runs them on demand, nightly, and on pull requests that change them,
-  and they are never required to merge.
+  `providers.yml` runs them on demand, nightly, and on pull requests that change the
+  runtime or test kit packages, the shared probe test models, the package versions or
+  the provider tests, and they are never required to merge.
 
 Use synthetic names in tests and samples, with tenants such as `acme`, `globex` and
 `initech`.
