@@ -2,41 +2,64 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using LightBDD.Framework;
+using LightBDD.Framework.Scenarios;
+using LightBDD.XUnit3;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// A filter that captures a local in OnModelCreating freezes the first tenant into the
-// model, and EF caches the model per context type, so a context built for another tenant still sees
-// the first tenant's rows. This is the leak TGM003 exists for.
 // https://learn.microsoft.com/ef/core/querying/filters
-public sealed class CapturedLocalFilterPin
+[FeatureDescription("A filter that captures a local in OnModelCreating freezes the first tenant into the model, and EF caches the model per context type, so a context built for another tenant still sees the first tenant's rows. This is the leak TGM003 exists for.")]
+public sealed class CapturedLocalFilterPin : FeatureFixture, IAsyncDisposable
 {
+    private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private DbContextOptions<PinContext> _options = null!;
+    private List<string> _visible = [];
+    private ModelReport _report = null!;
+
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
     [Fact]
-    public async Task Second_tenant_sees_the_first_tenants_rows_and_TGM003_flags_the_model()
+    public Task Second_tenant_sees_the_first_tenants_rows_and_TGM003_flags_the_model()
+        => Runner.RunScenarioAsync(
+            Given_a_model_built_for_acme_with_a_captured_tenant,
+            When_a_context_for_globex_reads_the_invoices,
+            Then_globex_sees_acmes_invoice,
+            Then_TGM003_flags_the_model);
+
+    public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
+
+    private async Task Given_a_model_built_for_acme_with_a_captured_tenant()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync(cancellationToken);
-        var options = new DbContextOptionsBuilder<PinContext>().UseSqlite(connection).Options;
+        await _connection.OpenAsync(Token);
+        _options = new DbContextOptionsBuilder<PinContext>().UseSqlite(_connection).Options;
+        await using var acme = new PinContext(_options, "acme");
+        await acme.Database.EnsureCreatedAsync(Token);
+        acme.Invoices.AddRange(
+            new Invoice { TenantId = "acme", Number = "acme-1" },
+            new Invoice { TenantId = "globex", Number = "globex-1" });
+        await acme.SaveChangesAsync(Token);
+    }
 
-        await using (var acme = new PinContext(options, "acme"))
-        {
-            await acme.Database.EnsureCreatedAsync(cancellationToken);
-            acme.Invoices.AddRange(
-                new Invoice { TenantId = "acme", Number = "acme-1" },
-                new Invoice { TenantId = "globex", Number = "globex-1" });
-            await acme.SaveChangesAsync(cancellationToken);
-        }
+    private async Task When_a_context_for_globex_reads_the_invoices()
+    {
+        await using var globex = new PinContext(_options, "globex");
+        _visible = await globex.Invoices.Select(invoice => invoice.TenantId).ToListAsync(Token);
+        _report = TenantGuardModel.Validate(globex.Model, new TenantGuardOptionsBuilder().Options);
+    }
 
-        await using var globex = new PinContext(options, "globex");
-        var visible = await globex.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken);
+    private Task Then_globex_sees_acmes_invoice()
+    {
+        _visible.Should().ContainSingle().Subject.Should().Be("acme");
+        return Task.CompletedTask;
+    }
 
-        visible.Should().ContainSingle().Subject.Should().Be("acme");
-
-        var report = TenantGuardModel.Validate(globex.Model, new TenantGuardOptionsBuilder().Options);
-        report.Errors.Should().ContainSingle().Subject.RuleId.Should().Be("TGM003");
+    private Task Then_TGM003_flags_the_model()
+    {
+        _report.Errors.Should().ContainSingle().Subject.RuleId.Should().Be("TGM003");
+        return Task.CompletedTask;
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

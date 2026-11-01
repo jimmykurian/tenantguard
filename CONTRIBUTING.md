@@ -57,9 +57,10 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | `task test:integration` | `tests/integration/`: the EF Core behavior pins (SPEC 9) and the test kit's own tests |
 | `task test:e2e` | `tests/e2e/`: the isolation probe against each sample app |
 | `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
-| `task lint` | `dotnet format --verify-no-changes` on the solution and the samples, then `lint:api` and `lint:headers` |
+| `task lint` | `dotnet format --verify-no-changes` on the solution and the samples, then `lint:api`, `lint:headers` and `lint:scenarios` |
 | `task lint:api` | fails when `PublicAPI.Shipped.txt` or `PublicAPI.Unshipped.txt` is out of date |
 | `task lint:headers` | checks the YAML files and git hooks start with the copyright line; StyleCop checks C# |
+| `task lint:scenarios` | fails on LightBDD's `[Scenario]`, which xunit.v3 4 silently skips |
 | `task fmt` | formats the solution and the samples |
 | `task pack` | builds the NuGet packages into `./artifacts/`, then checks their metadata, symbols and docs with Meziantou's NuGet package validator |
 | `task release:push` | pushes the packages to nuget.org with the key in `$NUGET_API_KEY`; the release workflow runs it |
@@ -100,6 +101,13 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
   test); [Bogus](https://github.com/bchavez/Bogus) fills entity values where a test checks
   that messages leave them out. Every model rule has a positive and a negative model in
   `tests/unit/TenantGuard.EntityFrameworkCore.Tests/Models/`.
+- **Integration tests** read as [LightBDD](https://github.com/LightBDD/LightBDD) scenarios:
+  the feature class derives from `FeatureFixture` with a `[FeatureDescription]`, and each
+  test is a `[Fact]` that runs Given/When/Then step methods through
+  `Runner.RunScenarioAsync`. Use `[Fact]`, not `[Scenario]`: LightBDD.XUnit3 3.12.1 does not
+  load on xunit.v3 4, and the test platform then drops `[Scenario]` tests without a word
+  ([LightBDD#409](https://github.com/LightBDD/LightBDD/issues/409)); `task lint:scenarios`
+  catches it. LightBDD's HTML report lands in each project's `bin/.../Reports/`.
 - **Analyzer tests** run each rule through `CSharpAnalyzerTest` and mark where a
   diagnostic lands with `{|TG001:...|}`.
 - **Behavior pins** in `tests/integration/TenantGuard.BehaviorPins` pin the EF Core behaviors the

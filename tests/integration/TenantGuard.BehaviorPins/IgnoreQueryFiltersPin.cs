@@ -2,37 +2,55 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using LightBDD.Framework;
+using LightBDD.Framework.Scenarios;
+using LightBDD.XUnit3;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// IgnoreQueryFilters() returns every tenant's rows, which is why analyzer TG001
-// flags it.
 // https://learn.microsoft.com/ef/core/querying/filters
-public sealed class IgnoreQueryFiltersPin
+[FeatureDescription("IgnoreQueryFilters() returns every tenant's rows, which is why analyzer TG001 flags it.")]
+public sealed class IgnoreQueryFiltersPin : FeatureFixture, IAsyncDisposable
 {
+    private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private DbContextOptions<PinContext> _options = null!;
+    private List<string> _tenants = [];
+
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
     [Fact]
-    public async Task IgnoreQueryFilters_returns_other_tenants_rows()
+    public Task IgnoreQueryFilters_returns_other_tenants_rows()
+        => Runner.RunScenarioAsync(
+            Given_acme_and_globex_each_have_an_invoice,
+            When_globex_reads_every_invoice_with_IgnoreQueryFilters,
+            Then_globex_gets_both_tenants_invoices);
+
+    public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
+
+    private async Task Given_acme_and_globex_each_have_an_invoice()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync(cancellationToken);
-        var options = new DbContextOptionsBuilder<PinContext>().UseSqlite(connection).Options;
+        await _connection.OpenAsync(Token);
+        _options = new DbContextOptionsBuilder<PinContext>().UseSqlite(_connection).Options;
+        await using var setup = new PinContext(_options, "acme");
+        await setup.Database.EnsureCreatedAsync(Token);
+        setup.Invoices.AddRange(
+            new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" },
+            new Invoice { Id = 2, TenantId = "globex", Number = "globex-1" });
+        await setup.SaveChangesAsync(Token);
+    }
 
-        await using (var setup = new PinContext(options, "acme"))
-        {
-            await setup.Database.EnsureCreatedAsync(cancellationToken);
-            setup.Invoices.AddRange(
-                new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" },
-                new Invoice { Id = 2, TenantId = "globex", Number = "globex-1" });
-            await setup.SaveChangesAsync(cancellationToken);
-        }
+    private async Task When_globex_reads_every_invoice_with_IgnoreQueryFilters()
+    {
+        await using var globex = new PinContext(_options, "globex");
+        _tenants = await globex.Invoices.IgnoreQueryFilters().OrderBy(invoice => invoice.Id).Select(invoice => invoice.TenantId).ToListAsync(Token);
+    }
 
-        await using var globex = new PinContext(options, "globex");
-
-        var tenants = await globex.Invoices.IgnoreQueryFilters().OrderBy(invoice => invoice.Id).Select(invoice => invoice.TenantId).ToListAsync(cancellationToken);
-        tenants.Should().Equal("acme", "globex");
+    private Task Then_globex_gets_both_tenants_invoices()
+    {
+        _tenants.Should().Equal("acme", "globex");
+        return Task.CompletedTask;
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

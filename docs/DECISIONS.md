@@ -14,7 +14,8 @@ Decision: "Tests use xUnit v3, `Microsoft.EntityFrameworkCore.Sqlite`,
 (AGENTS.md), so assertions were xUnit's `Assert.*` and fakes were written by hand.
 
 Problem: none; the maintainer asked to assert with AwesomeAssertions and to evaluate
-NSubstitute, Bogus, AutoFixture, AutoFixture.AutoNSubstitute, FsCheck and Verify.MSTest.
+NSubstitute, Bogus, AutoFixture, AutoFixture.AutoNSubstitute, FsCheck and Verify.MSTest,
+and to refactor the integration tests to LightBDD.
 
 Change, all test-only:
 
@@ -39,6 +40,15 @@ Change, all test-only:
   cross-tenant write and checks the exceptions and logs; a probe test does the same for
   the report and its table. Elsewhere tests keep fixed values: only the tenant and the key
   matter to them.
+- **LightBDD** (BSD-2-Clause) for the integration tests: the behavior pins, the test
+  kit's probe scenarios and the provider tests read as Given/When/Then steps, with a
+  feature description per class and an HTML report. LightBDD.XUnit3 3.12.1 is built against
+  xunit.v3 3.2.2 and throws a TypeLoadException on xunit.v3 4 (LightBDD#409, open); the
+  test platform then drops every `[Scenario]` test without reporting it, so a broken
+  scenario looked like a pass. Scenarios therefore run from `[Fact]` through
+  `Runner.RunScenarioAsync`, which works, and `task lint:scenarios` fails on `[Scenario]`.
+  When LightBDD supports xunit.v3 4, switch to `[Scenario]` and drop the check. The
+  argument-checking probe tests and the FsCheck properties stay plain facts.
 - **AutoFixture and AutoFixture.AutoNSubstitute are not used.** Each test's EF model is the
   point of the test, so anonymous objects have nothing to fill.
 
