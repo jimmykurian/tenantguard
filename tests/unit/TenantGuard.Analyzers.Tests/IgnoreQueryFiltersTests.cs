@@ -225,9 +225,7 @@ public sealed class IgnoreQueryFiltersTests
     {
         var rule = IgnoreQueryFiltersAnalyzer.Rule;
 
-        Assert.Equal(("TG001", DiagnosticSeverity.Warning), (rule.Id, rule.DefaultSeverity));
-        Assert.Equal(
-            "IgnoreQueryFilters disables the tenant filter. Add [AllowCrossTenantAccess(\"why\")] to the method, or ignore only the non-tenant filters by name.",
-            rule.MessageFormat.ToString(CultureInfo.InvariantCulture));
+        (rule.Id, rule.DefaultSeverity).Should().Be(("TG001", DiagnosticSeverity.Warning));
+        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("IgnoreQueryFilters disables the tenant filter. Add [AllowCrossTenantAccess(\"why\")] to the method, or ignore only the non-tenant filters by name.");
     }
 }

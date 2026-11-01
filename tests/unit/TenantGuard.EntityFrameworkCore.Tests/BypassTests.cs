@@ -29,9 +29,9 @@ public sealed class BypassTests
             acme.SaveChanges();
         }
 
-        Assert.Equal("globex", Assert.Single(db.AllInvoices()).TenantId);
-        var entry = Assert.Single(capture.TenantGuardEntries, entry => entry.EventName == "Bypass");
-        Assert.Equal((LogLevel.Warning, "TenantGuard bypass: nightly aggregation across tenants (Shop)"), (entry.Level, entry.Message));
+        db.AllInvoices().Should().ContainSingle().Subject.TenantId.Should().Be("globex");
+        var entry = capture.TenantGuardEntries.Should().ContainSingle(entry => entry.EventName == "Bypass").Subject;
+        (entry.Level, entry.Message).Should().Be((LogLevel.Warning, "TenantGuard bypass: nightly aggregation across tenants (Shop)"));
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class BypassTests
         acme.TenantGuard().Bypass("one-off import").Dispose();
         acme.Invoices.Add(new Invoice { Id = 1, TenantId = "globex", Number = "globex-1" });
 
-        Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>();
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class BypassTests
 
         acme.SaveChanges();
 
-        Assert.Single(db.AllInvoices());
+        db.AllInvoices().Should().ContainSingle();
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public sealed class BypassTests
         second.CurrentTenant = "acme";
         second.Invoices.Add(new Invoice { Id = 1, TenantId = "globex", Number = "globex-1" });
 
-        Assert.Same(first, second);
-        Assert.Throws<TenantIsolationViolationException>(() => second.SaveChanges());
+        second.Should().BeSameAs(first);
+        FluentActions.Invoking(() => second.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>();
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class BypassTests
 
         using (acme.TenantGuard().Bypass("report"))
         {
-            Assert.Equal("acme", Assert.Single(acme.Invoices).TenantId);
+            acme.Invoices.Should().ContainSingle().Subject.TenantId.Should().Be("acme");
         }
     }
 
@@ -107,7 +107,7 @@ public sealed class BypassTests
         using var db = new ShopDatabase();
         using var acme = db.Create("acme");
 
-        Assert.Throws<ArgumentException>(() => acme.TenantGuard().Bypass(reason));
+        FluentActions.Invoking(() => acme.TenantGuard().Bypass(reason)).Should().ThrowExactly<ArgumentException>();
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public sealed class BypassTests
         using var db = new ShopDatabase();
         using var acme = db.Create("acme");
 
-        Assert.Throws<ArgumentNullException>(() => acme.TenantGuard().Bypass(null!));
+        FluentActions.Invoking(() => acme.TenantGuard().Bypass(null!)).Should().ThrowExactly<ArgumentNullException>();
     }
 
     [Fact]
@@ -124,8 +124,8 @@ public sealed class BypassTests
     {
         using var context = TestModels.Create<Tgm001Models.Guarded>();
 
-        var exception = Assert.Throws<InvalidOperationException>(() => context.TenantGuard());
+        var exception = FluentActions.Invoking(() => context.TenantGuard()).Should().ThrowExactly<InvalidOperationException>().Which;
 
-        Assert.Equal("Guarded does not use TenantGuard. Add UseTenantGuard to its options.", exception.Message);
+        exception.Message.Should().Be("Guarded does not use TenantGuard. Add UseTenantGuard to its options.");
     }
 }

@@ -12,20 +12,19 @@ public sealed class OptionsBuilderTests
 {
     [Fact]
     public void TenantPropertyNames_needs_at_least_one_name()
-        => Assert.Throws<ArgumentException>(() => new TenantGuardOptionsBuilder().TenantPropertyNames());
+        => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().TenantPropertyNames()).Should().ThrowExactly<ArgumentException>();
 
     [Fact]
     public void TenantPropertyNames_rejects_a_blank_name()
-        => Assert.Throws<ArgumentException>(() => new TenantGuardOptionsBuilder().TenantPropertyNames("TenantId", " "));
+        => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().TenantPropertyNames("TenantId", " ")).Should().ThrowExactly<ArgumentException>();
 
     [Fact]
     public void TenantProperty_needs_a_property_of_the_entity()
-        => Assert.Throws<ArgumentException>(
-            () => new TenantGuardOptionsBuilder().TenantProperty<DiscoveryModels.Account>(account => account.OrgId.Trim()));
+        => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().TenantProperty<DiscoveryModels.Account>(account => account.OrgId.Trim())).Should().ThrowExactly<ArgumentException>();
 
     [Fact]
     public void Enforcement_rejects_an_unknown_value()
-        => Assert.Throws<ArgumentOutOfRangeException>(() => new TenantGuardOptionsBuilder().Enforcement((Enforcement)42));
+        => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().Enforcement((Enforcement)42)).Should().ThrowExactly<ArgumentOutOfRangeException>();
 
     [Fact]
     public void A_second_UseTenantGuard_builds_on_the_first()
@@ -36,8 +35,8 @@ public sealed class OptionsBuilderTests
 
         var options = builder.Options.FindExtension<TenantGuardOptionsExtension>()!.Options;
 
-        Assert.Equal("OrgId", Assert.Single(options.TenantPropertyNames));
-        Assert.Equal(Enforcement.Log, options.Enforcement);
+        options.TenantPropertyNames.Should().ContainSingle().Subject.Should().Be("OrgId");
+        options.Enforcement.Should().Be(Enforcement.Log);
     }
 
     [Fact]
@@ -46,8 +45,8 @@ public sealed class OptionsBuilderTests
         var first = new TenantGuardOptionsExtension(new TenantGuardOptionsBuilder().Shared<DiscoveryModels.Account>().Options);
         var second = new TenantGuardOptionsExtension(new TenantGuardOptionsBuilder().Shared<DiscoveryModels.Account>().Options);
 
-        Assert.True(first.Info.ShouldUseSameServiceProvider(second.Info));
-        Assert.Equal(first.Info.GetServiceProviderHashCode(), second.Info.GetServiceProviderHashCode());
+        first.Info.ShouldUseSameServiceProvider(second.Info).Should().BeTrue();
+        second.Info.GetServiceProviderHashCode().Should().Be(first.Info.GetServiceProviderHashCode());
     }
 
     [Fact]
@@ -56,6 +55,6 @@ public sealed class OptionsBuilderTests
         var first = new TenantGuardOptionsExtension(new TenantGuardOptionsBuilder().Options);
         var second = new TenantGuardOptionsExtension(new TenantGuardOptionsBuilder().Enforcement(Enforcement.Log).Options);
 
-        Assert.False(first.Info.ShouldUseSameServiceProvider(second.Info));
+        first.Info.ShouldUseSameServiceProvider(second.Info).Should().BeFalse();
     }
 }

@@ -30,6 +30,7 @@
 
   <ItemGroup Label="Tests">
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="AwesomeAssertions" Version="9.6.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />
     <!-- Transitive from the analyzer testing package; pinned past the advisories on 9.0.x. -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />

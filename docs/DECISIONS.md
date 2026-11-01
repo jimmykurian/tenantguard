@@ -7,6 +7,22 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-11-01: Tests assert with AwesomeAssertions (accepted)
+
+Decision: "Tests use xUnit v3, `Microsoft.EntityFrameworkCore.Sqlite`,
+`Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, and the ASP.NET Core shared framework"
+(AGENTS.md), so assertions were xUnit's `Assert.*`.
+
+Problem: none; requested by the maintainer. AwesomeAssertions (Apache-2.0, the community
+fork of FluentAssertions 7) reads as a sentence and reports the expectation, the actual
+value and where they differ.
+
+Change: every test project references `AwesomeAssertions` through
+`tests/Directory.Build.props`, with a global `using`, and the 231 `Assert.*` calls are
+rewritten. `Assert.Throws<T>` becomes `ThrowExactly<T>`, keeping xUnit's exact-type check,
+and `Assert.Equal` on a sequence becomes the ordered `Equal`. xUnit stays the test
+framework, and only test projects take the dependency.
+
 ## 2026-11-01: End-to-end tests live in tests/e2e, Finbuckle with them (accepted)
 
 Decision: "Do not take a dependency on Finbuckle or any tenancy library outside

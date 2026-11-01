@@ -28,10 +28,8 @@ public abstract class ProviderProbeTests
     {
         var report = await ProbeAsync((options, tenant) => new LeakyShop(options, tenant), Guard(tg => tg.Enforcement(Enforcement.Log)));
 
-        Assert.Equal(
-            [("Customer", "ReadIsolation"), ("Customer", "FindIsolation"), ("Customer", "BulkIsolation")],
-            report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).Select(row => (row.Entity, row.Check)));
-        Assert.All(report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed), row => Assert.Equal(ProbeOutcome.Failed, row.Outcome));
+        report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).Select(row => (row.Entity, row.Check)).Should().Equal([("Customer", "ReadIsolation"), ("Customer", "FindIsolation"), ("Customer", "BulkIsolation")]);
+        report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).Should().AllSatisfy(row => row.Outcome.Should().Be(ProbeOutcome.Failed));
     }
 
     [Fact]
@@ -40,8 +38,8 @@ public abstract class ProviderProbeTests
         var report = await ProbeAsync((options, tenant) => new Shop(options, tenant), tenantGuard: null);
 
         var notPassed = report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).ToList();
-        Assert.All(notPassed, row => Assert.Contains(row.Check, _guardChecks));
-        Assert.Equal(12, notPassed.Count);
+        notPassed.Should().AllSatisfy(row => _guardChecks.Should().Contain(row.Check));
+        notPassed.Count.Should().Be(12);
     }
 
     // Options for a new database with the given name on the server.

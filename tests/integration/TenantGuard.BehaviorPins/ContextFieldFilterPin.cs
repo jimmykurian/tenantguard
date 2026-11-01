@@ -38,9 +38,9 @@ public sealed class ContextFieldFilterPin
         await using var acme = new PinContext(options, "acme");
         await using var globex = new PinContext(options, "globex");
 
-        Assert.Equal("acme", Assert.Single(await acme.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)));
-        Assert.Equal("globex", Assert.Single(await globex.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)));
-        Assert.Empty(TenantGuardModel.Validate(globex.Model, new TenantGuardOptionsBuilder().Options).Findings);
+        (await acme.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)).Should().ContainSingle().Subject.Should().Be("acme");
+        (await globex.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)).Should().ContainSingle().Subject.Should().Be("globex");
+        TenantGuardModel.Validate(globex.Model, new TenantGuardOptionsBuilder().Options).Findings.Should().BeEmpty();
     }
 
     // Finbuckle's pattern: the filter reads a captured null of an interface the context implements,
@@ -65,9 +65,9 @@ public sealed class ContextFieldFilterPin
         await using var acme = new InterfaceContext(options, "acme");
         await using var globex = new InterfaceContext(options, "globex");
 
-        Assert.Equal("acme", Assert.Single(await acme.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)));
-        Assert.Equal("globex", Assert.Single(await globex.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)));
-        Assert.Empty(TenantGuardModel.Validate(globex.Model, new TenantGuardOptionsBuilder().Options).Findings);
+        (await acme.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)).Should().ContainSingle().Subject.Should().Be("acme");
+        (await globex.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken)).Should().ContainSingle().Subject.Should().Be("globex");
+        TenantGuardModel.Validate(globex.Model, new TenantGuardOptionsBuilder().Options).Findings.Should().BeEmpty();
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

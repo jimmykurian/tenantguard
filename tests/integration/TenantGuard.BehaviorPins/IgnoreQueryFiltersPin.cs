@@ -31,10 +31,8 @@ public sealed class IgnoreQueryFiltersPin
 
         await using var globex = new PinContext(options, "globex");
 
-        Assert.Collection(
-            await globex.Invoices.IgnoreQueryFilters().OrderBy(invoice => invoice.Id).Select(invoice => invoice.TenantId).ToListAsync(cancellationToken),
-            tenant => Assert.Equal("acme", tenant),
-            tenant => Assert.Equal("globex", tenant));
+        var tenants = await globex.Invoices.IgnoreQueryFilters().OrderBy(invoice => invoice.Id).Select(invoice => invoice.TenantId).ToListAsync(cancellationToken);
+        tenants.Should().Equal("acme", "globex");
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

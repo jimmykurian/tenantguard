@@ -31,8 +31,8 @@ public sealed class RequiredNavigationFilterPin
 
         await using var globex = new PinContext(options, "globex");
 
-        Assert.Equal(2, await globex.Posts.CountAsync(cancellationToken));
-        Assert.Equal("globex-1", Assert.Single(await globex.Posts.Include(post => post.Blog).ToListAsync(cancellationToken)).Title);
+        (await globex.Posts.CountAsync(cancellationToken)).Should().Be(2);
+        (await globex.Posts.Include(post => post.Blog).ToListAsync(cancellationToken)).Should().ContainSingle().Subject.Title.Should().Be("globex-1");
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

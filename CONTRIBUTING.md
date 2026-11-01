@@ -91,7 +91,9 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
 
 ## Tests
 
-- **Unit tests** use xUnit v3. Every model rule has a positive and a negative model in
+- **Tests** use xUnit v3 and assert with
+  [AwesomeAssertions](https://awesomeassertions.org) (`x.Should().Be(...)`), not
+  `Assert.*`. Every model rule has a positive and a negative model in
   `tests/unit/TenantGuard.EntityFrameworkCore.Tests/Models/`.
 - **Analyzer tests** run each rule through `CSharpAnalyzerTest` and mark where a
   diagnostic lands with `{|TG001:...|}`.

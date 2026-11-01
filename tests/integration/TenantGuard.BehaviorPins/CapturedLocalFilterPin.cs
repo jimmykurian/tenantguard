@@ -33,10 +33,10 @@ public sealed class CapturedLocalFilterPin
         await using var globex = new PinContext(options, "globex");
         var visible = await globex.Invoices.Select(invoice => invoice.TenantId).ToListAsync(cancellationToken);
 
-        Assert.Equal("acme", Assert.Single(visible));
+        visible.Should().ContainSingle().Subject.Should().Be("acme");
 
         var report = TenantGuardModel.Validate(globex.Model, new TenantGuardOptionsBuilder().Options);
-        Assert.Equal("TGM003", Assert.Single(report.Errors).RuleId);
+        report.Errors.Should().ContainSingle().Subject.RuleId.Should().Be("TGM003");
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

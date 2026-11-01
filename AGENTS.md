@@ -44,8 +44,8 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`,
   StyleCop.Analyzers (settings in `stylecop.json` and `.editorconfig`).
 - Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no
-  tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3,
-  `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`,
+  tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3 with
+  AwesomeAssertions, `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`,
   and the ASP.NET Core shared framework for a generic host; the opt-in provider tests
   (SPEC 12) add Testcontainers and the SQL Server and PostgreSQL providers. Finbuckle
   appears only in `samples/` and `tests/e2e/`.

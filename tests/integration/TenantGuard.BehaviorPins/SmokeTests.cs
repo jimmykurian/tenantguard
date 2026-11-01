@@ -26,7 +26,7 @@ public sealed class SmokeTests
         await using (var context = new SmokeContext(options))
         {
             var invoice = await context.Invoices.SingleAsync(TestContext.Current.CancellationToken);
-            Assert.Equal("acme", invoice.TenantId);
+            invoice.TenantId.Should().Be("acme");
         }
     }
 

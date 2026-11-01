@@ -18,14 +18,12 @@ public sealed class ConventionTests
     {
         using var context = TestModels.Create<ConventionModels.TwoUnguarded>(options => options.UseTenantGuard(_ => { }));
 
-        var exception = Assert.Throws<TenantGuardModelException>(() => context.Model);
+        var exception = FluentActions.Invoking(() => context.Model).Should().ThrowExactly<TenantGuardModelException>().Which;
 
-        Assert.Equal(
-            "TenantGuard found 2 model errors:\n"
+        exception.Message.Should().Be("TenantGuard found 2 model errors:\n"
                 + "- TGM001: Invoice has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type.\n"
-                + "- TGM001: Receipt has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type.",
-            exception.Message);
-        Assert.Equal(2, exception.Report.Errors.Count);
+                + "- TGM001: Receipt has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type.");
+        exception.Report.Errors.Count.Should().Be(2);
     }
 
     [Fact]
@@ -37,10 +35,9 @@ public sealed class ConventionTests
             .UseLoggerFactory(loggerFactory)
             .UseTenantGuard(tg => tg.Enforcement(Enforcement.Log)));
 
-        Assert.NotNull(context.Model);
+        context.Model.Should().NotBeNull();
 
-        Assert.Equal(
-            [
+        capture.TenantGuardEntries.Should().Equal([
                 new LogCapture.Entry(
                     TenantGuardLogging.Category,
                     LogLevel.Information,
@@ -51,8 +48,7 @@ public sealed class ConventionTests
                     LogLevel.Error,
                     "ModelFinding",
                     "TGM001: Invoice has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type."),
-            ],
-            capture.TenantGuardEntries);
+            ]);
     }
 
     [Fact]
@@ -64,12 +60,10 @@ public sealed class ConventionTests
             .UseLoggerFactory(loggerFactory)
             .UseTenantGuard(_ => { }));
 
-        Assert.NotNull(context.Model);
+        context.Model.Should().NotBeNull();
 
-        var warning = Assert.Single(capture.TenantGuardEntries, entry => entry.Level == LogLevel.Warning);
-        Assert.Equal(
-            "TGM005: Receipt.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.",
-            warning.Message);
+        var warning = capture.TenantGuardEntries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning).Subject;
+        warning.Message.Should().Be("TGM005: Receipt.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.");
     }
 
     [Fact]
@@ -77,11 +71,10 @@ public sealed class ConventionTests
     {
         using var context = TestModels.Create<Tgm001Models.Guarded>(options => options.UseTenantGuard(_ => { }));
 
-        var entities = Assert.IsType<TenantGuardEntities>(
-            context.Model.FindRuntimeAnnotationValue(TenantGuardEntities.AnnotationName));
+        var entities = context.Model.FindRuntimeAnnotationValue(TenantGuardEntities.AnnotationName).Should().BeOfType<TenantGuardEntities>().Subject;
 
         var invoice = context.Model.FindEntityType(typeof(Tgm001Models.Invoice))!;
-        Assert.Equal("TenantId", Assert.Single(entities.TenantProperties, pair => pair.Key == invoice.Name).Value);
+        entities.TenantProperties.Should().ContainSingle(pair => pair.Key == invoice.Name).Subject.Value.Should().Be("TenantId");
     }
 
     [Fact]
@@ -96,8 +89,8 @@ public sealed class ConventionTests
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
 
-        Assert.NotNull(scope.ServiceProvider.GetRequiredService<ConventionModels.AppLogged>().Model);
+        scope.ServiceProvider.GetRequiredService<ConventionModels.AppLogged>().Model.Should().NotBeNull();
 
-        Assert.Contains(capture.TenantGuardEntries, entry => entry.Level == LogLevel.Error && entry.EventName == "ModelFinding");
+        capture.TenantGuardEntries.Should().Contain(entry => entry.Level == LogLevel.Error && entry.EventName == "ModelFinding");
     }
 }

@@ -68,7 +68,7 @@ public sealed class UnverifiableRawSqlTests
     {
         var rule = UnverifiableRawSqlAnalyzer.Rule;
 
-        Assert.Equal(("TG004", DiagnosticSeverity.Info), (rule.Id, rule.DefaultSeverity));
-        Assert.Equal("Raw SQL built at runtime cannot be checked for a tenant predicate.", rule.MessageFormat.ToString(CultureInfo.InvariantCulture));
+        (rule.Id, rule.DefaultSeverity).Should().Be(("TG004", DiagnosticSeverity.Info));
+        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("Raw SQL built at runtime cannot be checked for a tenant predicate.");
     }
 }

@@ -170,9 +170,7 @@ public sealed class RawSqlWithoutTenantTests
     {
         var rule = RawSqlWithoutTenantAnalyzer.Rule;
 
-        Assert.Equal(("TG002", DiagnosticSeverity.Warning), (rule.Id, rule.DefaultSeverity));
-        Assert.Equal(
-            "Raw SQL bypasses query filters and does not mention '{0}'. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].",
-            rule.MessageFormat.ToString(CultureInfo.InvariantCulture));
+        (rule.Id, rule.DefaultSeverity).Should().Be(("TG002", DiagnosticSeverity.Warning));
+        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("Raw SQL bypasses query filters and does not mention '{0}'. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].");
     }
 }

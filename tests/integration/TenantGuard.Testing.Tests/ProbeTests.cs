@@ -25,9 +25,7 @@ public sealed class ProbeTests
         var report = await database.Probe().RunAsync(TestContext.Current.CancellationToken);
 
         report.AssertAllPassed();
-        Assert.Equal(
-            from entity in _shopEntities from check in _allChecks select (entity, check),
-            report.Rows.Select(row => (row.Entity, row.Check)));
+        report.Rows.Select(row => (row.Entity, row.Check)).Should().Equal(from entity in _shopEntities from check in _allChecks select (entity, check));
     }
 
     [Fact]
@@ -39,14 +37,12 @@ public sealed class ProbeTests
 
         var report = await database.Probe().RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            [
+        report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).Should().Equal([
                 new ProbeRow("Customer", "ReadIsolation", ProbeOutcome.Failed, "As acme, Set<Customer>() returned globex's row (Id: 2). As globex, Set<Customer>() returned acme's row (Id: 1)."),
                 new ProbeRow("Customer", "FindIsolation", ProbeOutcome.Failed, "As acme, FindAsync(Id: 2) returned globex's row. As globex, FindAsync(Id: 1) returned acme's row."),
                 new ProbeRow("Customer", "BulkIsolation", ProbeOutcome.Failed, "As acme, ExecuteDelete removed globex's row (Id: 2). As globex, ExecuteDelete removed acme's row (Id: 1)."),
-            ],
-            report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed));
-        Assert.Equal(24, report.Rows.Count);
+            ]);
+        report.Rows.Count.Should().Be(24);
     }
 
     [Fact]
@@ -57,12 +53,8 @@ public sealed class ProbeTests
         var report = await database.Probe().RunAsync(TestContext.Current.CancellationToken);
 
         var notPassed = report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).ToList();
-        Assert.Equal(
-            from entity in _shopEntities from check in _guardChecks select (entity, check, ProbeOutcome.Failed),
-            notPassed.Select(row => (row.Entity, row.Check, row.Outcome)));
-        Assert.Equal(
-            "As acme, SaveChanges updated globex's row (Id: 2); the context does not use UseTenantGuard. As globex, SaveChanges updated acme's row (Id: 1); the context does not use UseTenantGuard.",
-            Assert.Single(notPassed, row => row is { Entity: "Customer", Check: "UpdateGuard" }).Detail);
+        notPassed.Select(row => (row.Entity, row.Check, row.Outcome)).Should().Equal(from entity in _shopEntities from check in _guardChecks select (entity, check, ProbeOutcome.Failed));
+        notPassed.Should().ContainSingle(row => row.Entity == "Customer" && row.Check == "UpdateGuard").Subject.Detail.Should().Be("As acme, SaveChanges updated globex's row (Id: 2); the context does not use UseTenantGuard. As globex, SaveChanges updated acme's row (Id: 1); the context does not use UseTenantGuard.");
     }
 
     [Fact]
@@ -72,11 +64,9 @@ public sealed class ProbeTests
 
         var report = await database.Probe().RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.All(
-            report.Rows.Where(row => row.Entity != "Plain"),
-            row => Assert.Equal((ProbeOutcome.Skipped, "Needs a seeder: its required relationships form a cycle."), (row.Outcome, row.Detail)));
-        Assert.All(report.Rows.Where(row => row.Entity == "Plain"), row => Assert.Equal(ProbeOutcome.Passed, row.Outcome));
-        Assert.Equal(18, report.Rows.Count);
+        report.Rows.Where(row => row.Entity != "Plain").Should().AllSatisfy(row => (row.Outcome, row.Detail).Should().Be((ProbeOutcome.Skipped, "Needs a seeder: its required relationships form a cycle.")));
+        report.Rows.Where(row => row.Entity == "Plain").Should().AllSatisfy(row => row.Outcome.Should().Be(ProbeOutcome.Passed));
+        report.Rows.Count.Should().Be(18);
     }
 
     [Fact]
@@ -88,13 +78,11 @@ public sealed class ProbeTests
 
         var report = await database.Probe().RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            [
+        report.Rows.Where(row => row.Outcome == ProbeOutcome.Skipped).Select(row => (row.Entity, row.Detail)).Distinct().Should().Equal([
                 ("Seat", "Needs a seeder: its required principal Subscription cannot be seeded."),
                 ("Subscription", "Needs a seeder: Subscription has no parameterless constructor."),
-            ],
-            report.Rows.Where(row => row.Outcome == ProbeOutcome.Skipped).Select(row => (row.Entity, row.Detail)).Distinct());
-        Assert.DoesNotContain(report.Rows, row => row.Outcome != ProbeOutcome.Skipped);
+            ]);
+        report.Rows.Should().NotContain(row => row.Outcome != ProbeOutcome.Skipped);
     }
 
     [Fact]
@@ -110,7 +98,7 @@ public sealed class ProbeTests
 
         report.AssertAllPassed();
         await using var acme = database.Create("acme");
-        Assert.Equal("acme-gold", (await acme.Set<Subscription>().SingleAsync(TestContext.Current.CancellationToken)).Plan);
+        (await acme.Set<Subscription>().SingleAsync(TestContext.Current.CancellationToken)).Plan.Should().Be("acme-gold");
     }
 
     [Fact]
@@ -121,7 +109,7 @@ public sealed class ProbeTests
         await database.Probe("acme", "globex", "initech").RunAsync(TestContext.Current.CancellationToken);
 
         await using var context = database.Create(tenant: null);
-        Assert.Equal(1, await context.Countries.CountAsync(TestContext.Current.CancellationToken));
+        (await context.Countries.CountAsync(TestContext.Current.CancellationToken)).Should().Be(1);
     }
 
     [Fact]
@@ -139,11 +127,9 @@ public sealed class ProbeTests
     {
         await using var database = await ProbeDatabase<GuidShop>.CreateAsync((options, tenant) => new GuidShop(options, tenant), Guard<GuidShop>(shop => shop.CurrentTenant));
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => database.Probe().RunAsync(TestContext.Current.CancellationToken));
+        var exception = (await FluentActions.Awaiting(() => database.Probe().RunAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<InvalidOperationException>()).Which;
 
-        Assert.Equal(
-            "The tenant \"acme\" is not a Guid, the type of Ledger.TenantId. Pass WithTenants values the tenant property can hold.",
-            exception.Message);
+        exception.Message.Should().Be("The tenant \"acme\" is not a Guid, the type of Ledger.TenantId. Pass WithTenants values the tenant property can hold.");
     }
 
     [Fact]
@@ -155,8 +141,7 @@ public sealed class ProbeTests
             .UseTenantGuard(Guard<ShopBase>(shop => shop.CurrentTenant))
             .Options;
 
-        await Assert.ThrowsAsync<TenantGuardModelException>(
-            () => new TenantIsolationProbe<LeakyShop>(tenant => new LeakyShop(leaky, tenant)).WithTenants("acme", "globex").RunAsync(TestContext.Current.CancellationToken));
+        await FluentActions.Awaiting(() => new TenantIsolationProbe<LeakyShop>(tenant => new LeakyShop(leaky, tenant)).WithTenants("acme", "globex").RunAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<TenantGuardModelException>();
     }
 
     [Fact]
@@ -166,9 +151,9 @@ public sealed class ProbeTests
 
         var report = await database.Probe().RunAsync(TestContext.Current.CancellationToken);
 
-        var row = Assert.Single(report.Rows);
-        Assert.Equal(("(model)", "Discovery", ProbeOutcome.Skipped), (row.Entity, row.Check, row.Outcome));
-        Assert.Throws<TenantIsolationProbeException>(report.AssertAllPassed);
+        var row = report.Rows.Should().ContainSingle().Subject;
+        (row.Entity, row.Check, row.Outcome).Should().Be(("(model)", "Discovery", ProbeOutcome.Skipped));
+        FluentActions.Invoking(report.AssertAllPassed).Should().ThrowExactly<TenantIsolationProbeException>();
     }
 
     [Fact]
@@ -179,10 +164,9 @@ public sealed class ProbeTests
             Guard<ShopBase>(shop => shop.CurrentTenant, tg => tg.Enforcement(Enforcement.Log)));
         var report = await database.Probe().RunAsync(TestContext.Current.CancellationToken);
 
-        var exception = Assert.Throws<TenantIsolationProbeException>(report.AssertAllPassed);
+        var exception = FluentActions.Invoking(report.AssertAllPassed).Should().ThrowExactly<TenantIsolationProbeException>().Which;
 
-        Assert.Equal(
-            """
+        exception.Message.Should().Be("""
             TenantGuard isolation probe: 3 of 24 checks did not pass.
 
             Entity    Check          Outcome  Detail
@@ -190,8 +174,7 @@ public sealed class ProbeTests
             Customer  ReadIsolation  Failed   As acme, Set<Customer>() returned globex's row (Id: 2). As globex, Set<Customer>() returned acme's row (Id: 1).
             Customer  FindIsolation  Failed   As acme, FindAsync(Id: 2) returned globex's row. As globex, FindAsync(Id: 1) returned acme's row.
             Customer  BulkIsolation  Failed   As acme, ExecuteDelete removed globex's row (Id: 2). As globex, ExecuteDelete removed acme's row (Id: 1).
-            """.ReplaceLineEndings("\n"),
-            exception.Message);
+            """.ReplaceLineEndings("\n"));
     }
 
     [Fact]
@@ -199,10 +182,9 @@ public sealed class ProbeTests
     {
         await using var database = await ProbeDatabase<Shop>.CreateAsync((options, tenant) => new Shop(options, tenant), Guard<ShopBase>(shop => shop.CurrentTenant));
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => database.Probe().Seed<Plain>((_, _) => new Plain()).RunAsync(TestContext.Current.CancellationToken));
+        var exception = (await FluentActions.Awaiting(() => database.Probe().Seed<Plain>((_, _) => new Plain()).RunAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<InvalidOperationException>()).Which;
 
-        Assert.Equal("Seed<Plain> names a type that is not an entity type of Shop.", exception.Message);
+        exception.Message.Should().Be("Seed<Plain> names a type that is not an entity type of Shop.");
     }
 
     [Theory]
@@ -214,7 +196,7 @@ public sealed class ProbeTests
         var probe = new TenantIsolationProbe<Shop>(tenant => throw new InvalidOperationException("Not called."));
         string[] tenants = second is null ? [first] : [first, second];
 
-        Assert.Throws<ArgumentException>(() => probe.WithTenants(tenants));
+        FluentActions.Invoking(() => probe.WithTenants(tenants)).Should().ThrowExactly<ArgumentException>();
     }
 
     [Fact]
@@ -222,9 +204,9 @@ public sealed class ProbeTests
     {
         var probe = new TenantIsolationProbe<Shop>(tenant => throw new InvalidOperationException("Not called."));
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => probe.RunAsync(TestContext.Current.CancellationToken));
+        var exception = (await FluentActions.Awaiting(() => probe.RunAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<InvalidOperationException>()).Which;
 
-        Assert.Equal("Call WithTenants with at least two tenants before RunAsync.", exception.Message);
+        exception.Message.Should().Be("Call WithTenants with at least two tenants before RunAsync.");
     }
 
     // UseTenantGuard with CurrentTenant read from the context, plus anything else the test needs.

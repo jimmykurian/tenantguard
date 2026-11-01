@@ -32,15 +32,13 @@ public sealed class BulkOperationFilterPin
 
         await using (var globex = new PinContext(options, "globex"))
         {
-            Assert.Equal(1, await globex.Invoices.ExecuteUpdateAsync(setters => setters.SetProperty(invoice => invoice.Number, "changed"), cancellationToken));
-            Assert.Equal(1, await globex.Invoices.ExecuteDeleteAsync(cancellationToken));
+            (await globex.Invoices.ExecuteUpdateAsync(setters => setters.SetProperty(invoice => invoice.Number, "changed"), cancellationToken)).Should().Be(1);
+            (await globex.Invoices.ExecuteDeleteAsync(cancellationToken)).Should().Be(1);
         }
 
         await using var acme = new PinContext(options, "acme");
-        Assert.Collection(
-            await acme.Invoices.OrderBy(invoice => invoice.Id).Select(invoice => invoice.Number).ToListAsync(cancellationToken),
-            number => Assert.Equal("acme-1", number),
-            number => Assert.Equal("acme-2", number));
+        var numbers = await acme.Invoices.OrderBy(invoice => invoice.Id).Select(invoice => invoice.Number).ToListAsync(cancellationToken);
+        numbers.Should().Equal("acme-1", "acme-2");
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

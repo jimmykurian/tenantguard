@@ -123,7 +123,7 @@ public sealed class MissingJustificationTests
     {
         var rule = MissingJustificationAnalyzer.Rule;
 
-        Assert.Equal(("TG003", DiagnosticSeverity.Error), (rule.Id, rule.DefaultSeverity));
-        Assert.Equal("AllowCrossTenantAccess needs a reason.", rule.MessageFormat.ToString(CultureInfo.InvariantCulture));
+        (rule.Id, rule.DefaultSeverity).Should().Be(("TG003", DiagnosticSeverity.Error));
+        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("AllowCrossTenantAccess needs a reason.");
     }
 }

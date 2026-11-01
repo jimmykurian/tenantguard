@@ -31,8 +31,8 @@ public sealed class FindAsyncFilterPin
 
         await using var globex = new PinContext(options, "globex");
 
-        Assert.Null(await globex.Invoices.FindAsync([1], cancellationToken));
-        Assert.NotNull(await globex.Invoices.FindAsync([2], cancellationToken));
+        (await globex.Invoices.FindAsync([1], cancellationToken)).Should().BeNull();
+        (await globex.Invoices.FindAsync([2], cancellationToken)).Should().NotBeNull();
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)
