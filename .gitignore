@@ -9,3 +9,6 @@ TestResults/
 .vscode/
 *.DotSettings.user
 .DS_Store
+
+# Verify snapshot files from a failing run; the .verified.* files are committed.
+*.received.*

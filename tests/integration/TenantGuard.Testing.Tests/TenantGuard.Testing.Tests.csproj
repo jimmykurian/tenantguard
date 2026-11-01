@@ -2,11 +2,17 @@
 
   <PropertyGroup>
     <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <!-- Verify's maintenance fee: TenantGuard is open source and earns no revenue. The
+         exemption runs at most 12 months; renew the month before it ends, or the build fails. -->
+    <Verify_SponsorshipExemption>OpenSource</Verify_SponsorshipExemption>
+    <Verify_SponsorshipExemptionUntil>2027-11</Verify_SponsorshipExemptionUntil>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="FsCheck" />
+    <PackageReference Include="Verify.XunitV3" />
   </ItemGroup>
 
 </Project>

@@ -7,21 +7,38 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
-## 2026-11-01: Tests assert with AwesomeAssertions (accepted)
+## 2026-11-01: Test libraries beyond xUnit (accepted)
 
 Decision: "Tests use xUnit v3, `Microsoft.EntityFrameworkCore.Sqlite`,
 `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, and the ASP.NET Core shared framework"
-(AGENTS.md), so assertions were xUnit's `Assert.*`.
+(AGENTS.md), so assertions were xUnit's `Assert.*` and fakes were written by hand.
 
-Problem: none; requested by the maintainer. AwesomeAssertions (Apache-2.0, the community
-fork of FluentAssertions 7) reads as a sentence and reports the expectation, the actual
-value and where they differ.
+Problem: none; the maintainer asked to assert with AwesomeAssertions and to evaluate
+NSubstitute, Bogus, AutoFixture, AutoFixture.AutoNSubstitute, FsCheck and Verify.MSTest.
 
-Change: every test project references `AwesomeAssertions` through
-`tests/Directory.Build.props`, with a global `using`, and the 231 `Assert.*` calls are
-rewritten. `Assert.Throws<T>` becomes `ThrowExactly<T>`, keeping xUnit's exact-type check,
-and `Assert.Equal` on a sequence becomes the ordered `Equal`. xUnit stays the test
-framework, and only test projects take the dependency.
+Change, all test-only:
+
+- **AwesomeAssertions** (Apache-2.0, the community fork of FluentAssertions 7) in every
+  test project, through `tests/Directory.Build.props` with a global `using`. The 231
+  `Assert.*` calls are rewritten. `Assert.Throws<T>` becomes `ThrowExactly<T>`, keeping
+  xUnit's exact-type check, and `Assert.Equal` on a sequence becomes the ordered `Equal`.
+- **FsCheck** property tests where a rule holds for every input: blank tenant property
+  names and bypass reasons are rejected, names and reasons are kept as given, and the
+  probe converts any tenant string into a string or Guid tenant property, or fails naming
+  both. Referenced by the projects that use it.
+- **NSubstitute** for Finbuckle's tenant context accessor in `tests/e2e`, replacing a
+  hand-written fake. `LogCapture` stays hand-written: substituting `ILogger.Log<TState>`
+  with its formatter reads worse than the capture.
+- **Verify.XunitV3**, not Verify.MSTest, which needs MSTest; the tests run on xUnit v3. It
+  snapshots the probe's failure table, the one long user-facing output. Verify charges a
+  maintenance fee, and the build fails without a declaration: the test kit's test project
+  claims the OpenSource exemption until 2027-11. Renew it before then, or the build fails.
+- **Bogus, AutoFixture and AutoFixture.AutoNSubstitute are not used.** Tests use the
+  synthetic tenants `acme`, `globex` and `initech` and assert exact messages, the probe
+  seeds its own deterministic rows, and each test's EF model is the point of the test, so
+  random or anonymous data has nothing to replace.
+
+xUnit stays the test framework.
 
 ## 2026-11-01: End-to-end tests live in tests/e2e, Finbuckle with them (accepted)
 

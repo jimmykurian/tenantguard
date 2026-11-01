@@ -166,15 +166,8 @@ public sealed class ProbeTests
 
         var exception = FluentActions.Invoking(report.AssertAllPassed).Should().ThrowExactly<TenantIsolationProbeException>().Which;
 
-        exception.Message.Should().Be("""
-            TenantGuard isolation probe: 3 of 24 checks did not pass.
-
-            Entity    Check          Outcome  Detail
-            --------  -------------  -------  ------
-            Customer  ReadIsolation  Failed   As acme, Set<Customer>() returned globex's row (Id: 2). As globex, Set<Customer>() returned acme's row (Id: 1).
-            Customer  FindIsolation  Failed   As acme, FindAsync(Id: 2) returned globex's row. As globex, FindAsync(Id: 1) returned acme's row.
-            Customer  BulkIsolation  Failed   As acme, ExecuteDelete removed globex's row (Id: 2). As globex, ExecuteDelete removed acme's row (Id: 1).
-            """.ReplaceLineEndings("\n"));
+        // The table is the probe's output to the user; the snapshot is next to this file.
+        await Verify(exception.Message);
     }
 
     [Fact]

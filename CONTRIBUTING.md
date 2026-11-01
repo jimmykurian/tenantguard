@@ -93,7 +93,11 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
 
 - **Tests** use xUnit v3 and assert with
   [AwesomeAssertions](https://awesomeassertions.org) (`x.Should().Be(...)`), not
-  `Assert.*`. Every model rule has a positive and a negative model in
+  `Assert.*`. Where a rule holds for every input, a property test with
+  [FsCheck](https://fscheck.github.io/FsCheck/) checks it; fakes of interfaces use
+  [NSubstitute](https://nsubstitute.github.io/); long user-facing output is a
+  [Verify](https://github.com/VerifyTests/Verify) snapshot (`*.verified.txt`, next to the
+  test). Every model rule has a positive and a negative model in
   `tests/unit/TenantGuard.EntityFrameworkCore.Tests/Models/`.
 - **Analyzer tests** run each rule through `CSharpAnalyzerTest` and mark where a
   diagnostic lands with `{|TG001:...|}`.

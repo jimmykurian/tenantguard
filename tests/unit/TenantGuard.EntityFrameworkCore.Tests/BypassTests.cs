@@ -2,6 +2,8 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using FsCheck;
+using FsCheck.Fluent;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -99,15 +101,34 @@ public sealed class BypassTests
         }
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Bypass_needs_a_reason(string reason)
+    [Fact]
+    public void Bypass_needs_a_reason()
     {
         using var db = new ShopDatabase();
         using var acme = db.Create("acme");
 
-        FluentActions.Invoking(() => acme.TenantGuard().Bypass(reason)).Should().ThrowExactly<ArgumentException>();
+        Prop.ForAll(
+                Generators.Blank(),
+                reason => FluentActions.Invoking(() => acme.TenantGuard().Bypass(reason)).Should().ThrowExactly<ArgumentException>())
+            .QuickCheckThrowOnFailure();
+    }
+
+    [Fact]
+    public void Bypass_logs_any_reason_as_given()
+    {
+        using var db = new ShopDatabase();
+        using var capture = new LogCapture();
+        using var loggerFactory = LoggerFactory.Create(logging => logging.AddProvider(capture));
+        using var acme = db.Create("acme", loggerFactory: loggerFactory);
+
+        Prop.ForAll(
+                Generators.NonBlank(),
+                reason =>
+                {
+                    acme.TenantGuard().Bypass(reason).Dispose();
+                    capture.TenantGuardEntries[^1].Message.Should().Be($"TenantGuard bypass: {reason} (Shop)");
+                })
+            .QuickCheckThrowOnFailure();
     }
 
     [Fact]

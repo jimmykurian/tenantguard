@@ -2,8 +2,11 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using FsCheck;
+using FsCheck.Fluent;
 using Microsoft.EntityFrameworkCore;
 using TenantGuard.EntityFrameworkCore.Tests.Models;
+using TenantGuard.EntityFrameworkCore.Tests.Support;
 
 namespace TenantGuard.EntityFrameworkCore.Tests;
 
@@ -15,8 +18,18 @@ public sealed class OptionsBuilderTests
         => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().TenantPropertyNames()).Should().ThrowExactly<ArgumentException>();
 
     [Fact]
-    public void TenantPropertyNames_rejects_a_blank_name()
-        => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().TenantPropertyNames("TenantId", " ")).Should().ThrowExactly<ArgumentException>();
+    public void TenantPropertyNames_rejects_any_blank_name()
+        => Prop.ForAll(
+                Generators.Blank(),
+                blank => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().TenantPropertyNames("TenantId", blank)).Should().ThrowExactly<ArgumentException>())
+            .QuickCheckThrowOnFailure();
+
+    [Fact]
+    public void TenantPropertyNames_keeps_the_names_as_given_and_in_order()
+        => Prop.ForAll(
+                Generators.NonBlank().Array().Filter(names => names.Length > 0),
+                names => new TenantGuardOptionsBuilder().TenantPropertyNames(names).Options.TenantPropertyNames.Should().Equal(names))
+            .QuickCheckThrowOnFailure();
 
     [Fact]
     public void TenantProperty_needs_a_property_of_the_entity()

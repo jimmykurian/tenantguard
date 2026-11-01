@@ -11,6 +11,16 @@ trim_trailing_whitespace = true
 [*.{csproj,props,targets,slnx,xml,json,yml,yaml}]
 indent_size = 2
 
+# Verify snapshots: written by Verify and compared byte for byte, so editors leave them alone.
+[*.{received,verified}.txt]
+charset = utf-8-bom
+end_of_line = lf
+indent_size = unset
+indent_style = unset
+insert_final_newline = false
+tab_width = unset
+trim_trailing_whitespace = false
+
 [*.md]
 trim_trailing_whitespace = false
 

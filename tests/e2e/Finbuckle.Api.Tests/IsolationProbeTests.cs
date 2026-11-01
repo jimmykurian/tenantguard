@@ -18,12 +18,12 @@ public sealed class IsolationProbeTests
         await using var connection = new SqliteConnection("DataSource=:memory:");
         await connection.OpenAsync(cancellationToken);
         var options = new DbContextOptionsBuilder<AppDbContext>().UseAppDatabase(connection).Options;
-        await using (var setup = new AppDbContext(new FixedTenant(tenant: null), options))
+        await using (var setup = new AppDbContext(FixedTenant.For(tenant: null), options))
         {
             await setup.Database.EnsureCreatedAsync(cancellationToken);
         }
 
-        var report = await new TenantIsolationProbe<AppDbContext>(tenant => new AppDbContext(new FixedTenant(tenant), options))
+        var report = await new TenantIsolationProbe<AppDbContext>(tenant => new AppDbContext(FixedTenant.For(tenant), options))
             .WithTenants("acme", "globex")
             .RunAsync(cancellationToken);
 
