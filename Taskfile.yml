@@ -109,10 +109,14 @@ tasks:
       # ContinuousIntegrationBuild maps source paths to /_/, so the symbols match on any machine.
       - dotnet pack {{.SOLUTION}} -c {{.CONFIGURATION}} -o artifacts -p:ContinuousIntegrationBuild=true
       - dotnet tool restore
-      # PackageIdAvailableOnNuGetOrg fails once a version is on nuget.org.
+      # PackageIdAvailableOnNuGetOrg fails once a version is on nuget.org. Rules 119 and 120
+      # download each source file from GitHub at the commit SourceLink names and compare its
+      # hash, so they only pass for a pushed commit with no local changes: CI runs them
+      # (GitHub sets CI), a local pack skips them.
       - >-
         dotnet meziantou.validate-nuget-package artifacts/*.nupkg
         --excluded-rules PackageIdAvailableOnNuGetOrg
+        {{if not .CI}}--excluded-rule-ids 119 --excluded-rule-ids 120{{end}}
 
   # The release workflow (release.yml) runs these two after task pack.
   release:push:
