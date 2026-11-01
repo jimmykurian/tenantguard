@@ -63,7 +63,7 @@ For each entity type in the model, the tenant property is the first match of:
 2. A property carrying `[TenantKey]` (attribute shipped in the runtime package).
 3. Finbuckle's multi-tenant annotation on the entity type, `Finbuckle:MultiTenant`
    (Finbuckle's `Constants.MultiTenantAnnotationName`; matched by string, no package
-   reference; `samples/Finbuckle.Api.Tests` checks it against the sample's Finbuckle
+   reference; `tests/e2e/Finbuckle.Api.Tests` checks it against the sample's Finbuckle
    version), with Finbuckle's `TenantId` property.
 4. A property (CLR or shadow) whose name is in `TenantPropertyNames`
    (default `["TenantId"]`).
@@ -327,7 +327,7 @@ Phase 5 on.
 
 ## 9. Behavior pins
 
-`tests/TenantGuard.BehaviorPins` asserts, against SQLite, the EF behaviors the design
+`tests/integration/TenantGuard.BehaviorPins` asserts, against SQLite, the EF behaviors the design
 assumes. Each is one test with the EF docs link in a comment.
 
 1. Query filters apply to `FindAsync` when the entity is not already tracked.

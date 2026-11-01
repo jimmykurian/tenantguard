@@ -23,11 +23,11 @@ Delete the options that don't apply.
 
 - [ ] `task ci` passes (lint, build, test, pack, samples, scrub)
 - [ ] A model rule change has a positive and a negative model in
-      `tests/TenantGuard.EntityFrameworkCore.Tests/Models/`
+      `tests/unit/TenantGuard.EntityFrameworkCore.Tests/Models/`
 - [ ] An analyzer change has `CSharpAnalyzerTest` cases with `{|TG00n:...|}` markup
 - [ ] A change that relies on new EF Core behavior pins it in
-      `tests/TenantGuard.BehaviorPins`
-- [ ] A write guard or test kit change passes the samples' isolation probe tests
+      `tests/integration/TenantGuard.BehaviorPins`
+- [ ] A write guard or test kit change passes the end-to-end tests in `tests/e2e/`
 
 ## Checklist
 

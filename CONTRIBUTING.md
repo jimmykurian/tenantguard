@@ -52,10 +52,10 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | Task | What it does |
 | --- | --- |
 | `task build` | restores and builds the solution, warnings as errors |
-| `task test` | runs every test project |
-| `task test:unit` | the runtime and test kit unit tests |
-| `task test:analyzers` | the analyzer tests |
-| `task test:behavior` | the EF Core behavior pins (SPEC 9) |
+| `task test` | runs the unit, integration and end-to-end tests |
+| `task test:unit` | `tests/unit/`: the runtime and analyzer tests |
+| `task test:integration` | `tests/integration/`: the EF Core behavior pins (SPEC 9) and the test kit's own tests |
+| `task test:e2e` | `tests/e2e/`: the isolation probe against each sample app |
 | `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
 | `task lint` | `dotnet format --verify-no-changes` on the solution and the samples, then `lint:api` and `lint:headers` |
 | `task lint:api` | fails when `PublicAPI.Shipped.txt` or `PublicAPI.Unshipped.txt` is out of date |
@@ -64,7 +64,7 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | `task pack` | builds the NuGet packages into `./artifacts/`, then checks their metadata, symbols and docs with Meziantou's NuGet package validator |
 | `task release:push` | pushes the packages to nuget.org with the key in `$NUGET_API_KEY`; the release workflow runs it |
 | `task release:attach -- vX.Y.Z` | attaches the packages to that GitHub Release; the release workflow runs it |
-| `task samples` | builds the samples, smoke-tests each one and runs their isolation probe tests |
+| `task samples` | builds the samples and smoke-tests each one |
 | `task scrub` | greps the tree for the private terms in `$SCRUB_TERMS_FILE`; warns and passes when it isn't set |
 | `task ci` | lint, build, test, pack, samples and scrub, in order |
 | `task hooks:install` | turns on the git hooks in `.githooks/` |
@@ -79,8 +79,11 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
   `Microsoft.CodeAnalysis.CSharp` 4.8.0. The runtime package carries them too.
 - `src/TenantGuard.Testing`: the isolation probe. `Probe/` runs the checks, `Seeding/`
   creates the rows, and `Report/` holds the report and its table.
-- `tests/`: a test project per package, and `TenantGuard.BehaviorPins`.
-- `samples/`: a hand-rolled app and a Finbuckle app, each with a probe test project.
+- `tests/unit/`: the runtime and analyzer tests, in process.
+- `tests/integration/`: the EF Core behavior pins, the test kit's own tests, and the
+  provider tests.
+- `tests/e2e/`: a test project per sample app.
+- `samples/`: a hand-rolled app and a Finbuckle app.
 
 The public surface is small and documented with XML docs; everything else is `internal`,
 with `InternalsVisibleTo` for the test projects. `PublicAPI.Shipped.txt` holds the
@@ -89,16 +92,17 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
 ## Tests
 
 - **Unit tests** use xUnit v3. Every model rule has a positive and a negative model in
-  `tests/TenantGuard.EntityFrameworkCore.Tests/Models/`.
+  `tests/unit/TenantGuard.EntityFrameworkCore.Tests/Models/`.
 - **Analyzer tests** run each rule through `CSharpAnalyzerTest` and mark where a
   diagnostic lands with `{|TG001:...|}`.
-- **Behavior pins** in `tests/TenantGuard.BehaviorPins` pin the EF Core behaviors the
+- **Behavior pins** in `tests/integration/TenantGuard.BehaviorPins` pin the EF Core behaviors the
   design relies on (SPEC 9). If one fails on a new EF Core version, stop and open an
   issue.
 - **The test kit is tested against itself:** a deliberately leaky model must make the
   probe fail with the expected rows.
-- **The samples** run the probe against their own models in `task samples`.
-- **Provider tests** in `tests/TenantGuard.Providers.Tests` run the probe on SQL Server
+- **End-to-end tests** in `tests/e2e/` run the probe against each sample app's own
+  model and registration, in `task test:e2e`.
+- **Provider tests** in `tests/integration/TenantGuard.Providers.Tests` run the probe on SQL Server
   and PostgreSQL in Testcontainers, so they need Docker. `task test` leaves them out;
   `providers.yml` runs them on demand, nightly, and on pull requests that change them,
   and they are never required to merge.

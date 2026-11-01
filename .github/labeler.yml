@@ -24,17 +24,17 @@ tests:
   - changed-files:
       - any-glob-to-any-file:
           - "tests/**"
-          - "samples/*.Tests/**"
 
 pins:
   - changed-files:
       - any-glob-to-any-file:
-          - "tests/TenantGuard.BehaviorPins/**"
+          - "tests/integration/TenantGuard.BehaviorPins/**"
 
 samples:
   - changed-files:
       - any-glob-to-any-file:
           - "samples/**"
+          - "tests/e2e/**"
 
 # Contracts and docs
 

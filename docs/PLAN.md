@@ -14,10 +14,9 @@ global.json                      .NET SDK 11, rollForward latestFeature
 src/TenantGuard.EntityFrameworkCore/
 src/TenantGuard.Analyzers/
 src/TenantGuard.Testing/
-tests/TenantGuard.EntityFrameworkCore.Tests/
-tests/TenantGuard.Analyzers.Tests/
-tests/TenantGuard.Testing.Tests/
-tests/TenantGuard.BehaviorPins/
+tests/unit/                      TenantGuard.EntityFrameworkCore.Tests, TenantGuard.Analyzers.Tests
+tests/integration/               TenantGuard.BehaviorPins, TenantGuard.Testing.Tests, TenantGuard.Providers.Tests
+tests/e2e/                       HandRolled.Api.Tests, Finbuckle.Api.Tests
 samples/HandRolled.Api/          minimal API, own ITenantContext, own filters
 samples/Finbuckle.Api/           Finbuckle.MultiTenant, proves library-agnostic
 docs/                            SPEC.md, PLAN.md, DECISIONS.md, guides/, reference/

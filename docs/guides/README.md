@@ -10,4 +10,5 @@ option and message.
 - [Migrating an existing app](migrating.md): turn TenantGuard on without stopping
   production
 
-The [samples](../../samples) run what the first two guides show, each with a probe test.
+The [samples](../../samples) run what the first two guides show, and
+[`tests/e2e`](../../tests/e2e) runs the probe against each one.

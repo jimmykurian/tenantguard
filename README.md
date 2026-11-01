@@ -193,7 +193,8 @@ check looks for the column's name in the SQL text; it doesn't parse SQL.
 - [Guides](https://github.com/jimmykurian/tenantguard/blob/main/docs/guides/README.md):
   hand-rolled filters, Finbuckle, testing, migrating an existing app
 - [Samples](https://github.com/jimmykurian/tenantguard/tree/main/samples): a hand-rolled
-  app and a Finbuckle app, each with a probe test
+  app and a Finbuckle app, each with a probe test in
+  [`tests/e2e`](https://github.com/jimmykurian/tenantguard/tree/main/tests/e2e)
 - [Changelog](https://github.com/jimmykurian/tenantguard/blob/main/CHANGELOG.md)
 
 ## Building from source

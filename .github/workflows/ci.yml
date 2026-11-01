@@ -41,14 +41,14 @@ jobs:
         run: task build
       - name: Unit tests
         run: task test:unit
-      - name: Analyzer tests
-        run: task test:analyzers
-      - name: Behavior pins
-        run: task test:behavior
+      - name: Integration tests
+        run: task test:integration
       - name: Pack
         run: task pack
       - name: Samples
         run: task samples
+      - name: End-to-end tests
+        run: task test:e2e
       - name: Scrub
         run: task scrub
 

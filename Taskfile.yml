@@ -6,8 +6,8 @@ vars:
   SOLUTION: TenantGuard.slnx
   CONFIGURATION: Release
   SAMPLES: HandRolled.Api Finbuckle.Api
-  # Each sample's isolation probe tests.
-  SAMPLE_TESTS: HandRolled.Api.Tests Finbuckle.Api.Tests
+  # The end-to-end tests in tests/e2e, one per sample app.
+  E2E_TESTS: HandRolled.Api.Tests Finbuckle.Api.Tests
   # Absolute: `dotnet test` in the .NET 11 RC SDK resolves a relative --project against the
   # project's own directory.
   TESTS: "{{.ROOT_DIR}}/tests"
@@ -23,33 +23,35 @@ tasks:
       - dotnet build {{.SOLUTION}} -c {{.CONFIGURATION}}
 
   test:
-    desc: Run every test project
+    desc: Run the unit, integration and end-to-end tests
     cmds:
       - task: test:unit
-      - task: test:analyzers
-      - task: test:behavior
+      - task: test:integration
+      - task: test:e2e
 
   test:unit:
-    desc: Run the runtime and test kit unit tests
+    desc: Run the unit tests (tests/unit)
     cmds:
-      - dotnet test --project "{{.TESTS}}/TenantGuard.EntityFrameworkCore.Tests" -c {{.CONFIGURATION}}
-      - dotnet test --project "{{.TESTS}}/TenantGuard.Testing.Tests" -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/unit/TenantGuard.Analyzers.Tests" -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/unit/TenantGuard.EntityFrameworkCore.Tests" -c {{.CONFIGURATION}}
 
-  test:analyzers:
-    desc: Run the analyzer tests
+  test:integration:
+    desc: Run the integration tests (tests/integration) except the provider tests
     cmds:
-      - dotnet test --project "{{.TESTS}}/TenantGuard.Analyzers.Tests" -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/integration/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/integration/TenantGuard.Testing.Tests" -c {{.CONFIGURATION}}
 
-  test:behavior:
-    desc: Run the EF Core behavior pins
+  test:e2e:
+    desc: Run the end-to-end tests (tests/e2e) against the sample apps
     cmds:
-      - dotnet test --project "{{.TESTS}}/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
+      - for: { var: E2E_TESTS, split: " " }
+        cmd: dotnet test --project "{{.TESTS}}/e2e/{{.ITEM}}" -c {{.CONFIGURATION}}
 
   # Opt-in: needs Docker, so test leaves it out and providers.yml runs it.
   test:providers:
     desc: Run the isolation probe on SQL Server and PostgreSQL in Testcontainers (needs Docker)
     cmds:
-      - dotnet test --project "{{.TESTS}}/TenantGuard.Providers.Tests" -c {{.CONFIGURATION}}
+      - dotnet test --project "{{.TESTS}}/integration/TenantGuard.Providers.Tests" -c {{.CONFIGURATION}}
 
   lint:
     desc: Check formatting and analyzers, then the public API files and the copyright headers
@@ -57,8 +59,8 @@ tasks:
       - dotnet format {{.SOLUTION}} --verify-no-changes
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet format samples/{{.ITEM}} --verify-no-changes
-      - for: { var: SAMPLE_TESTS, split: " " }
-        cmd: dotnet format samples/{{.ITEM}} --verify-no-changes
+      - for: { var: E2E_TESTS, split: " " }
+        cmd: dotnet format tests/e2e/{{.ITEM}} --verify-no-changes
       - task: lint:api
       - task: lint:headers
 
@@ -99,8 +101,8 @@ tasks:
       - dotnet format {{.SOLUTION}}
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet format samples/{{.ITEM}}
-      - for: { var: SAMPLE_TESTS, split: " " }
-        cmd: dotnet format samples/{{.ITEM}}
+      - for: { var: E2E_TESTS, split: " " }
+        cmd: dotnet format tests/e2e/{{.ITEM}}
 
   pack:
     desc: Build the NuGet packages into ./artifacts/ and validate them
@@ -135,14 +137,12 @@ tasks:
       - gh release upload "{{.CLI_ARGS}}" artifacts/*.nupkg artifacts/*.snupkg --clobber
 
   samples:
-    desc: Build the samples, smoke-test each one and run their isolation probe tests
+    desc: Build the samples and smoke-test each one (task test:e2e runs their tests)
     cmds:
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet build samples/{{.ITEM}} -c {{.CONFIGURATION}}
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet run --project samples/{{.ITEM}} -c {{.CONFIGURATION}} --no-build -- --smoke --urls http://127.0.0.1:0
-      - for: { var: SAMPLE_TESTS, split: " " }
-        cmd: dotnet test --project "{{.ROOT_DIR}}/samples/{{.ITEM}}" -c {{.CONFIGURATION}}
 
   scrub:
     desc: Grep the tree for the private terms in $SCRUB_TERMS_FILE

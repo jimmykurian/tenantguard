@@ -12,8 +12,8 @@ to work in this repo. Read all three before writing code.
 Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enforces that.
 
 - `task build` restores and builds the solution, warnings as errors
-- `task test` runs every test project; `task test:unit`, `task test:analyzers`,
-  `task test:behavior` run one group
+- `task test` runs the unit, integration and end-to-end tests; `task test:unit`,
+  `task test:integration`, `task test:e2e` run one folder of `tests/`
 - `task test:providers` runs the probe on SQL Server and PostgreSQL in Testcontainers;
   it needs Docker, so `task test` leaves it out and `providers.yml` runs it
 - `task lint` runs `dotnet format --verify-no-changes`, the Roslyn analyzers,
@@ -48,7 +48,7 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`,
   and the ASP.NET Core shared framework for a generic host; the opt-in provider tests
   (SPEC 12) add Testcontainers and the SQL Server and PostgreSQL providers. Finbuckle
-  appears only in `samples/`.
+  appears only in `samples/` and `tests/e2e/`.
 - Model validation runs as an EF convention (`IModelFinalizedConvention` via an
   `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator`.
 - Rule IDs, messages, option names and exception types are fixed by `docs/SPEC.md`.
@@ -75,8 +75,10 @@ If a decision turns out to be wrong, write the problem and the proposed change i
 
 ## Testing
 
-- Every rule has a positive and a negative model in `tests/.../Models/`.
-- `tests/TenantGuard.BehaviorPins` holds tests that pin the EF Core behaviors the design
+- `tests/unit/` runs in process (SQLite in memory at most), `tests/integration/` pins EF
+  Core and runs the probe on real databases, `tests/e2e/` drives the sample apps.
+- Every rule has a positive and a negative model in `tests/unit/.../Models/`.
+- `tests/integration/TenantGuard.BehaviorPins` holds tests that pin the EF Core behaviors the design
   relies on (SPEC section 9). If a pin fails on a new EF version, stop and ask.
 - Analyzer tests use the `CSharpAnalyzerTest` verifier with `{|TG001:...|}` markup.
 - The test kit is tested against itself: a deliberately leaky model must make the probe
@@ -110,6 +112,7 @@ and passes.
 
 - Do not implement anything under Phase 6 (backlog) in `docs/PLAN.md`.
 - Do not add an option, rule or public type the spec does not list. Propose it first.
-- Do not take a dependency on Finbuckle or any tenancy library outside `samples/`.
+- Do not take a dependency on Finbuckle or any tenancy library outside `samples/` and
+  `tests/e2e/`.
 - Do not add a `CLAUDE.md`. Claude Code (2.1.277 or later) reads `AGENTS.md` directly, but
   only when no `CLAUDE.md` exists.

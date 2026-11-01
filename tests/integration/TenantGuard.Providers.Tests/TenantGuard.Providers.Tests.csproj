@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
+    <ProjectReference Include="../../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Testcontainers.MsSql" />
