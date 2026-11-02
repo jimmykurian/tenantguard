@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0-preview.7](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.6...v0.1.0-preview.7) (2026-11-02)
+
+
+### Documentation
+
+* add a site favicon and ACCESSIBILITY.md, and slim AGENTS.md ([#47](https://github.com/jimmykurian/tenantguard/issues/47)) ([619be25](https://github.com/jimmykurian/tenantguard/commit/619be25c655bdb99d267d85f399d2aa044bc13f9))
+* give the docs site the Rapide theme ([#45](https://github.com/jimmykurian/tenantguard/issues/45)) ([031a6bb](https://github.com/jimmykurian/tenantguard/commit/031a6bb4165935ee19b43c9ebfdb1b0edb7c4579))
+
 ## [0.1.0-preview.6](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.5...v0.1.0-preview.6) (2026-11-02)
 
 
