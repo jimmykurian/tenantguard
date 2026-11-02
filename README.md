@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/jimmykurian/tenantguard/main/assets/icon.png" alt="TenantGuard logo: a shield divided into separate cells, one per tenant" width="96" height="96">
+
 # TenantGuard
 
 > **Preview.** The 0.1.0 previews build their net11.0 target against the EF Core 11
