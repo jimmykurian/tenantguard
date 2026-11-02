@@ -327,7 +327,3 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 </details>
 
 <!-- METRICS:END -->
-
-## License
-
-[Apache-2.0](LICENSE)
