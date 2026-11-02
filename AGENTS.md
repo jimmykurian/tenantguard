@@ -1,134 +1,71 @@
 # TenantGuard
 
-EF Core packages that prove a multi-tenant model leaks nothing: startup model validation,
-a SaveChanges interceptor, Roslyn analyzers and a test kit. Library-agnostic: it works on
-Finbuckle, on any of the tenancy packages, and on hand-rolled query filters.
+EF Core packages that prove a multi-tenant model leaks nothing. Query filters isolate
+tenants until someone forgets one, switches it off or writes around it; TenantGuard catches
+each of those at build (Roslyn analyzers), at startup (model rules), on `SaveChanges` (a
+write guard) and in tests (an isolation probe). It works on Finbuckle, any tenancy package
+and hand-rolled query filters.
 
-`docs/reference/` says what TenantGuard does, word for word, and `docs/architecture/` how it
-is built; the records in `docs/architecture/decisions/` say why. The roadmap (GitHub project
-2, by milestone) says what's next. This file says how to work in this repo. Read the
-architecture overview and the decisions index before writing code.
+## Map
 
-## Commands
+- `src/TenantGuard.EntityFrameworkCore`: the runtime package, in rings from the inside out:
+  `Options/`, `Model/`, `Diagnostics/`, `Interception/`, `Hosting/`
+- `src/TenantGuard.Analyzers`: TG001 to TG004, one file per rule
+- `src/TenantGuard.Testing`: the isolation probe (`Probe/`, `Seeding/`, `Report/`)
+- `tests/unit/`, `tests/architecture/`, `tests/integration/`, `tests/e2e/`: one task each
+- `samples/`: a hand-rolled app and a Finbuckle app; `site/`: the docs site, built from `docs/`
+- `docs/reference/`: what TenantGuard does, word for word. It is the contract: rule IDs,
+  messages, options, exceptions and the public API
+- `docs/architecture/decisions/`: why it is built this way, one record per decision
 
-Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enforces that.
+## Verify
 
-- `task build` restores and builds the solution, warnings as errors
-- `task test` runs the unit, architecture, integration and end-to-end tests;
-  `task test:unit`, `task test:architecture`, `task test:integration`, `task test:e2e` run
-  one folder of `tests/`
-- `task test:providers` runs the probe on SQL Server and PostgreSQL in Testcontainers;
-  it needs Docker, so `task test` leaves it out and `providers.yml` runs it
-- `task lint` runs `task lint:format` (`dotnet format --verify-no-changes` and the Roslyn
-  analyzers), `task lint:api` (PublicAPI.Shipped/Unshipped are up to date),
-  `task lint:headers` (YAML files and git hooks start with the copyright line),
-  `task lint:scenarios` (no LightBDD `[Scenario]`, which xunit.v3 4 silently skips) and
-  `task metrics:check` (the README's code metrics are current; `task metrics:readme` writes
-  them)
-- `task fmt` formats
-- `task pack` builds the NuGet packages into `./artifacts/` and validates them
-- `task release:push` and `task release:attach` publish the packages; only `release.yml`
-  runs them
-- `task samples` builds and smoke-tests `samples/`
-- `task site:install`, `task site:check` (sync tests and build, failing on a broken link) and
-  `task site:dev` work on the docs site in `site/` (Astro Starlight, built from `docs/`;
-  Node.js 22+ and pnpm); `site.yml` deploys it to GitHub Pages
-- `task scrub` greps the tree for terms in `$SCRUB_TERMS_FILE` (see Clean room)
-- `task ci` runs lint, build, test, pack, samples, scrub and the docs site
-- `task hooks:install` turns on the git hooks in `.githooks/` (pre-commit, commit-msg,
-  pre-push)
+Everything runs through the Taskfile, and CI runs the same tasks.
 
-`task ci` must be green before you call any step done.
+- `task ci`: lint, build, test, pack, samples, scrub and the docs site. It must pass before
+  any step is done.
+- `task build`, `task test` (or `task test:unit`, `test:architecture`, `test:integration`,
+  `test:e2e`), `task lint`, `task fmt`; `task --list` has the rest.
 
-## Decisions already made (do not relitigate)
+Formatting, headers, the public API files, commit messages and the ring dependencies are
+checked by `task lint`, the git hooks and `tests/architecture/`: run them rather than
+checking by hand.
 
-Each has a record in `docs/architecture/decisions/`:
+## Read before you start
 
-- Targets `net10.0` (EF Core 10.x) and `net11.0` (EF Core 11.x); EF 11 only APIs sit behind
-  `#if NET11_0_OR_GREATER` (0010). Releases are previews until EF Core 11 is stable (0016).
-- Analyzers on `netstandard2.0` and `Microsoft.CodeAnalysis.CSharp` 4.8.0, bundled into the
-  runtime package under `analyzers/dotnet/cs` (0004).
-- Build: .NET SDK 11 pinned in `global.json` with `rollForward: latestFeature`, C# latest,
-  Central Package Management, nullable, `TreatWarningsAsErrors`, deterministic, SourceLink,
-  `PublicApiAnalyzers`, StyleCop.Analyzers (0005).
-- The runtime package depends on `Microsoft.EntityFrameworkCore` only: no provider, no
-  tenancy library, nothing beyond what EF brings (0002). Finbuckle appears only in
-  `samples/` and `tests/e2e/` (0017).
-- Model validation runs as an EF convention (`IModelFinalizedConvention` via an
-  `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator` (0003); startup
-  validation goes through `ValidateOnStart` (0009).
-- Rule IDs, messages, option names, exception types and the public API are the contract in
-  `docs/reference/` (0006). Changing one is a breaking change.
-- Public namespaces are `TenantGuard` and `TenantGuard.Testing`, whatever the folder (0007).
-- Tests use xUnit v3 with AwesomeAssertions, and FsCheck, NSubstitute, Bogus, Verify,
-  LightBDD and NetArchTest where they fit (0018); the provider tests add Testcontainers.
-- License Apache-2.0, one LICENSE at the root. C# files start with the StyleCop copyright
-  header set in `stylecop.json`; YAML files and scripts start with the same copyright line
-  as a comment. Other files have no header (0011).
+Read the ones that fit the task:
 
-If a decision turns out to be wrong, write a record with status Proposed in
-`docs/architecture/decisions/`, then stop and ask. Do not quietly work around it.
+- [CONTRIBUTING.md](CONTRIBUTING.md): setup, every task, code layout and conventions, tests,
+  commits, hooks, pull requests and releases
+- [docs/architecture/README.md](docs/architecture/README.md): packages, flows and vocabulary
+- [docs/architecture/decisions/README.md](docs/architecture/decisions/README.md): the
+  decision index; read the records your change touches
+- [docs/reference/README.md](docs/reference/README.md): the page for the rule, option or
+  check you are changing
+- [docs/testing/strategy.md](docs/testing/strategy.md): which test goes where, the test
+  libraries and the EF Core behavior pins
+- [docs/deployment/releases-and-ci.md](docs/deployment/releases-and-ci.md): the workflows
+- [ACCESSIBILITY.md](ACCESSIBILITY.md): rules for messages, output and docs
 
-## Code conventions
+## Rules
 
-- `src/TenantGuard.EntityFrameworkCore`: rings, innermost first; a ring depends only on rings
-  further in (tests/architecture enforces it): `Options/` (configuration), `Model/` (rules),
-  `Diagnostics/` (logging), `Interception/` (write guard), `Hosting/` (composition root, EF
-  convention, DI). `src/TenantGuard.Analyzers`: one file per rule.
-  `src/TenantGuard.Testing`: `Probe/`, `Seeding/`, `Report/`.
-- Public surface is small and documented with XML docs; everything else `internal`
-  with `InternalsVisibleTo` for the test projects.
-- Error messages name the entity, the property and the fix. Never include entity
-  property values other than tenant ids and key values in exceptions or logs.
-- No reflection over user types at query time. Per-model metadata is computed once and
-  cached on the `IModel` (annotation or `ConditionalWeakTable`).
-- No async-over-sync, no `Task.Result`. Interceptors implement both sync and async paths.
-
-## Testing
-
-- `tests/unit/` runs in process (SQLite in memory at most), `tests/architecture/` checks
-  the shipped assemblies' dependencies and public shape with NetArchTest,
-  `tests/integration/` pins EF Core and runs the probe on real databases, `tests/e2e/`
-  drives the sample apps. A dependency or public-surface rule here is enforced there.
-- Integration tests are LightBDD scenarios: Given/When/Then step methods run through
-  `Runner.RunScenarioAsync` from a `[Fact]`, never `[Scenario]` (0018).
-- Every rule has a positive and a negative model in `tests/unit/.../Models/`.
-- `tests/integration/TenantGuard.BehaviorPins` pins the EF Core behaviors the design relies
-  on (`docs/testing/strategy.md`). If a pin fails on a new EF version, stop and ask.
-- Analyzer tests use the `CSharpAnalyzerTest` verifier with `{|TG001:...|}` markup.
-- The test kit is tested against itself: a deliberately leaky model must make the probe
-  fail with the expected rows.
-- Samples are synthetic: `acme`, `globex`, `initech`. No real company or client names.
-
-## Clean room
-
-This is a from-scratch implementation. Do not read, copy or adapt code from any client
-codebase, audit, or other repository on this machine. No client names, finding IDs,
-ticket IDs or internal URLs anywhere in the tree. The README's audit story is told
-generically ("an audit of a SaaS codebase").
-
-`$SCRUB_TERMS_FILE` points at a private term list outside the repo. `task scrub` greps
-for them and must pass before every commit (the pre-commit hook runs it); unset, it warns
-and passes.
-
-## Workflow
-
-- Work one issue at a time. A feature issue (labelled `spec`) gets its reference page, and a
-  record when it changes a decision, agreed before any code.
-- When the issue's acceptance criteria pass and `task ci` is green, commit, summarize in a
-  few lines, and stop. Do not start the next issue until asked.
-- Conventional commits with the types and scopes in `.gitmessage`, which
-  `.githooks/commit-msg` checks. Small commits. Branch and PR; never commit to `main`.
-- Fill in `.github/PULL_REQUEST_TEMPLATE.md` in every pull request description.
-- Every `run:` step in this repo's workflows calls `task`. Third-party actions pinned to
-  a full SHA with a version comment.
-- Keep this file under 150 lines, and `README.md` and `docs/` accurate with every change.
-
-## Do not
-
-- Do not start a roadmap issue until asked.
-- Do not add an option, rule or public type `docs/reference/` does not list. Propose it first.
-- Do not take a dependency on Finbuckle or any tenancy library outside `samples/` and
-  `tests/e2e/`.
+- Work one issue at a time. A feature issue (labelled `spec`) gets its reference page, and
+  a decision record when it changes a decision, agreed before any code. Do not start a
+  roadmap issue until asked.
+- Do not add an option, rule or public type that `docs/reference/` doesn't list; propose it
+  first.
+- Decisions are settled. If one turns out wrong, write a record with status Proposed, then
+  stop and ask. If a behavior pin fails on a new EF Core version, stop and ask.
+- The runtime package depends on EF Core only. Finbuckle and other tenancy libraries appear
+  only in `samples/` and `tests/e2e/`.
+- Clean room: this is a from-scratch implementation. Do not read, copy or adapt code from
+  any client codebase, audit or other repository on this machine. No client names, finding
+  IDs, ticket IDs or internal URLs anywhere in the tree; tests and samples use `acme`,
+  `globex` and `initech`. `task scrub` checks the tree against `$SCRUB_TERMS_FILE`.
+- Branch and pull request, never `main`; fill in `.github/PULL_REQUEST_TEMPLATE.md`. When the
+  acceptance criteria pass and `task ci` is green, commit, summarize in a few lines and
+  stop.
+- Keep `README.md` and `docs/` accurate with every change. Keep this file short: guidance
+  for one kind of task goes in the doc that covers it, listed above.
 - Do not add a `CLAUDE.md`. Claude Code (2.1.277 or later) reads `AGENTS.md` directly, but
   only when no `CLAUDE.md` exists.

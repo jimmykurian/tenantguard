@@ -142,12 +142,17 @@ function main() {
     writeFileSync(target, convert(readFileSync(join(docs, rel), 'utf8'), rel, isDir));
   }
 
-  // The logo for Starlight's header and the home page, and every docs asset for links to it.
+  // The logo for Starlight's header and the home page, every docs asset for links to it,
+  // and the favicons.
   rmSync(join(site, 'src', 'assets'), { recursive: true, force: true });
   mkdirSync(join(site, 'src', 'assets'), { recursive: true });
   cpSync(join(repo, 'assets', 'logo.svg'), join(site, 'src', 'assets', 'logo.svg'));
   rmSync(join(site, 'public'), { recursive: true, force: true });
   cpSync(join(docs, 'assets'), join(site, 'public'), { recursive: true });
+  // The logo as the favicon (Starlight's default path), and the package icon as a PNG for
+  // browsers and home screens that don't take an SVG one.
+  cpSync(join(repo, 'assets', 'logo.svg'), join(site, 'public', 'favicon.svg'));
+  cpSync(join(repo, 'assets', 'icon.png'), join(site, 'public', 'favicon.png'));
   writeFileSync(join(content, 'changelog.md'), changelog(readFileSync(join(repo, 'CHANGELOG.md'), 'utf8')));
   console.log(`synced ${files.length} pages from ${relative(site, docs)}/ and the changelog`);
 }
