@@ -28,7 +28,7 @@ export function outputPath(rel) {
 
 /**
  * Returns the site route for a docs/ page, under BASE and ending in a slash. Astro
- * lowercases each segment, so SPEC.md is served at spec/.
+ * lowercases each segment, so STYLE.md would be served at style/.
  * @param {string} rel - path relative to docs/, with forward slashes
  */
 export function route(rel) {

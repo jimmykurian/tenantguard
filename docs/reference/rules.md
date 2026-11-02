@@ -21,7 +21,9 @@ For each entity type, the tenant property is the first match of:
 1. An explicit registration: `tg.TenantProperty<Invoice>(invoice => invoice.OrgId)`.
 2. A property marked `[TenantKey]`.
 3. Finbuckle's `Finbuckle:MultiTenant` annotation, which `IsMultiTenant()` adds, with
-   Finbuckle's `TenantId` property.
+   Finbuckle's `TenantId` property. It's matched by name, so the runtime package needs no
+   Finbuckle reference; `tests/e2e/Finbuckle.Api.Tests` checks the name against Finbuckle's
+   `Constants.MultiTenantAnnotationName`.
 4. A CLR or shadow property named in `TenantPropertyNames`, `TenantId` by default.
 
 An entity type with a tenant property is tenant-scoped. Only the root of an inheritance
@@ -165,7 +167,8 @@ follows the other operand's member and call chain to its root:
   that is a context, or a captured null of an interface or `DbContext` type, as the
   context.
 - A constant that is a `DbContext`: the context, which passes.
-- A constant of a compiler-generated closure type: a captured local, TGM003.
+- A constant of a compiler-generated closure type (marked `CompilerGeneratedAttribute`, or
+  named like `<>c__DisplayClass`): a captured local, TGM003.
 - A constant primitive, string, `Guid` or enum: TGM004.
 - A static member, or a static method call, extension methods included: passes. The
   call's arguments aren't examined.

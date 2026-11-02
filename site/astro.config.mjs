@@ -26,13 +26,16 @@ export default defineConfig({
         { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
         { label: 'Reference', items: [{ autogenerate: { directory: 'reference' } }] },
         {
-          label: 'Project',
+          label: 'Architecture',
           items: [
-            { label: 'Specification', link: '/spec/' },
-            { label: 'Decisions', link: '/decisions/' },
-            { label: 'Plan', link: '/plan/' },
+            'architecture',
+            'architecture/packages',
+            'architecture/flows',
+            { label: 'Decisions', items: [{ autogenerate: { directory: 'architecture/decisions' } }] },
           ],
         },
+        { label: 'Testing', items: [{ autogenerate: { directory: 'testing' } }] },
+        { label: 'Releases and CI', items: [{ autogenerate: { directory: 'deployment' } }] },
         { label: 'Changelog', link: '/changelog/' },
       ],
       // Fails the build on a broken link or anchor between pages.

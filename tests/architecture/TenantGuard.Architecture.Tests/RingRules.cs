@@ -8,7 +8,7 @@ using TenantGuard.Architecture.Tests.Support;
 namespace TenantGuard.Architecture.Tests;
 
 // The Dependency Rule inside the runtime package: its folders are rings, and a ring depends only
-// on rings further in. The public namespace is flat (SPEC 2), so a type's ring is the folder of
+// on rings further in. The public namespace is flat (ADR 0007), so a type's ring is the folder of
 // its source file, read from the symbols.
 public sealed class RingRules
 {

@@ -201,10 +201,12 @@ The full documentation is at **<https://jimmykurian.github.io/tenantguard/>**, w
 
 | | |
 | --- | --- |
-| [Guides](docs/guides/README.md) | [Hand-rolled filters](docs/guides/hand-rolled.md), [Finbuckle](docs/guides/finbuckle.md), [testing with the probe](docs/guides/testing.md) and [migrating an existing app](docs/guides/migrating.md) |
-| [Reference](docs/reference/README.md) | [Rules](docs/reference/rules.md) TGM001 to TGM008, [analyzers](docs/reference/analyzers.md) TG001 to TG004, [options](docs/reference/options.md), [exceptions](docs/reference/exceptions.md) and [logging](docs/reference/logging.md), with every message |
-| [Specification](docs/SPEC.md) | The contract: rule IDs, messages, options and public types, and the EF Core behaviors the design relies on |
-| [Decisions](docs/DECISIONS.md) | Why things are the way they are |
+| [Guides](docs/guides/README.md) | [Why TenantGuard](docs/guides/why.md), [hand-rolled filters](docs/guides/hand-rolled.md), [Finbuckle](docs/guides/finbuckle.md), [testing with the probe](docs/guides/testing.md) and [migrating an existing app](docs/guides/migrating.md) |
+| [Reference](docs/reference/README.md) | [Rules](docs/reference/rules.md) TGM001 to TGM008, [analyzers](docs/reference/analyzers.md) TG001 to TG004, the [write guard](docs/reference/write-guard.md), the [isolation probe](docs/reference/probe.md), [options](docs/reference/options.md), [exceptions](docs/reference/exceptions.md) and [logging](docs/reference/logging.md), with every message, and what stays [compatible](docs/reference/compatibility.md) |
+| [Architecture](docs/architecture/README.md) | The [packages](docs/architecture/packages.md), the [flows](docs/architecture/flows.md), and the [decision records](docs/architecture/decisions/README.md) behind them |
+| [Testing strategy](docs/testing/strategy.md) | How TenantGuard tests itself, and the EF Core behaviors it pins |
+| [Releases and CI](docs/deployment/releases-and-ci.md) | The workflows and how a release ships |
+| [Roadmap](https://github.com/users/jimmykurian/projects/2) | What's planned next, by milestone |
 | [Samples](samples/) | A hand-rolled app and a Finbuckle app, each with a probe test in [`tests/e2e`](tests/e2e/) |
 | [Changelog](CHANGELOG.md) | Every release |
 
@@ -240,7 +242,7 @@ flowchart LR
 
 Inside the runtime package the folders are rings, and each depends only on the rings
 further in; the architecture tests in [`tests/architecture`](tests/architecture/) fail on
-a dependency that points outward. [DECISIONS.md](docs/DECISIONS.md) records why.
+a dependency that points outward. [ADR 0019](docs/architecture/decisions/0019-runtime-folders-are-rings.md) records why.
 
 ## Development
 

@@ -8,8 +8,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check docs/PLAN.md and docs/DECISIONS.md for ideas already on the list, and add
-        your use case to an existing issue if there is one.
+        Check the roadmap (https://github.com/users/jimmykurian/projects/2) and the decision
+        records in docs/architecture/decisions/ for ideas already on the list, and add your
+        use case to an existing issue if there is one.
 
   - type: dropdown
     id: area

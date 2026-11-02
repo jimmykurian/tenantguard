@@ -8,7 +8,7 @@ using TenantGuard.Testing;
 
 namespace TenantGuard.Architecture.Tests;
 
-// The shape of the public API: SPEC 2 fixes the namespaces, and the folders only group files.
+// The shape of the public API: the namespaces are fixed (ADR 0007), and the folders only group files.
 public sealed class PublicSurfaceRules
 {
     [Fact]

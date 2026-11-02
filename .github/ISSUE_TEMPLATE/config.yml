@@ -6,5 +6,5 @@ contact_links:
     url: https://github.com/jimmykurian/tenantguard/blob/main/SECURITY.md
     about: Please don't open an issue for a vulnerability; follow the security policy.
   - name: What TenantGuard does
-    url: https://github.com/jimmykurian/tenantguard/blob/main/docs/SPEC.md
-    about: The spec covers the model rules, the write guard, the analyzers and the isolation probe.
+    url: https://jimmykurian.github.io/tenantguard/reference/
+    about: The reference covers the model rules, the write guard, the analyzers and the isolation probe.
