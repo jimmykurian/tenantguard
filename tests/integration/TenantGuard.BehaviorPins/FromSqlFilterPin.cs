@@ -2,38 +2,55 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using LightBDD.Framework;
+using LightBDD.Framework.Scenarios;
+using LightBDD.XUnit3;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// Query filters compose over FromSqlRaw on an entity type, so analyzer TG002 leaves
-// FromSql, FromSqlRaw and FromSqlInterpolated alone. If this fails, they join TG002.
 // https://learn.microsoft.com/ef/core/querying/sql-queries
-public sealed class FromSqlFilterPin
+[FeatureDescription("Query filters compose over FromSqlRaw on an entity type, so analyzer TG002 leaves FromSql, FromSqlRaw and FromSqlInterpolated alone. If this fails, they join TG002.")]
+public sealed class FromSqlFilterPin : FeatureFixture, IAsyncDisposable
 {
+    private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private DbContextOptions<PinContext> _options = null!;
+    private List<string> _tenants = [];
+
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
     [Fact]
-    public async Task FromSqlRaw_returns_only_the_current_tenants_rows()
+    public Task FromSqlRaw_returns_only_the_current_tenants_rows()
+        => Runner.RunScenarioAsync(
+            Given_acme_and_globex_each_have_an_invoice,
+            When_globex_reads_every_invoice_with_FromSqlRaw,
+            Then_globex_gets_only_its_own_invoice);
+
+    public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
+
+    private async Task Given_acme_and_globex_each_have_an_invoice()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync(cancellationToken);
-        var options = new DbContextOptionsBuilder<PinContext>().UseSqlite(connection).Options;
+        await _connection.OpenAsync(Token);
+        _options = new DbContextOptionsBuilder<PinContext>().UseSqlite(_connection).Options;
+        await using var setup = new PinContext(_options, "acme");
+        await setup.Database.EnsureCreatedAsync(Token);
+        setup.Invoices.AddRange(
+            new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" },
+            new Invoice { Id = 2, TenantId = "globex", Number = "globex-1" });
+        await setup.SaveChangesAsync(Token);
+    }
 
-        await using (var setup = new PinContext(options, "acme"))
-        {
-            await setup.Database.EnsureCreatedAsync(cancellationToken);
-            setup.Invoices.AddRange(
-                new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" },
-                new Invoice { Id = 2, TenantId = "globex", Number = "globex-1" });
-            await setup.SaveChangesAsync(cancellationToken);
-        }
+    private async Task When_globex_reads_every_invoice_with_FromSqlRaw()
+    {
+        await using var globex = new PinContext(_options, "globex");
+        _tenants = await globex.Invoices.FromSqlRaw("SELECT * FROM Invoices").Select(invoice => invoice.TenantId).ToListAsync(Token);
+    }
 
-        await using var globex = new PinContext(options, "globex");
-
-        Assert.Collection(
-            await globex.Invoices.FromSqlRaw("SELECT * FROM Invoices").Select(invoice => invoice.TenantId).ToListAsync(cancellationToken),
-            tenant => Assert.Equal("globex", tenant));
+    private Task Then_globex_gets_only_its_own_invoice()
+    {
+        _tenants.Should().Equal("globex");
+        return Task.CompletedTask;
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

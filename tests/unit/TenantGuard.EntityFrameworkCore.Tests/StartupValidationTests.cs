@@ -23,13 +23,10 @@ public sealed class StartupValidationTests
         builder.Services.AddTenantGuardStartupValidation<Tgm001Models.Unguarded>();
         using var host = builder.Build();
 
-        var exception = await Assert.ThrowsAsync<TenantGuardModelException>(
-            () => host.StartAsync(TestContext.Current.CancellationToken));
+        var exception = (await FluentActions.Awaiting(() => host.StartAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<TenantGuardModelException>()).Which;
 
-        Assert.Equal(
-            "TenantGuard found 1 model error:\n"
-                + "- TGM001: Invoice has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type.",
-            exception.Message);
+        exception.Message.Should().Be("TenantGuard found 1 model error:\n"
+                + "- TGM001: Invoice has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type.");
     }
 
     [Fact]
@@ -56,10 +53,9 @@ public sealed class StartupValidationTests
         builder.Services.AddTenantGuardStartupValidation<Tgm001Models.Unguarded>();
         using var host = builder.Build();
 
-        var exception = await Assert.ThrowsAsync<TenantGuardModelException>(
-            () => host.StartAsync(TestContext.Current.CancellationToken));
+        var exception = (await FluentActions.Awaiting(() => host.StartAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<TenantGuardModelException>()).Which;
 
-        Assert.Equal("TGM001", Assert.Single(exception.Report.Errors).RuleId);
+        exception.Report.Errors.Should().ContainSingle().Subject.RuleId.Should().Be("TGM001");
     }
 
     [Fact]
@@ -70,12 +66,9 @@ public sealed class StartupValidationTests
         builder.Services.AddTenantGuardStartupValidation<Tgm001Models.Unguarded>();
         using var host = builder.Build();
 
-        var exception = await Assert.ThrowsAsync<OptionsValidationException>(
-            () => host.StartAsync(TestContext.Current.CancellationToken));
+        var exception = (await FluentActions.Awaiting(() => host.StartAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<OptionsValidationException>()).Which;
 
-        Assert.Equal(
-            "AddTenantGuardStartupValidation<Unguarded>() needs Unguarded configured with UseTenantGuard; without it there are no rules to run.",
-            Assert.Single(exception.Failures));
+        exception.Failures.Should().ContainSingle().Subject.Should().Be("AddTenantGuardStartupValidation<Unguarded>() needs Unguarded configured with UseTenantGuard; without it there are no rules to run.");
     }
 
     [Fact]
@@ -85,11 +78,8 @@ public sealed class StartupValidationTests
         builder.Services.AddTenantGuardStartupValidation<Tgm001Models.Unguarded>();
         using var host = builder.Build();
 
-        var exception = await Assert.ThrowsAsync<OptionsValidationException>(
-            () => host.StartAsync(TestContext.Current.CancellationToken));
+        var exception = (await FluentActions.Awaiting(() => host.StartAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<OptionsValidationException>()).Which;
 
-        Assert.Equal(
-            "AddTenantGuardStartupValidation<Unguarded>() found neither Unguarded nor IDbContextFactory<Unguarded>. Register the context before the host starts.",
-            Assert.Single(exception.Failures));
+        exception.Failures.Should().ContainSingle().Subject.Should().Be("AddTenantGuardStartupValidation<Unguarded>() found neither Unguarded nor IDbContextFactory<Unguarded>. Register the context before the host starts.");
     }
 }

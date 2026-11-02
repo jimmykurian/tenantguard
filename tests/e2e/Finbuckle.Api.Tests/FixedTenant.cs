@@ -3,14 +3,19 @@
 // </copyright>
 
 using Finbuckle.MultiTenant.Abstractions;
+using NSubstitute;
 
 namespace Finbuckle.Api.Tests;
 
 // A Finbuckle context accessor that always holds one tenant, for the contexts the tests create.
-internal sealed class FixedTenant(string? tenant) : IMultiTenantContextAccessor<TenantInfo>
+internal static class FixedTenant
 {
-    public IMultiTenantContext<TenantInfo> MultiTenantContext { get; } =
-        new MultiTenantContext<TenantInfo>(tenant is null ? null! : new TenantInfo { Id = tenant, Identifier = tenant, Name = tenant });
-
-    IMultiTenantContext IMultiTenantContextAccessor.MultiTenantContext => MultiTenantContext;
+    public static IMultiTenantContextAccessor<TenantInfo> For(string? tenant)
+    {
+        var context = new MultiTenantContext<TenantInfo>(tenant is null ? null! : new TenantInfo { Id = tenant, Identifier = tenant, Name = tenant });
+        var accessor = Substitute.For<IMultiTenantContextAccessor<TenantInfo>>();
+        accessor.MultiTenantContext.Returns(context);
+        ((IMultiTenantContextAccessor)accessor).MultiTenantContext.Returns(context);
+        return accessor;
+    }
 }

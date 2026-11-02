@@ -52,14 +52,16 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | Task | What it does |
 | --- | --- |
 | `task build` | restores and builds the solution, warnings as errors |
-| `task test` | runs the unit, integration and end-to-end tests |
+| `task test` | runs the unit, architecture, integration and end-to-end tests |
 | `task test:unit` | `tests/unit/`: the runtime and analyzer tests |
+| `task test:architecture` | `tests/architecture/`: the dependency and public-surface rules over the shipped assemblies |
 | `task test:integration` | `tests/integration/`: the EF Core behavior pins (SPEC 9) and the test kit's own tests |
 | `task test:e2e` | `tests/e2e/`: the isolation probe against each sample app |
 | `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
-| `task lint` | `dotnet format --verify-no-changes` on the solution and the samples, then `lint:api` and `lint:headers` |
+| `task lint` | `dotnet format --verify-no-changes` on the solution and the samples, then `lint:api`, `lint:headers` and `lint:scenarios` |
 | `task lint:api` | fails when `PublicAPI.Shipped.txt` or `PublicAPI.Unshipped.txt` is out of date |
 | `task lint:headers` | checks the YAML files and git hooks start with the copyright line; StyleCop checks C# |
+| `task lint:scenarios` | fails on LightBDD's `[Scenario]`, which xunit.v3 4 silently skips |
 | `task fmt` | formats the solution and the samples |
 | `task pack` | builds the NuGet packages into `./artifacts/`, then checks their metadata, symbols and docs with Meziantou's NuGet package validator |
 | `task release:push` | pushes the packages to nuget.org with the key in `$NUGET_API_KEY`; the release workflow runs it |
@@ -80,6 +82,9 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 - `src/TenantGuard.Testing`: the isolation probe. `Probe/` runs the checks, `Seeding/`
   creates the rows, and `Report/` holds the report and its table.
 - `tests/unit/`: the runtime and analyzer tests, in process.
+- `tests/architecture/`: [NetArchTest](https://github.com/NeVeSpl/NetArchTest.eNhancedEdition)
+  rules over the three shipped assemblies: what each may depend on, where public types
+  live, sealed exceptions, and that every interceptor has both its sync and async path.
 - `tests/integration/`: the EF Core behavior pins, the test kit's own tests, and the
   provider tests.
 - `tests/e2e/`: a test project per sample app.
@@ -91,8 +96,22 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
 
 ## Tests
 
-- **Unit tests** use xUnit v3. Every model rule has a positive and a negative model in
+- **Tests** use xUnit v3 and assert with
+  [AwesomeAssertions](https://awesomeassertions.org) (`x.Should().Be(...)`), not
+  `Assert.*`. Where a rule holds for every input, a property test with
+  [FsCheck](https://fscheck.github.io/FsCheck/) checks it; fakes of interfaces use
+  [NSubstitute](https://nsubstitute.github.io/); long user-facing output is a
+  [Verify](https://github.com/VerifyTests/Verify) snapshot (`*.verified.txt`, next to the
+  test); [Bogus](https://github.com/bchavez/Bogus) fills entity values where a test checks
+  that messages leave them out. Every model rule has a positive and a negative model in
   `tests/unit/TenantGuard.EntityFrameworkCore.Tests/Models/`.
+- **Integration tests** read as [LightBDD](https://github.com/LightBDD/LightBDD) scenarios:
+  the feature class derives from `FeatureFixture` with a `[FeatureDescription]`, and each
+  test is a `[Fact]` that runs Given/When/Then step methods through
+  `Runner.RunScenarioAsync`. Use `[Fact]`, not `[Scenario]`: LightBDD.XUnit3 3.12.1 does not
+  load on xunit.v3 4, and the test platform then drops `[Scenario]` tests without a word
+  ([LightBDD#409](https://github.com/LightBDD/LightBDD/issues/409)); `task lint:scenarios`
+  catches it. LightBDD's HTML report lands in each project's `bin/.../Reports/`.
 - **Analyzer tests** run each rule through `CSharpAnalyzerTest` and mark where a
   diagnostic lands with `{|TG001:...|}`.
 - **Behavior pins** in `tests/integration/TenantGuard.BehaviorPins` pin the EF Core behaviors the
@@ -104,8 +123,9 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
   model and registration, in `task test:e2e`.
 - **Provider tests** in `tests/integration/TenantGuard.Providers.Tests` run the probe on SQL Server
   and PostgreSQL in Testcontainers, so they need Docker. `task test` leaves them out;
-  `providers.yml` runs them on demand, nightly, and on pull requests that change them,
-  and they are never required to merge.
+  `providers.yml` runs them on demand, nightly, and on pull requests that change the
+  runtime or test kit packages, the shared probe test models, the package versions or
+  the provider tests, and they are never required to merge.
 
 Use synthetic names in tests and samples, with tenants such as `acme`, `globex` and
 `initech`.

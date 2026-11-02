@@ -1,2 +1,4 @@
 * text=auto eol=lf
 *.png binary
+# Verify snapshots: compared byte for byte, so always LF.
+*.verified.txt text eol=lf working-tree-encoding=UTF-8

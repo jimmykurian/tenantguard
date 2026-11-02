@@ -23,9 +23,10 @@ tasks:
       - dotnet build {{.SOLUTION}} -c {{.CONFIGURATION}}
 
   test:
-    desc: Run the unit, integration and end-to-end tests
+    desc: Run the unit, architecture, integration and end-to-end tests
     cmds:
       - task: test:unit
+      - task: test:architecture
       - task: test:integration
       - task: test:e2e
 
@@ -34,6 +35,11 @@ tasks:
     cmds:
       - dotnet test --project "{{.TESTS}}/unit/TenantGuard.Analyzers.Tests" -c {{.CONFIGURATION}}
       - dotnet test --project "{{.TESTS}}/unit/TenantGuard.EntityFrameworkCore.Tests" -c {{.CONFIGURATION}}
+
+  test:architecture:
+    desc: Run the architecture rules (tests/architecture) over the shipped assemblies
+    cmds:
+      - dotnet test --project "{{.TESTS}}/architecture/TenantGuard.Architecture.Tests" -c {{.CONFIGURATION}}
 
   test:integration:
     desc: Run the integration tests (tests/integration) except the provider tests
@@ -54,7 +60,7 @@ tasks:
       - dotnet test --project "{{.TESTS}}/integration/TenantGuard.Providers.Tests" -c {{.CONFIGURATION}}
 
   lint:
-    desc: Check formatting and analyzers, then the public API files and the copyright headers
+    desc: Check formatting and analyzers, then the public API files, the copyright headers and the LightBDD scenarios
     cmds:
       - dotnet format {{.SOLUTION}} --verify-no-changes
       - for: { var: SAMPLES, split: " " }
@@ -63,6 +69,7 @@ tasks:
         cmd: dotnet format tests/e2e/{{.ITEM}} --verify-no-changes
       - task: lint:api
       - task: lint:headers
+      - task: lint:scenarios
 
   lint:api:
     desc: Fail when PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt are out of date
@@ -94,6 +101,18 @@ tasks:
           fi
         done < "$tmp/files"
         exit $status
+
+  lint:scenarios:
+    desc: Fail on LightBDD's [Scenario], which xunit.v3 4 silently skips; scenarios run from [Fact]
+    silent: true
+    cmds:
+      - |
+        # LightBDD.XUnit3 3.12.1 does not load on xunit.v3 4, so a [Scenario] test is dropped
+        # without a word (LightBDD#409). Remove this check once LightBDD supports xunit.v3 4.
+        if git grep -nE '^[[:space:]]*\[Scenario[](,]' -- 'tests/*.cs'; then
+          echo "lint:scenarios: run the scenario from [Fact]; xunit.v3 4 skips [Scenario] (LightBDD#409)" >&2
+          exit 1
+        fi
 
   fmt:
     desc: Format the solution and the samples

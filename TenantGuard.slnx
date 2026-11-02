@@ -5,6 +5,9 @@
     <Project Path="src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
   </Folder>
   <Folder Name="/tests/" />
+  <Folder Name="/tests/architecture/">
+    <Project Path="tests/architecture/TenantGuard.Architecture.Tests/TenantGuard.Architecture.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/integration/">
     <Project Path="tests/integration/TenantGuard.BehaviorPins/TenantGuard.BehaviorPins.csproj" />
     <Project Path="tests/integration/TenantGuard.Providers.Tests/TenantGuard.Providers.Tests.csproj" />

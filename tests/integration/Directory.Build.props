@@ -1,0 +1,11 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <!-- The integration tests read as LightBDD scenarios. -->
+  <ItemGroup>
+    <PackageReference Include="LightBDD.XUnit3" />
+    <Compile Include="$(MSBuildThisFileDirectory)IntegrationScope.cs" Link="IntegrationScope.cs" />
+  </ItemGroup>
+
+</Project>

@@ -24,7 +24,7 @@ public sealed class WriteGuardTests
 
         acme.SaveChanges();
 
-        Assert.Equal("acme", Assert.Single(db.AllInvoices()).TenantId);
+        db.AllInvoices().Should().ContainSingle().Subject.TenantId.Should().Be("acme");
     }
 
     [Fact]
@@ -34,17 +34,15 @@ public sealed class WriteGuardTests
         using var acme = db.Create("acme");
         acme.Invoices.Add(new Invoice { Id = 7, TenantId = "globex", Number = "globex-7" });
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        var exception = FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        Assert.Equal(
-            "TenantGuard blocked 1 write outside the current tenant \"acme\":\n"
+        exception.Message.Should().Be("TenantGuard blocked 1 write outside the current tenant \"acme\":\n"
                 + "- Added Invoice (Id: 7): TenantId is \"globex\"\n"
-                + "Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).",
-            exception.Message);
-        var violation = Assert.Single(exception.Violations);
-        Assert.Equal(("Invoice", EntityState.Added, "acme", "globex"), (violation.Entity, violation.State, violation.Expected, violation.Actual));
-        Assert.Equal(7, Assert.Single(violation.Keys).Value);
-        Assert.Empty(db.AllInvoices());
+                + "Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).");
+        var violation = exception.Violations.Should().ContainSingle().Subject;
+        (violation.Entity, violation.State, violation.Expected, violation.Actual).Should().Be(("Invoice", EntityState.Added, "acme", "globex"));
+        violation.Keys.Should().ContainSingle().Subject.Value.Should().Be(7);
+        db.AllInvoices().Should().BeEmpty();
     }
 
     [Fact]
@@ -54,10 +52,10 @@ public sealed class WriteGuardTests
         using var acme = db.Create("acme");
         acme.Invoices.Add(new Invoice { TenantId = "globex", Number = "globex-1" });
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        var exception = FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        Assert.Empty(Assert.Single(exception.Violations).Keys);
-        Assert.Contains("\n- Added Invoice: TenantId is \"globex\"\n", exception.Message, StringComparison.Ordinal);
+        exception.Violations.Should().ContainSingle().Subject.Keys.Should().BeEmpty();
+        exception.Message.Should().Contain("\n- Added Invoice: TenantId is \"globex\"\n");
     }
 
     [Fact]
@@ -67,9 +65,9 @@ public sealed class WriteGuardTests
         using var acme = db.Create("acme");
         acme.Invoices.Add(new Invoice { Id = 1, TenantId = null!, Number = "acme-1" });
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        var exception = FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        Assert.Null(Assert.Single(exception.Violations).Actual);
+        exception.Violations.Should().ContainSingle().Subject.Actual.Should().BeNull();
     }
 
     [Fact]
@@ -81,7 +79,7 @@ public sealed class WriteGuardTests
 
         acme.SaveChanges();
 
-        Assert.Equal("acme", Assert.Single(db.AllInvoices()).TenantId);
+        db.AllInvoices().Should().ContainSingle().Subject.TenantId.Should().Be("acme");
     }
 
     [Fact]
@@ -94,7 +92,7 @@ public sealed class WriteGuardTests
 
         acme.SaveChanges();
 
-        Assert.Equal("acme-1b", Assert.Single(db.AllInvoices()).Number);
+        db.AllInvoices().Should().ContainSingle().Subject.Number.Should().Be("acme-1b");
     }
 
     [Fact]
@@ -107,11 +105,11 @@ public sealed class WriteGuardTests
         globex.Attach(copy);
         copy.Number = "taken";
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => globex.SaveChanges());
+        var exception = FluentActions.Invoking(() => globex.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        var violation = Assert.Single(exception.Violations);
-        Assert.Equal((EntityState.Modified, "globex", "acme"), (violation.State, violation.Expected, violation.Actual));
-        Assert.Equal("acme-1", Assert.Single(db.AllInvoices()).Number);
+        var violation = exception.Violations.Should().ContainSingle().Subject;
+        (violation.State, violation.Expected, violation.Actual).Should().Be((EntityState.Modified, "globex", "acme"));
+        db.AllInvoices().Should().ContainSingle().Subject.Number.Should().Be("acme-1");
     }
 
     [Fact]
@@ -122,12 +120,12 @@ public sealed class WriteGuardTests
         using var acme = db.Create("acme");
         acme.Invoices.Single().TenantId = "globex";
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        var exception = FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        var violation = Assert.Single(exception.Violations);
-        Assert.Equal((EntityState.Modified, "acme", "globex"), (violation.State, violation.Expected, violation.Actual));
-        Assert.Contains("\n- Modified Invoice (Id: 1): TenantId changes from \"acme\" to \"globex\"\n", exception.Message, StringComparison.Ordinal);
-        Assert.Equal("acme", Assert.Single(db.AllInvoices()).TenantId);
+        var violation = exception.Violations.Should().ContainSingle().Subject;
+        (violation.State, violation.Expected, violation.Actual).Should().Be((EntityState.Modified, "acme", "globex"));
+        exception.Message.Should().Contain("\n- Modified Invoice (Id: 1): TenantId changes from \"acme\" to \"globex\"\n");
+        db.AllInvoices().Should().ContainSingle().Subject.TenantId.Should().Be("acme");
     }
 
     [Fact]
@@ -140,7 +138,7 @@ public sealed class WriteGuardTests
 
         acme.SaveChanges();
 
-        Assert.Empty(db.AllInvoices());
+        db.AllInvoices().Should().BeEmpty();
     }
 
     [Fact]
@@ -151,11 +149,11 @@ public sealed class WriteGuardTests
         using var globex = db.Create("globex");
         globex.Invoices.Remove(new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" });
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => globex.SaveChanges());
+        var exception = FluentActions.Invoking(() => globex.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        var violation = Assert.Single(exception.Violations);
-        Assert.Equal((EntityState.Deleted, "globex", "acme"), (violation.State, violation.Expected, violation.Actual));
-        Assert.Single(db.AllInvoices());
+        var violation = exception.Violations.Should().ContainSingle().Subject;
+        (violation.State, violation.Expected, violation.Actual).Should().Be((EntityState.Deleted, "globex", "acme"));
+        db.AllInvoices().Should().ContainSingle();
     }
 
     [Fact]
@@ -165,14 +163,12 @@ public sealed class WriteGuardTests
         using var anonymous = db.Create(tenant: null);
         anonymous.Invoices.Add(new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" });
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => anonymous.SaveChanges());
+        var exception = FluentActions.Invoking(() => anonymous.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        Assert.Equal(
-            "TenantGuard blocked 1 write because the context has no current tenant:\n"
+        exception.Message.Should().Be("TenantGuard blocked 1 write because the context has no current tenant:\n"
                 + "- Added Invoice (Id: 1): TenantId is \"acme\"\n"
-                + "Set the current tenant before saving, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).",
-            exception.Message);
-        Assert.Null(Assert.Single(exception.Violations).Expected);
+                + "Set the current tenant before saving, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).");
+        exception.Violations.Should().ContainSingle().Subject.Expected.Should().BeNull();
     }
 
     [Fact]
@@ -188,9 +184,9 @@ public sealed class WriteGuardTests
 
         anonymous.SaveChanges();
 
-        Assert.Equal(2, db.AllInvoices().Count);
-        var entry = Assert.Single(capture.TenantGuardEntries, entry => entry.EventName == "NoTenantAllowed");
-        Assert.Equal((LogLevel.Information, "TenantGuard let Shop save without a current tenant (NoTenantPolicy.Allow)"), (entry.Level, entry.Message));
+        db.AllInvoices().Count.Should().Be(2);
+        var entry = capture.TenantGuardEntries.Should().ContainSingle(entry => entry.EventName == "NoTenantAllowed").Subject;
+        (entry.Level, entry.Message).Should().Be((LogLevel.Information, "TenantGuard let Shop save without a current tenant (NoTenantPolicy.Allow)"));
     }
 
     [Fact]
@@ -200,11 +196,9 @@ public sealed class WriteGuardTests
         using var shop = db.Create("acme", withCurrentTenant: false);
         shop.Invoices.Add(new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" });
 
-        var exception = Assert.Throws<InvalidOperationException>(() => shop.SaveChanges());
+        var exception = FluentActions.Invoking(() => shop.SaveChanges()).Should().ThrowExactly<InvalidOperationException>().Which;
 
-        Assert.Equal(
-            "TenantGuard checks the writes of Shop against its current tenant, but no CurrentTenant is configured. Add CurrentTenant(ctx => ...) to UseTenantGuard.",
-            exception.Message);
+        exception.Message.Should().Be("TenantGuard checks the writes of Shop against its current tenant, but no CurrentTenant is configured. Add CurrentTenant(ctx => ...) to UseTenantGuard.");
     }
 
     [Fact]
@@ -214,11 +208,9 @@ public sealed class WriteGuardTests
         using var shop = db.Create("acme", tg => tg.CurrentTenant(_ => 42));
         shop.Invoices.Add(new Invoice { Id = 1, TenantId = "acme", Number = "acme-1" });
 
-        var exception = Assert.Throws<InvalidOperationException>(() => shop.SaveChanges());
+        var exception = FluentActions.Invoking(() => shop.SaveChanges()).Should().ThrowExactly<InvalidOperationException>().Which;
 
-        Assert.Equal(
-            "CurrentTenant returned a Int32, but Invoice.TenantId is a String. Return a value of the tenant property's type.",
-            exception.Message);
+        exception.Message.Should().Be("CurrentTenant returned a Int32, but Invoice.TenantId is a String. Return a value of the tenant property's type.");
     }
 
     [Fact]
@@ -230,9 +222,9 @@ public sealed class WriteGuardTests
         acme.Notes.Add(note);
         acme.Entry(note).Property("TenantId").CurrentValue = "globex";
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        var exception = FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        Assert.Equal(("Note", "globex"), (Assert.Single(exception.Violations).Entity, Assert.Single(exception.Violations).Actual));
+        (exception.Violations.Should().ContainSingle().Subject.Entity, exception.Violations.Should().ContainSingle().Subject.Actual).Should().Be(("Note", "globex"));
     }
 
     [Fact]
@@ -246,7 +238,7 @@ public sealed class WriteGuardTests
         }
 
         using var reader = db.Create("acme");
-        Assert.Equal("acme", reader.Notes.Select(note => EF.Property<string>(note, "TenantId")).Single());
+        reader.Notes.Select(note => EF.Property<string>(note, "TenantId")).Single().Should().Be("acme");
     }
 
     [Fact]
@@ -259,7 +251,7 @@ public sealed class WriteGuardTests
         acme.SaveChanges();
 
         using var reader = db.Create("acme");
-        Assert.Equal("globex", reader.Orders.Single().Shipping.TenantId);
+        reader.Orders.Single().Shipping.TenantId.Should().Be("globex");
     }
 
     [Fact]
@@ -269,9 +261,9 @@ public sealed class WriteGuardTests
         await using var acme = db.Create("acme");
         acme.Invoices.Add(new Invoice { Id = 1, TenantId = "globex", Number = "globex-1" });
 
-        await Assert.ThrowsAsync<TenantIsolationViolationException>(() => acme.SaveChangesAsync(TestContext.Current.CancellationToken));
+        await FluentActions.Awaiting(() => acme.SaveChangesAsync(TestContext.Current.CancellationToken)).Should().ThrowExactlyAsync<TenantIsolationViolationException>();
 
-        Assert.Empty(db.AllInvoices());
+        db.AllInvoices().Should().BeEmpty();
     }
 
     [Fact]
@@ -284,13 +276,13 @@ public sealed class WriteGuardTests
             acme.Invoices.Add(new Invoice { Id = id, TenantId = "globex", Number = $"globex-{id}" });
         }
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        var exception = FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        Assert.Equal(12, exception.Violations.Count);
+        exception.Violations.Count.Should().Be(12);
         var lines = exception.Message.Split('\n');
-        Assert.Equal("TenantGuard blocked 12 writes outside the current tenant \"acme\":", lines[0]);
-        Assert.Equal(10, lines.Count(line => line.StartsWith("- Added Invoice", StringComparison.Ordinal)));
-        Assert.Equal("- and 2 more", lines[^2]);
+        lines[0].Should().Be("TenantGuard blocked 12 writes outside the current tenant \"acme\":");
+        lines.Count(line => line.StartsWith("- Added Invoice", StringComparison.Ordinal)).Should().Be(10);
+        lines[^2].Should().Be("- and 2 more");
     }
 
     [Fact]
@@ -300,10 +292,10 @@ public sealed class WriteGuardTests
         using var acme = db.Create("acme", tg => tg.IncludeKeysInErrors(false));
         acme.Invoices.Add(new Invoice { Id = 7, TenantId = "globex", Number = "globex-7" });
 
-        var exception = Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        var exception = FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
 
-        Assert.Empty(Assert.Single(exception.Violations).Keys);
-        Assert.Contains("\n- Added Invoice: TenantId is \"globex\"\n", exception.Message, StringComparison.Ordinal);
+        exception.Violations.Should().ContainSingle().Subject.Keys.Should().BeEmpty();
+        exception.Message.Should().Contain("\n- Added Invoice: TenantId is \"globex\"\n");
     }
 
     [Fact]
@@ -315,10 +307,10 @@ public sealed class WriteGuardTests
         using var acme = db.Create("acme", loggerFactory: loggerFactory);
         acme.Invoices.Add(new Invoice { Id = 1, TenantId = "globex", Number = "globex-1" });
 
-        Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>();
 
-        var entry = Assert.Single(capture.TenantGuardEntries, entry => entry.EventName == "ViolationBlocked");
-        Assert.Equal((LogLevel.Error, "TenantGuard blocked SaveChanges on Shop; cross-tenant writes: 1"), (entry.Level, entry.Message));
+        var entry = capture.TenantGuardEntries.Should().ContainSingle(entry => entry.EventName == "ViolationBlocked").Subject;
+        (entry.Level, entry.Message).Should().Be((LogLevel.Error, "TenantGuard blocked SaveChanges on Shop; cross-tenant writes: 1"));
     }
 
     [Fact]
@@ -329,9 +321,9 @@ public sealed class WriteGuardTests
         var unstamped = new Invoice { Id = 1, TenantId = null!, Number = "acme-1" };
         acme.Invoices.AddRange(unstamped, new Invoice { Id = 2, TenantId = "globex", Number = "globex-1" });
 
-        Assert.Throws<TenantIsolationViolationException>(() => acme.SaveChanges());
+        FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>();
 
-        Assert.Null(unstamped.TenantId);
+        unstamped.TenantId.Should().BeNull();
     }
 
     [Theory]
@@ -346,7 +338,7 @@ public sealed class WriteGuardTests
 
         acme.SaveChanges();
 
-        Assert.Equal(autoDetectChanges, acme.ChangeTracker.AutoDetectChangesEnabled);
+        acme.ChangeTracker.AutoDetectChangesEnabled.Should().Be(autoDetectChanges);
     }
 
     [Fact]
@@ -362,7 +354,7 @@ public sealed class WriteGuardTests
         context.Database.EnsureCreated();
         context.Countries.Add(new Country { Name = "Utopia" });
 
-        Assert.Equal(0, AllocatedByCheck(context));
+        AllocatedByCheck(context).Should().Be(0);
         context.SaveChanges();
     }
 
@@ -372,7 +364,7 @@ public sealed class WriteGuardTests
         using var db = new ShopDatabase();
         using var acme = db.Create("acme");
 
-        Assert.Equal(0, AllocatedByCheck(acme));
+        AllocatedByCheck(acme).Should().Be(0);
     }
 
     [Fact]
@@ -383,7 +375,7 @@ public sealed class WriteGuardTests
         acme.Invoices.Add(new Invoice { Id = 1, TenantId = "globex", Number = "globex-1" });
         using var bypass = acme.TenantGuard().Bypass("allocation test");
 
-        Assert.Equal(0, AllocatedByCheck(acme));
+        AllocatedByCheck(acme).Should().Be(0);
     }
 
     // What the interceptor's check allocates on a warm context, which is all SavingChanges does.

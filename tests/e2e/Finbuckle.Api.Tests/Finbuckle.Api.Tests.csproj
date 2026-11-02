@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="../../../samples/Finbuckle.Api/Finbuckle.Api.csproj" />
     <ProjectReference Include="../../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
+    <PackageReference Include="NSubstitute" />
   </ItemGroup>
 
 </Project>

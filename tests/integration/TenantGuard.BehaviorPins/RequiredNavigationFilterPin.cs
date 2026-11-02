@@ -2,37 +2,64 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using LightBDD.Framework;
+using LightBDD.Framework.Scenarios;
+using LightBDD.XUnit3;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.BehaviorPins;
 
-// A query that reaches a filtered principal through a required navigation joins it with
-// an inner join, so dependents of rows the filter hides drop out of the result, a documented caveat.
 // https://learn.microsoft.com/ef/core/querying/filters#accessing-entity-with-query-filter-using-required-navigation
-public sealed class RequiredNavigationFilterPin
+[FeatureDescription("A query that reaches a filtered principal through a required navigation joins it with an inner join, so dependents of rows the filter hides drop out of the result, a documented caveat.")]
+public sealed class RequiredNavigationFilterPin : FeatureFixture, IAsyncDisposable
 {
+    private readonly SqliteConnection _connection = new("DataSource=:memory:");
+    private DbContextOptions<PinContext> _options = null!;
+    private int _postCount;
+    private List<Post> _postsWithBlog = [];
+
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
     [Fact]
-    public async Task Required_navigation_to_a_filtered_principal_drops_its_dependents()
+    public Task Required_navigation_to_a_filtered_principal_drops_its_dependents()
+        => Runner.RunScenarioAsync(
+            Given_acme_and_globex_each_have_a_blog_with_a_post,
+            When_globex_reads_the_posts_with_and_without_their_blog,
+            Then_globex_counts_both_posts,
+            Then_including_the_blog_drops_acmes_post);
+
+    public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
+
+    private async Task Given_acme_and_globex_each_have_a_blog_with_a_post()
     {
-        var cancellationToken = TestContext.Current.CancellationToken;
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync(cancellationToken);
-        var options = new DbContextOptionsBuilder<PinContext>().UseSqlite(connection).Options;
+        await _connection.OpenAsync(Token);
+        _options = new DbContextOptionsBuilder<PinContext>().UseSqlite(_connection).Options;
+        await using var setup = new PinContext(_options, "acme");
+        await setup.Database.EnsureCreatedAsync(Token);
+        setup.Blogs.AddRange(
+            new Blog { Id = 1, TenantId = "acme", Posts = [new Post { Id = 1, Title = "acme-1" }] },
+            new Blog { Id = 2, TenantId = "globex", Posts = [new Post { Id = 2, Title = "globex-1" }] });
+        await setup.SaveChangesAsync(Token);
+    }
 
-        await using (var setup = new PinContext(options, "acme"))
-        {
-            await setup.Database.EnsureCreatedAsync(cancellationToken);
-            setup.Blogs.AddRange(
-                new Blog { Id = 1, TenantId = "acme", Posts = [new Post { Id = 1, Title = "acme-1" }] },
-                new Blog { Id = 2, TenantId = "globex", Posts = [new Post { Id = 2, Title = "globex-1" }] });
-            await setup.SaveChangesAsync(cancellationToken);
-        }
+    private async Task When_globex_reads_the_posts_with_and_without_their_blog()
+    {
+        await using var globex = new PinContext(_options, "globex");
+        _postCount = await globex.Posts.CountAsync(Token);
+        _postsWithBlog = await globex.Posts.Include(post => post.Blog).ToListAsync(Token);
+    }
 
-        await using var globex = new PinContext(options, "globex");
+    private Task Then_globex_counts_both_posts()
+    {
+        _postCount.Should().Be(2);
+        return Task.CompletedTask;
+    }
 
-        Assert.Equal(2, await globex.Posts.CountAsync(cancellationToken));
-        Assert.Equal("globex-1", Assert.Single(await globex.Posts.Include(post => post.Blog).ToListAsync(cancellationToken)).Title);
+    private Task Then_including_the_blog_drops_acmes_post()
+    {
+        _postsWithBlog.Should().ContainSingle().Subject.Title.Should().Be("globex-1");
+        return Task.CompletedTask;
     }
 
     private sealed class PinContext(DbContextOptions<PinContext> options, string tenant) : DbContext(options)

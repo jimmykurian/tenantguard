@@ -12,13 +12,15 @@ to work in this repo. Read all three before writing code.
 Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enforces that.
 
 - `task build` restores and builds the solution, warnings as errors
-- `task test` runs the unit, integration and end-to-end tests; `task test:unit`,
-  `task test:integration`, `task test:e2e` run one folder of `tests/`
+- `task test` runs the unit, architecture, integration and end-to-end tests;
+  `task test:unit`, `task test:architecture`, `task test:integration`, `task test:e2e` run
+  one folder of `tests/`
 - `task test:providers` runs the probe on SQL Server and PostgreSQL in Testcontainers;
   it needs Docker, so `task test` leaves it out and `providers.yml` runs it
 - `task lint` runs `dotnet format --verify-no-changes`, the Roslyn analyzers,
-  `task lint:api` (PublicAPI.Shipped/Unshipped are up to date) and `task lint:headers`
-  (YAML files and git hooks start with the copyright line)
+  `task lint:api` (PublicAPI.Shipped/Unshipped are up to date), `task lint:headers`
+  (YAML files and git hooks start with the copyright line) and `task lint:scenarios`
+  (no LightBDD `[Scenario]`, which xunit.v3 4 silently skips)
 - `task fmt` formats
 - `task pack` builds the NuGet packages into `./artifacts/` and validates them
 - `task release:push` and `task release:attach` publish the packages; only `release.yml`
@@ -44,7 +46,8 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`,
   StyleCop.Analyzers (settings in `stylecop.json` and `.editorconfig`).
 - Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no
-  tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3,
+  tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3 with
+  AwesomeAssertions (FsCheck, NSubstitute, Bogus and Verify where they fit; see DECISIONS),
   `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`,
   and the ASP.NET Core shared framework for a generic host; the opt-in provider tests
   (SPEC 12) add Testcontainers and the SQL Server and PostgreSQL providers. Finbuckle
@@ -75,8 +78,12 @@ If a decision turns out to be wrong, write the problem and the proposed change i
 
 ## Testing
 
-- `tests/unit/` runs in process (SQLite in memory at most), `tests/integration/` pins EF
-  Core and runs the probe on real databases, `tests/e2e/` drives the sample apps.
+- `tests/unit/` runs in process (SQLite in memory at most), `tests/architecture/` checks
+  the shipped assemblies' dependencies and public shape with NetArchTest,
+  `tests/integration/` pins EF Core and runs the probe on real databases, `tests/e2e/`
+  drives the sample apps. A dependency or public-surface rule here is enforced there.
+- Integration tests are LightBDD scenarios: Given/When/Then step methods run through
+  `Runner.RunScenarioAsync` from a `[Fact]`, never `[Scenario]` (see DECISIONS).
 - Every rule has a positive and a negative model in `tests/unit/.../Models/`.
 - `tests/integration/TenantGuard.BehaviorPins` holds tests that pin the EF Core behaviors the design
   relies on (SPEC section 9). If a pin fails on a new EF version, stop and ask.

@@ -7,6 +7,61 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-11-01: Test libraries beyond xUnit (accepted)
+
+Decision: "Tests use xUnit v3, `Microsoft.EntityFrameworkCore.Sqlite`,
+`Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`, and the ASP.NET Core shared framework"
+(AGENTS.md), so assertions were xUnit's `Assert.*` and fakes were written by hand.
+
+Problem: none; the maintainer asked to assert with AwesomeAssertions and to evaluate
+NSubstitute, Bogus, AutoFixture, AutoFixture.AutoNSubstitute, FsCheck and Verify.MSTest,
+and to refactor the integration tests to LightBDD.
+
+Change, all test-only:
+
+- **AwesomeAssertions** (Apache-2.0, the community fork of FluentAssertions 7) in every
+  test project, through `tests/Directory.Build.props` with a global `using`. The 231
+  `Assert.*` calls are rewritten. `Assert.Throws<T>` becomes `ThrowExactly<T>`, keeping
+  xUnit's exact-type check, and `Assert.Equal` on a sequence becomes the ordered `Equal`.
+- **FsCheck** property tests where a rule holds for every input: blank tenant property
+  names and bypass reasons are rejected, names and reasons are kept as given, and the
+  probe converts any tenant string into a string or Guid tenant property, or fails naming
+  both. Referenced by the projects that use it.
+- **NSubstitute** for Finbuckle's tenant context accessor in `tests/e2e`, replacing a
+  hand-written fake. `LogCapture` stays hand-written: substituting `ILogger.Log<TState>`
+  with its formatter reads worse than the capture.
+- **Verify.XunitV3**, not Verify.MSTest, which needs MSTest; the tests run on xUnit v3. It
+  snapshots the probe's failure table, the one long user-facing output. Verify charges a
+  maintenance fee, and the build fails without a declaration: the test kit's test project
+  claims the OpenSource exemption until 2027-11. Renew it before then, or the build fails.
+- **Bogus** (MIT) for one rule nothing tested before: exceptions and logs name tenant ids
+  and key values and no other entity value (AGENTS.md). `NoValueLeakTests` fills every
+  other value through Bogus, with fixed seeds so runs repeat, then makes each kind of
+  cross-tenant write and checks the exceptions and logs; a probe test does the same for
+  the report and its table. Elsewhere tests keep fixed values: only the tenant and the key
+  matter to them.
+- **LightBDD** (BSD-2-Clause) for the integration tests: the behavior pins, the test
+  kit's probe scenarios and the provider tests read as Given/When/Then steps, with a
+  feature description per class and an HTML report. LightBDD.XUnit3 3.12.1 is built against
+  xunit.v3 3.2.2 and throws a TypeLoadException on xunit.v3 4 (LightBDD#409, open); the
+  test platform then drops every `[Scenario]` test without reporting it, so a broken
+  scenario looked like a pass. Scenarios therefore run from `[Fact]` through
+  `Runner.RunScenarioAsync`, which works, and `task lint:scenarios` fails on `[Scenario]`.
+  When LightBDD supports xunit.v3 4, switch to `[Scenario]` and drop the check. The
+  argument-checking probe tests and the FsCheck properties stay plain facts.
+- **NetArchTest.eNhancedEdition** (MIT) in a new `tests/architecture/` project, which turns
+  rules this file and AGENTS.md state in prose into tests over the shipped assemblies: the
+  runtime and the test kit depend on System, EF Core, Microsoft.Extensions and TenantGuard
+  only, the test kit on no test framework, the analyzers on Roslyn only; public types live
+  in `TenantGuard` and `TenantGuard.Testing`; exceptions are public, sealed and end in
+  `Exception`; reports, results and options can't be changed from outside; interceptors
+  implement both the sync and the async path; and the analyzers' attribute name matches
+  `AllowCrossTenantAccessAttribute`.
+- **AutoFixture and AutoFixture.AutoNSubstitute are not used.** Each test's EF model is the
+  point of the test, so anonymous objects have nothing to fill.
+
+xUnit stays the test framework.
+
 ## 2026-11-01: End-to-end tests live in tests/e2e, Finbuckle with them (accepted)
 
 Decision: "Do not take a dependency on Finbuckle or any tenancy library outside
