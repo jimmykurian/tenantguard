@@ -14,6 +14,15 @@ and a local `task ci` run the same commands.
 | `site.yml` | Pushes to `main` that change `docs/`, `site/`, the logo or the changelog | Builds the docs site and deploys it to GitHub Pages |
 | `labeler.yml`, `pr-assign-author.yml` | Pull requests | Labels by changed paths; assigns the author, or the owner for a bot's |
 
+## Docs site
+
+`site.yml` publishes the docs site at <https://tenantguard.is-a.dev/>, from the root of the
+domain. The domain is a subdomain of [is-a.dev](https://is-a.dev): `domains/tenantguard.json`
+in [is-a-dev/register](https://github.com/is-a-dev/register) points it at
+`jimmykurian.github.io` with a CNAME record, and the repository's Pages settings name it as
+the custom domain with HTTPS enforced. GitHub redirects the old
+`jimmykurian.github.io/tenantguard/` URLs to it.
+
 ## Releases
 
 Release Please keeps one release pull request open, bumping the `Version` in
