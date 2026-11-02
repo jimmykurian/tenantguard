@@ -7,6 +7,7 @@ import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import mermaid from 'astro-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
+import starlightThemeRapide from 'starlight-theme-rapide';
 
 export default defineConfig({
   site: 'https://jimmykurian.github.io',
@@ -40,7 +41,8 @@ export default defineConfig({
         { label: 'Changelog', link: '/changelog/' },
       ],
       // Fails the build on a broken link or anchor between pages.
-      plugins: [starlightLinksValidator()],
+      // Rapide restyles Starlight, so this site doesn't look like ci-parity's.
+      plugins: [starlightLinksValidator(), starlightThemeRapide()],
     }),
   ],
 });
