@@ -58,11 +58,14 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | `task test:integration` | `tests/integration/`: the EF Core behavior pins (SPEC 9) and the test kit's own tests |
 | `task test:e2e` | `tests/e2e/`: the isolation probe against each sample app |
 | `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
-| `task lint` | `dotnet format --verify-no-changes` on the solution and the samples, then `lint:api`, `lint:headers` and `lint:scenarios` |
+| `task lint` | `lint:format`, `lint:api`, `lint:headers`, `lint:scenarios` and `metrics:check` |
+| `task lint:format` | `dotnet format --verify-no-changes` on the solution, the samples, the end-to-end tests and `tools/` |
 | `task lint:api` | fails when `PublicAPI.Shipped.txt` or `PublicAPI.Unshipped.txt` is out of date |
 | `task lint:headers` | checks the YAML files and git hooks start with the copyright line; StyleCop checks C# |
 | `task lint:scenarios` | fails on LightBDD's `[Scenario]`, which xunit.v3 4 silently skips |
-| `task fmt` | formats the solution and the samples |
+| `task fmt` | formats the solution, the samples, the end-to-end tests and `tools/` |
+| `task metrics` | prints the code metrics: files, lines of code and method complexity, read by `tools/Metrics` |
+| `task metrics:readme` | writes them into the README's METRICS block; run it after a code change, since `metrics:check` fails until you do |
 | `task pack` | builds the NuGet packages into `./artifacts/`, then checks their metadata, symbols and docs with Meziantou's NuGet package validator |
 | `task release:push` | pushes the packages to nuget.org with the key in `$NUGET_API_KEY`; the release workflow runs it |
 | `task release:attach -- vX.Y.Z` | attaches the packages to that GitHub Release; the release workflow runs it |
@@ -227,8 +230,9 @@ Before the first stable release:
   and merging that PR fails because the tag already exists.
 - Move `global.json` and the EF Core 11 packages off the release candidate, and drop
   `allowPrerelease`. A stable package can't depend on a prerelease one.
-- Remove the preview note at the top of `README.md`, which nuget.org shows, and the
-  `--prerelease` flags from the install commands in `README.md` and `docs/guides/`.
+- Remove the preview note at the top of `README.md` and of `assets/nuget-readme.md`, the
+  README nuget.org shows, and the `--prerelease` flags from the install commands in both and
+  in `docs/guides/`.
 
 ## License
 

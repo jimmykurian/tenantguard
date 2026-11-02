@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 372" role="img" aria-labelledby="title desc" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">
+  <title id="title">TenantGuard catches a missing tenant filter at build and at startup</title>
+  <desc id="desc">A terminal session. dotnet add package adds TenantGuard.EntityFrameworkCore. dotnet build warns TG001: IgnoreQueryFilters disables the tenant filter. dotnet run fails at startup with TGM001: Invoice has a tenant property but no query filter references it. After adding the filter, dotnet run starts and TenantGuard logs 0 errors.</desc>
+  <style>
+    .w{fill:#e2e6ee} .p{fill:#9aa8ff} .d{fill:#8b93a4} .r{fill:#ff7b7b} .g{fill:#5fdc8f} .y{fill:#f2c94c}
+    @keyframes a0{0%,5.835%{opacity:0}5.845%,97%{opacity:1}97.01%,100%{opacity:0}}.a0{opacity:0;animation:a0 15.4s linear infinite}@keyframes a1{0%,7.131%{opacity:0}7.141%,97%{opacity:1}97.01%,100%{opacity:0}}.a1{opacity:0;animation:a1 15.4s linear infinite}@keyframes a2{0%,7.423%{opacity:0}7.433%,97%{opacity:1}97.01%,100%{opacity:0}}.a2{opacity:0;animation:a2 15.4s linear infinite}@keyframes a3{0%,7.715%{opacity:0}7.725%,97%{opacity:1}97.01%,100%{opacity:0}}.a3{opacity:0;animation:a3 15.4s linear infinite}@keyframes a4{0%,8.006%{opacity:0}8.016%,97%{opacity:1}97.01%,100%{opacity:0}}.a4{opacity:0;animation:a4 15.4s linear infinite}@keyframes a5{0%,8.298%{opacity:0}8.308%,97%{opacity:1}97.01%,100%{opacity:0}}.a5{opacity:0;animation:a5 15.4s linear infinite}@keyframes a6{0%,8.590%{opacity:0}8.600%,97%{opacity:1}97.01%,100%{opacity:0}}.a6{opacity:0;animation:a6 15.4s linear infinite}@keyframes a7{0%,8.882%{opacity:0}8.892%,97%{opacity:1}97.01%,100%{opacity:0}}.a7{opacity:0;animation:a7 15.4s linear infinite}@keyframes a8{0%,9.173%{opacity:0}9.183%,97%{opacity:1}97.01%,100%{opacity:0}}.a8{opacity:0;animation:a8 15.4s linear infinite}@keyframes a9{0%,9.465%{opacity:0}9.475%,97%{opacity:1}97.01%,100%{opacity:0}}.a9{opacity:0;animation:a9 15.4s linear infinite}@keyframes a10{0%,9.757%{opacity:0}9.767%,97%{opacity:1}97.01%,100%{opacity:0}}.a10{opacity:0;animation:a10 15.4s linear infinite}@keyframes a11{0%,10.049%{opacity:0}10.059%,97%{opacity:1}97.01%,100%{opacity:0}}.a11{opacity:0;animation:a11 15.4s linear infinite}@keyframes a12{0%,10.340%{opacity:0}10.350%,97%{opacity:1}97.01%,100%{opacity:0}}.a12{opacity:0;animation:a12 15.4s linear infinite}@keyframes a13{0%,10.632%{opacity:0}10.642%,97%{opacity:1}97.01%,100%{opacity:0}}.a13{opacity:0;animation:a13 15.4s linear infinite}@keyframes a14{0%,10.924%{opacity:0}10.934%,97%{opacity:1}97.01%,100%{opacity:0}}.a14{opacity:0;animation:a14 15.4s linear infinite}@keyframes a15{0%,11.216%{opacity:0}11.226%,97%{opacity:1}97.01%,100%{opacity:0}}.a15{opacity:0;animation:a15 15.4s linear infinite}@keyframes a16{0%,11.507%{opacity:0}11.517%,97%{opacity:1}97.01%,100%{opacity:0}}.a16{opacity:0;animation:a16 15.4s linear infinite}@keyframes a17{0%,11.799%{opacity:0}11.809%,97%{opacity:1}97.01%,100%{opacity:0}}.a17{opacity:0;animation:a17 15.4s linear infinite}@keyframes a18{0%,12.091%{opacity:0}12.101%,97%{opacity:1}97.01%,100%{opacity:0}}.a18{opacity:0;animation:a18 15.4s linear infinite}@keyframes a19{0%,12.382%{opacity:0}12.392%,97%{opacity:1}97.01%,100%{opacity:0}}.a19{opacity:0;animation:a19 15.4s linear infinite}@keyframes a20{0%,12.674%{opacity:0}12.684%,97%{opacity:1}97.01%,100%{opacity:0}}.a20{opacity:0;animation:a20 15.4s linear infinite}@keyframes a21{0%,12.966%{opacity:0}12.976%,97%{opacity:1}97.01%,100%{opacity:0}}.a21{opacity:0;animation:a21 15.4s linear infinite}@keyframes a22{0%,13.258%{opacity:0}13.268%,97%{opacity:1}97.01%,100%{opacity:0}}.a22{opacity:0;animation:a22 15.4s linear infinite}@keyframes a23{0%,13.549%{opacity:0}13.559%,97%{opacity:1}97.01%,100%{opacity:0}}.a23{opacity:0;animation:a23 15.4s linear infinite}@keyframes a24{0%,13.841%{opacity:0}13.851%,97%{opacity:1}97.01%,100%{opacity:0}}.a24{opacity:0;animation:a24 15.4s linear infinite}@keyframes a25{0%,14.133%{opacity:0}14.143%,97%{opacity:1}97.01%,100%{opacity:0}}.a25{opacity:0;animation:a25 15.4s linear infinite}@keyframes a26{0%,14.425%{opacity:0}14.435%,97%{opacity:1}97.01%,100%{opacity:0}}.a26{opacity:0;animation:a26 15.4s linear infinite}@keyframes a27{0%,14.716%{opacity:0}14.726%,97%{opacity:1}97.01%,100%{opacity:0}}.a27{opacity:0;animation:a27 15.4s linear infinite}@keyframes a28{0%,15.008%{opacity:0}15.018%,97%{opacity:1}97.01%,100%{opacity:0}}.a28{opacity:0;animation:a28 15.4s linear infinite}@keyframes a29{0%,15.300%{opacity:0}15.310%,97%{opacity:1}97.01%,100%{opacity:0}}.a29{opacity:0;animation:a29 15.4s linear infinite}@keyframes a30{0%,15.592%{opacity:0}15.602%,97%{opacity:1}97.01%,100%{opacity:0}}.a30{opacity:0;animation:a30 15.4s linear infinite}@keyframes a31{0%,15.883%{opacity:0}15.893%,97%{opacity:1}97.01%,100%{opacity:0}}.a31{opacity:0;animation:a31 15.4s linear infinite}@keyframes a32{0%,16.175%{opacity:0}16.185%,97%{opacity:1}97.01%,100%{opacity:0}}.a32{opacity:0;animation:a32 15.4s linear infinite}@keyframes a33{0%,16.467%{opacity:0}16.477%,97%{opacity:1}97.01%,100%{opacity:0}}.a33{opacity:0;animation:a33 15.4s linear infinite}@keyframes a34{0%,16.759%{opacity:0}16.769%,97%{opacity:1}97.01%,100%{opacity:0}}.a34{opacity:0;animation:a34 15.4s linear infinite}@keyframes a35{0%,17.050%{opacity:0}17.060%,97%{opacity:1}97.01%,100%{opacity:0}}.a35{opacity:0;animation:a35 15.4s linear infinite}@keyframes a36{0%,17.342%{opacity:0}17.352%,97%{opacity:1}97.01%,100%{opacity:0}}.a36{opacity:0;animation:a36 15.4s linear infinite}@keyframes a37{0%,17.634%{opacity:0}17.644%,97%{opacity:1}97.01%,100%{opacity:0}}.a37{opacity:0;animation:a37 15.4s linear infinite}@keyframes a38{0%,17.925%{opacity:0}17.935%,97%{opacity:1}97.01%,100%{opacity:0}}.a38{opacity:0;animation:a38 15.4s linear infinite}@keyframes a39{0%,18.217%{opacity:0}18.227%,97%{opacity:1}97.01%,100%{opacity:0}}.a39{opacity:0;animation:a39 15.4s linear infinite}@keyframes a40{0%,18.509%{opacity:0}18.519%,97%{opacity:1}97.01%,100%{opacity:0}}.a40{opacity:0;animation:a40 15.4s linear infinite}@keyframes a41{0%,18.801%{opacity:0}18.811%,97%{opacity:1}97.01%,100%{opacity:0}}.a41{opacity:0;animation:a41 15.4s linear infinite}@keyframes a42{0%,19.092%{opacity:0}19.102%,97%{opacity:1}97.01%,100%{opacity:0}}.a42{opacity:0;animation:a42 15.4s linear infinite}@keyframes a43{0%,19.384%{opacity:0}19.394%,97%{opacity:1}97.01%,100%{opacity:0}}.a43{opacity:0;animation:a43 15.4s linear infinite}@keyframes a44{0%,19.676%{opacity:0}19.686%,97%{opacity:1}97.01%,100%{opacity:0}}.a44{opacity:0;animation:a44 15.4s linear infinite}@keyframes a45{0%,19.968%{opacity:0}19.978%,97%{opacity:1}97.01%,100%{opacity:0}}.a45{opacity:0;animation:a45 15.4s linear infinite}@keyframes a46{0%,20.259%{opacity:0}20.269%,97%{opacity:1}97.01%,100%{opacity:0}}.a46{opacity:0;animation:a46 15.4s linear infinite}@keyframes a47{0%,20.551%{opacity:0}20.561%,97%{opacity:1}97.01%,100%{opacity:0}}.a47{opacity:0;animation:a47 15.4s linear infinite}@keyframes a48{0%,20.843%{opacity:0}20.853%,97%{opacity:1}97.01%,100%{opacity:0}}.a48{opacity:0;animation:a48 15.4s linear infinite}@keyframes a49{0%,21.135%{opacity:0}21.145%,97%{opacity:1}97.01%,100%{opacity:0}}.a49{opacity:0;animation:a49 15.4s linear infinite}@keyframes a50{0%,21.426%{opacity:0}21.436%,97%{opacity:1}97.01%,100%{opacity:0}}.a50{opacity:0;animation:a50 15.4s linear infinite}@keyframes a51{0%,21.718%{opacity:0}21.728%,97%{opacity:1}97.01%,100%{opacity:0}}.a51{opacity:0;animation:a51 15.4s linear infinite}@keyframes a52{0%,22.010%{opacity:0}22.020%,97%{opacity:1}97.01%,100%{opacity:0}}.a52{opacity:0;animation:a52 15.4s linear infinite}@keyframes a53{0%,22.301%{opacity:0}22.311%,97%{opacity:1}97.01%,100%{opacity:0}}.a53{opacity:0;animation:a53 15.4s linear infinite}@keyframes a54{0%,22.593%{opacity:0}22.603%,97%{opacity:1}97.01%,100%{opacity:0}}.a54{opacity:0;animation:a54 15.4s linear infinite}@keyframes a55{0%,22.885%{opacity:0}22.895%,97%{opacity:1}97.01%,100%{opacity:0}}.a55{opacity:0;animation:a55 15.4s linear infinite}@keyframes a56{0%,23.177%{opacity:0}23.187%,97%{opacity:1}97.01%,100%{opacity:0}}.a56{opacity:0;animation:a56 15.4s linear infinite}@keyframes a57{0%,23.468%{opacity:0}23.478%,97%{opacity:1}97.01%,100%{opacity:0}}.a57{opacity:0;animation:a57 15.4s linear infinite}@keyframes a58{0%,23.760%{opacity:0}23.770%,97%{opacity:1}97.01%,100%{opacity:0}}.a58{opacity:0;animation:a58 15.4s linear infinite}@keyframes a59{0%,24.052%{opacity:0}24.062%,97%{opacity:1}97.01%,100%{opacity:0}}.a59{opacity:0;animation:a59 15.4s linear infinite}@keyframes a60{0%,24.344%{opacity:0}24.354%,97%{opacity:1}97.01%,100%{opacity:0}}.a60{opacity:0;animation:a60 15.4s linear infinite}@keyframes a61{0%,24.635%{opacity:0}24.645%,97%{opacity:1}97.01%,100%{opacity:0}}.a61{opacity:0;animation:a61 15.4s linear infinite}@keyframes a62{0%,24.927%{opacity:0}24.937%,97%{opacity:1}97.01%,100%{opacity:0}}.a62{opacity:0;animation:a62 15.4s linear infinite}@keyframes a63{0%,25.219%{opacity:0}25.229%,97%{opacity:1}97.01%,100%{opacity:0}}.a63{opacity:0;animation:a63 15.4s linear infinite}@keyframes a64{0%,29.400%{opacity:0}29.410%,97%{opacity:1}97.01%,100%{opacity:0}}.a64{opacity:0;animation:a64 15.4s linear infinite}@keyframes a65{0%,31.345%{opacity:0}31.355%,97%{opacity:1}97.01%,100%{opacity:0}}.a65{opacity:0;animation:a65 15.4s linear infinite}@keyframes a66{0%,32.642%{opacity:0}32.652%,97%{opacity:1}97.01%,100%{opacity:0}}.a66{opacity:0;animation:a66 15.4s linear infinite}@keyframes a67{0%,32.934%{opacity:0}32.944%,97%{opacity:1}97.01%,100%{opacity:0}}.a67{opacity:0;animation:a67 15.4s linear infinite}@keyframes a68{0%,33.225%{opacity:0}33.235%,97%{opacity:1}97.01%,100%{opacity:0}}.a68{opacity:0;animation:a68 15.4s linear infinite}@keyframes a69{0%,33.517%{opacity:0}33.527%,97%{opacity:1}97.01%,100%{opacity:0}}.a69{opacity:0;animation:a69 15.4s linear infinite}@keyframes a70{0%,33.809%{opacity:0}33.819%,97%{opacity:1}97.01%,100%{opacity:0}}.a70{opacity:0;animation:a70 15.4s linear infinite}@keyframes a71{0%,34.100%{opacity:0}34.110%,97%{opacity:1}97.01%,100%{opacity:0}}.a71{opacity:0;animation:a71 15.4s linear infinite}@keyframes a72{0%,34.392%{opacity:0}34.402%,97%{opacity:1}97.01%,100%{opacity:0}}.a72{opacity:0;animation:a72 15.4s linear infinite}@keyframes a73{0%,34.684%{opacity:0}34.694%,97%{opacity:1}97.01%,100%{opacity:0}}.a73{opacity:0;animation:a73 15.4s linear infinite}@keyframes a74{0%,34.976%{opacity:0}34.986%,97%{opacity:1}97.01%,100%{opacity:0}}.a74{opacity:0;animation:a74 15.4s linear infinite}@keyframes a75{0%,35.267%{opacity:0}35.277%,97%{opacity:1}97.01%,100%{opacity:0}}.a75{opacity:0;animation:a75 15.4s linear infinite}@keyframes a76{0%,35.559%{opacity:0}35.569%,97%{opacity:1}97.01%,100%{opacity:0}}.a76{opacity:0;animation:a76 15.4s linear infinite}@keyframes a77{0%,35.851%{opacity:0}35.861%,97%{opacity:1}97.01%,100%{opacity:0}}.a77{opacity:0;animation:a77 15.4s linear infinite}@keyframes a78{0%,40.032%{opacity:0}40.042%,97%{opacity:1}97.01%,100%{opacity:0}}.a78{opacity:0;animation:a78 15.4s linear infinite}@keyframes a79{0%,41.653%{opacity:0}41.663%,97%{opacity:1}97.01%,100%{opacity:0}}.a79{opacity:0;animation:a79 15.4s linear infinite}@keyframes a80{0%,43.274%{opacity:0}43.284%,97%{opacity:1}97.01%,100%{opacity:0}}.a80{opacity:0;animation:a80 15.4s linear infinite}@keyframes a81{0%,45.219%{opacity:0}45.229%,97%{opacity:1}97.01%,100%{opacity:0}}.a81{opacity:0;animation:a81 15.4s linear infinite}@keyframes a82{0%,46.515%{opacity:0}46.525%,97%{opacity:1}97.01%,100%{opacity:0}}.a82{opacity:0;animation:a82 15.4s linear infinite}@keyframes a83{0%,46.807%{opacity:0}46.817%,97%{opacity:1}97.01%,100%{opacity:0}}.a83{opacity:0;animation:a83 15.4s linear infinite}@keyframes a84{0%,47.099%{opacity:0}47.109%,97%{opacity:1}97.01%,100%{opacity:0}}.a84{opacity:0;animation:a84 15.4s linear infinite}@keyframes a85{0%,47.391%{opacity:0}47.401%,97%{opacity:1}97.01%,100%{opacity:0}}.a85{opacity:0;animation:a85 15.4s linear infinite}@keyframes a86{0%,47.682%{opacity:0}47.692%,97%{opacity:1}97.01%,100%{opacity:0}}.a86{opacity:0;animation:a86 15.4s linear infinite}@keyframes a87{0%,47.974%{opacity:0}47.984%,97%{opacity:1}97.01%,100%{opacity:0}}.a87{opacity:0;animation:a87 15.4s linear infinite}@keyframes a88{0%,48.266%{opacity:0}48.276%,97%{opacity:1}97.01%,100%{opacity:0}}.a88{opacity:0;animation:a88 15.4s linear infinite}@keyframes a89{0%,48.558%{opacity:0}48.568%,97%{opacity:1}97.01%,100%{opacity:0}}.a89{opacity:0;animation:a89 15.4s linear infinite}@keyframes a90{0%,48.849%{opacity:0}48.859%,97%{opacity:1}97.01%,100%{opacity:0}}.a90{opacity:0;animation:a90 15.4s linear infinite}@keyframes a91{0%,49.141%{opacity:0}49.151%,97%{opacity:1}97.01%,100%{opacity:0}}.a91{opacity:0;animation:a91 15.4s linear infinite}@keyframes a92{0%,53.323%{opacity:0}53.333%,97%{opacity:1}97.01%,100%{opacity:0}}.a92{opacity:0;animation:a92 15.4s linear infinite}@keyframes a93{0%,54.943%{opacity:0}54.953%,97%{opacity:1}97.01%,100%{opacity:0}}.a93{opacity:0;animation:a93 15.4s linear infinite}@keyframes a94{0%,56.564%{opacity:0}56.574%,97%{opacity:1}97.01%,100%{opacity:0}}.a94{opacity:0;animation:a94 15.4s linear infinite}@keyframes a95{0%,62.399%{opacity:0}62.409%,97%{opacity:1}97.01%,100%{opacity:0}}.a95{opacity:0;animation:a95 15.4s linear infinite}@keyframes a96{0%,64.344%{opacity:0}64.354%,97%{opacity:1}97.01%,100%{opacity:0}}.a96{opacity:0;animation:a96 15.4s linear infinite}@keyframes a97{0%,65.640%{opacity:0}65.650%,97%{opacity:1}97.01%,100%{opacity:0}}.a97{opacity:0;animation:a97 15.4s linear infinite}@keyframes a98{0%,65.932%{opacity:0}65.942%,97%{opacity:1}97.01%,100%{opacity:0}}.a98{opacity:0;animation:a98 15.4s linear infinite}@keyframes a99{0%,66.224%{opacity:0}66.234%,97%{opacity:1}97.01%,100%{opacity:0}}.a99{opacity:0;animation:a99 15.4s linear infinite}@keyframes a100{0%,66.515%{opacity:0}66.525%,97%{opacity:1}97.01%,100%{opacity:0}}.a100{opacity:0;animation:a100 15.4s linear infinite}@keyframes a101{0%,66.807%{opacity:0}66.817%,97%{opacity:1}97.01%,100%{opacity:0}}.a101{opacity:0;animation:a101 15.4s linear infinite}@keyframes a102{0%,67.099%{opacity:0}67.109%,97%{opacity:1}97.01%,100%{opacity:0}}.a102{opacity:0;animation:a102 15.4s linear infinite}@keyframes a103{0%,67.391%{opacity:0}67.401%,97%{opacity:1}97.01%,100%{opacity:0}}.a103{opacity:0;animation:a103 15.4s linear infinite}@keyframes a104{0%,67.682%{opacity:0}67.692%,97%{opacity:1}97.01%,100%{opacity:0}}.a104{opacity:0;animation:a104 15.4s linear infinite}@keyframes a105{0%,67.974%{opacity:0}67.984%,97%{opacity:1}97.01%,100%{opacity:0}}.a105{opacity:0;animation:a105 15.4s linear infinite}@keyframes a106{0%,68.266%{opacity:0}68.276%,97%{opacity:1}97.01%,100%{opacity:0}}.a106{opacity:0;animation:a106 15.4s linear infinite}@keyframes a107{0%,72.447%{opacity:0}72.457%,97%{opacity:1}97.01%,100%{opacity:0}}.a107{opacity:0;animation:a107 15.4s linear infinite}@keyframes a108{0%,74.068%{opacity:0}74.078%,97%{opacity:1}97.01%,100%{opacity:0}}.a108{opacity:0;animation:a108 15.4s linear infinite}
+    @media (prefers-reduced-motion: reduce){[class*="a"]{animation:none!important;opacity:1!important}}
+  </style>
+  <rect width="1080" height="372" rx="10" fill="#1b1f2a"/>
+  <circle cx="22" cy="18" r="6" fill="#ff5f57"/><circle cx="42" cy="18" r="6" fill="#febc2e"/><circle cx="62" cy="18" r="6" fill="#28c840"/>
+  <text x="18" y="46" class="p a0">$</text>
+  <text x="36.0" y="46" class="w a1">d</text>
+  <text x="45.0" y="46" class="w a2">o</text>
+  <text x="54.0" y="46" class="w a3">t</text>
+  <text x="63.0" y="46" class="w a4">n</text>
+  <text x="72.0" y="46" class="w a5">e</text>
+  <text x="81.0" y="46" class="w a6">t</text>
+  <text x="90.0" y="46" class="w a7"> </text>
+  <text x="99.0" y="46" class="w a8">a</text>
+  <text x="108.0" y="46" class="w a9">d</text>
+  <text x="117.0" y="46" class="w a10">d</text>
+  <text x="126.0" y="46" class="w a11"> </text>
+  <text x="135.0" y="46" class="w a12">p</text>
+  <text x="144.0" y="46" class="w a13">a</text>
+  <text x="153.0" y="46" class="w a14">c</text>
+  <text x="162.0" y="46" class="w a15">k</text>
+  <text x="171.0" y="46" class="w a16">a</text>
+  <text x="180.0" y="46" class="w a17">g</text>
+  <text x="189.0" y="46" class="w a18">e</text>
+  <text x="198.0" y="46" class="w a19"> </text>
+  <text x="207.0" y="46" class="w a20">T</text>
+  <text x="216.0" y="46" class="w a21">e</text>
+  <text x="225.0" y="46" class="w a22">n</text>
+  <text x="234.0" y="46" class="w a23">a</text>
+  <text x="243.0" y="46" class="w a24">n</text>
+  <text x="252.0" y="46" class="w a25">t</text>
+  <text x="261.0" y="46" class="w a26">G</text>
+  <text x="270.0" y="46" class="w a27">u</text>
+  <text x="279.0" y="46" class="w a28">a</text>
+  <text x="288.0" y="46" class="w a29">r</text>
+  <text x="297.0" y="46" class="w a30">d</text>
+  <text x="306.0" y="46" class="w a31">.</text>
+  <text x="315.0" y="46" class="w a32">E</text>
+  <text x="324.0" y="46" class="w a33">n</text>
+  <text x="333.0" y="46" class="w a34">t</text>
+  <text x="342.0" y="46" class="w a35">i</text>
+  <text x="351.0" y="46" class="w a36">t</text>
+  <text x="360.0" y="46" class="w a37">y</text>
+  <text x="369.0" y="46" class="w a38">F</text>
+  <text x="378.0" y="46" class="w a39">r</text>
+  <text x="387.0" y="46" class="w a40">a</text>
+  <text x="396.0" y="46" class="w a41">m</text>
+  <text x="405.0" y="46" class="w a42">e</text>
+  <text x="414.0" y="46" class="w a43">w</text>
+  <text x="423.0" y="46" class="w a44">o</text>
+  <text x="432.0" y="46" class="w a45">r</text>
+  <text x="441.0" y="46" class="w a46">k</text>
+  <text x="450.0" y="46" class="w a47">C</text>
+  <text x="459.0" y="46" class="w a48">o</text>
+  <text x="468.0" y="46" class="w a49">r</text>
+  <text x="477.0" y="46" class="w a50">e</text>
+  <text x="486.0" y="46" class="w a51"> </text>
+  <text x="495.0" y="46" class="w a52">-</text>
+  <text x="504.0" y="46" class="w a53">-</text>
+  <text x="513.0" y="46" class="w a54">p</text>
+  <text x="522.0" y="46" class="w a55">r</text>
+  <text x="531.0" y="46" class="w a56">e</text>
+  <text x="540.0" y="46" class="w a57">r</text>
+  <text x="549.0" y="46" class="w a58">e</text>
+  <text x="558.0" y="46" class="w a59">l</text>
+  <text x="567.0" y="46" class="w a60">e</text>
+  <text x="576.0" y="46" class="w a61">a</text>
+  <text x="585.0" y="46" class="w a62">s</text>
+  <text x="594.0" y="46" class="w a63">e</text>
+  <text x="18" y="68" xml:space="preserve" class="a64"><tspan class="d">info : PackageReference for package &#x27;TenantGuard.EntityFrameworkCore&#x27; version &#x27;0.1.0-preview.4&#x27; added.</tspan></text>
+  <text x="18" y="90" class="p a65">$</text>
+  <text x="36.0" y="90" class="w a66">d</text>
+  <text x="45.0" y="90" class="w a67">o</text>
+  <text x="54.0" y="90" class="w a68">t</text>
+  <text x="63.0" y="90" class="w a69">n</text>
+  <text x="72.0" y="90" class="w a70">e</text>
+  <text x="81.0" y="90" class="w a71">t</text>
+  <text x="90.0" y="90" class="w a72"> </text>
+  <text x="99.0" y="90" class="w a73">b</text>
+  <text x="108.0" y="90" class="w a74">u</text>
+  <text x="117.0" y="90" class="w a75">i</text>
+  <text x="126.0" y="90" class="w a76">l</text>
+  <text x="135.0" y="90" class="w a77">d</text>
+  <text x="18" y="112" xml:space="preserve" class="a78"><tspan class="w">Program.cs(17,50): </tspan><tspan class="y">warning TG001</tspan><tspan class="w">: IgnoreQueryFilters disables the tenant filter. Add</tspan></text>
+  <text x="18" y="134" xml:space="preserve" class="a79"><tspan class="w">  [AllowCrossTenantAccess(&quot;why&quot;)] to the method, or ignore only the non-tenant filters by name.</tspan></text>
+  <text x="18" y="156" xml:space="preserve" class="a80"><tspan class="g">Build succeeded</tspan><tspan class="w"> with 1 warning(s).</tspan></text>
+  <text x="18" y="178" class="p a81">$</text>
+  <text x="36.0" y="178" class="w a82">d</text>
+  <text x="45.0" y="178" class="w a83">o</text>
+  <text x="54.0" y="178" class="w a84">t</text>
+  <text x="63.0" y="178" class="w a85">n</text>
+  <text x="72.0" y="178" class="w a86">e</text>
+  <text x="81.0" y="178" class="w a87">t</text>
+  <text x="90.0" y="178" class="w a88"> </text>
+  <text x="99.0" y="178" class="w a89">r</text>
+  <text x="108.0" y="178" class="w a90">u</text>
+  <text x="117.0" y="178" class="w a91">n</text>
+  <text x="18" y="200" xml:space="preserve" class="a92"><tspan class="r">Unhandled exception. TenantGuard.TenantGuardModelException</tspan><tspan class="w">: TenantGuard found 1 model error:</tspan></text>
+  <text x="18" y="222" xml:space="preserve" class="a93"><tspan class="w">- </tspan><tspan class="r">TGM001</tspan><tspan class="w">: Invoice has tenant property &#x27;TenantId&#x27; but no query filter references it.</tspan></text>
+  <text x="18" y="244" xml:space="preserve" class="a94"><tspan class="w">  Add HasQueryFilter(e =&gt; e.TenantId == &lt;current tenant&gt;) on the root type.</tspan></text>
+  <text x="18" y="266" xml:space="preserve" class="d a95"># add the filter to Invoice, then start again</text>
+  <text x="18" y="288" class="p a96">$</text>
+  <text x="36.0" y="288" class="w a97">d</text>
+  <text x="45.0" y="288" class="w a98">o</text>
+  <text x="54.0" y="288" class="w a99">t</text>
+  <text x="63.0" y="288" class="w a100">n</text>
+  <text x="72.0" y="288" class="w a101">e</text>
+  <text x="81.0" y="288" class="w a102">t</text>
+  <text x="90.0" y="288" class="w a103"> </text>
+  <text x="99.0" y="288" class="w a104">r</text>
+  <text x="108.0" y="288" class="w a105">u</text>
+  <text x="117.0" y="288" class="w a106">n</text>
+  <text x="18" y="310" xml:space="preserve" class="a107"><tspan class="d">info: TenantGuard[1]</tspan></text>
+  <text x="18" y="332" xml:space="preserve" class="a108"><tspan class="g">      TenantGuard checked the model: 1 tenant-scoped entity types, 0 errors, 0 warnings</tspan></text>
+</svg>

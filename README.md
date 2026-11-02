@@ -29,6 +29,12 @@ so.
 
 It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query filters.
 
+[![NuGet](https://img.shields.io/nuget/vpre/TenantGuard.EntityFrameworkCore?style=flat-square&label=nuget)](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore) [![Latest release](https://img.shields.io/github/v/release/jimmykurian/tenantguard?include_prereleases&style=flat-square&label=release)](https://github.com/jimmykurian/tenantguard/releases) [![License: Apache-2.0](https://img.shields.io/github/license/jimmykurian/tenantguard?style=flat-square)](LICENSE)
+
+[Documentation](docs/README.md) · [Rules](docs/reference/rules.md) · [Analyzers](docs/reference/analyzers.md) · [Guides](docs/guides/README.md) · [Changelog](CHANGELOG.md) · [NuGet](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore)
+
+![A terminal session: dotnet build warns TG001 on IgnoreQueryFilters; dotnet run fails at startup with TGM001, an entity with a tenant property and no query filter; after the filter is added, dotnet run starts and TenantGuard logs 0 errors.](docs/assets/tenantguard-demo.svg)
+
 ## Packages
 
 | Package | Targets | Contents |
@@ -188,21 +194,59 @@ if a bypass scope was never disposed.
 save that changes only the owned part of another tenant's row isn't blocked. The raw SQL
 check looks for the column's name in the SQL text; it doesn't parse SQL.
 
-## Docs
+## Documentation
 
-- [Reference](https://github.com/jimmykurian/tenantguard/blob/main/docs/reference/README.md):
-  rules, analyzers, options, exceptions and logging, with every message
-- [Guides](https://github.com/jimmykurian/tenantguard/blob/main/docs/guides/README.md):
-  hand-rolled filters, Finbuckle, testing, migrating an existing app
-- [Samples](https://github.com/jimmykurian/tenantguard/tree/main/samples): a hand-rolled
-  app and a Finbuckle app, each with a probe test in
-  [`tests/e2e`](https://github.com/jimmykurian/tenantguard/tree/main/tests/e2e)
-- [Changelog](https://github.com/jimmykurian/tenantguard/blob/main/CHANGELOG.md)
+Every page reads here on GitHub, starting at [docs/](docs/README.md).
 
-## Building from source
+| | |
+| --- | --- |
+| [Guides](docs/guides/README.md) | [Hand-rolled filters](docs/guides/hand-rolled.md), [Finbuckle](docs/guides/finbuckle.md), [testing with the probe](docs/guides/testing.md) and [migrating an existing app](docs/guides/migrating.md) |
+| [Reference](docs/reference/README.md) | [Rules](docs/reference/rules.md) TGM001 to TGM008, [analyzers](docs/reference/analyzers.md) TG001 to TG004, [options](docs/reference/options.md), [exceptions](docs/reference/exceptions.md) and [logging](docs/reference/logging.md), with every message |
+| [Specification](docs/SPEC.md) | The contract: rule IDs, messages, options and public types, and the EF Core behaviors the design relies on |
+| [Decisions](docs/DECISIONS.md) | Why things are the way they are |
+| [Samples](samples/) | A hand-rolled app and a Finbuckle app, each with a probe test in [`tests/e2e`](tests/e2e/) |
+| [Changelog](CHANGELOG.md) | Every release |
 
-Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.dev).
-`task ci` runs everything CI runs; `task --list` shows the rest.
+## Architecture
+
+TenantGuard reads the model your app already builds and never changes it. Three packages
+work at three moments: the analyzers at build, the runtime package when EF Core builds the
+model and on every `SaveChanges`, and the test kit in your tests.
+
+```mermaid
+flowchart LR
+    subgraph build["Build"]
+        src["Your code"] --> analyzers["Analyzers<br/>TG001 to TG004"]
+    end
+    subgraph runtime["TenantGuard.EntityFrameworkCore"]
+        direction TB
+        hosting["Hosting<br/>UseTenantGuard,<br/>startup validation"]
+        guard["Interception<br/>SaveChanges write guard"]
+        rules["Model<br/>rules TGM001 to TGM008"]
+        options["Options<br/>configuration"]
+        hosting --> guard --> rules --> options
+    end
+    subgraph tests["Tests"]
+        probe["TenantGuard.Testing<br/>isolation probe"]
+    end
+    model["Your DbContext<br/>and its EF Core model"] -->|"model built"| rules
+    model -->|"SaveChanges"| guard
+    rules -->|"error"| fail["Startup fails:<br/>TenantGuardModelException"]
+    guard -->|"cross-tenant write"| block["TenantIsolationViolationException,<br/>before the database"]
+    probe -->|"seeds a row per tenant,<br/>runs six checks per entity"| model
+    probe --> report["ProbeReport"]
+```
+
+Inside the runtime package the folders are rings, and each depends only on the rings
+further in; the architecture tests in [`tests/architecture`](tests/architecture/) fail on
+a dependency that points outward. [DECISIONS.md](docs/DECISIONS.md) records why.
+
+## Development
+
+Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.dev). Every
+command runs through the [Taskfile](Taskfile.yml), and CI calls the same tasks: `task ci`
+runs lint, build, the unit, architecture, integration and end-to-end tests, pack, the
+samples and scrub. `task --list` shows the rest.
 
 Commits follow [Conventional Commits](https://conventionalcommits.org).
 `git config commit.template .gitmessage` loads a template with the types and scopes.
@@ -210,11 +254,71 @@ Commits follow [Conventional Commits](https://conventionalcommits.org).
 `main` and checks the staged files, commit-msg checks the message, and pre-push runs
 `task lint` and `task test` before code reaches GitHub.
 
-[CONTRIBUTING.md](https://github.com/jimmykurian/tenantguard/blob/main/CONTRIBUTING.md)
-covers the tasks, the tests, the hooks and how to send a change. Report a vulnerability
-through [SECURITY.md](https://github.com/jimmykurian/tenantguard/blob/main/SECURITY.md),
-not an issue.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the tasks, the tests, the hooks and how to send a
+change. Report a vulnerability through [SECURITY.md](SECURITY.md), not an issue.
+
+## Status
+
+Each badge is a check from the last CI run on `main`: `.github/workflows/ci.yml` writes
+them to the `badges` branch. On a pull request, the same checks run as the pull request's
+checks.
+
+### Checks
+
+| Branch | Format | Public API | License headers | LightBDD scenarios | Code metrics | Scrub | ci-parity |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| main | [![format](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fchecks%2Fformat.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![public api](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fchecks%2Fpublic-api.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![headers](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fchecks%2Fheaders.json&style=flat-square&logo=apache&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![scenarios](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fchecks%2Fscenarios.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![metrics](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fchecks%2Fmetrics.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![scrub](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fchecks%2Fscrub.json&style=flat-square&logo=git&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![ci parity](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fchecks%2Fci-parity.json&style=flat-square&logo=githubactions&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) |
+
+### Build and tests
+
+| Branch | Build | Unit tests | Architecture tests | Integration tests | End-to-end tests | Samples | Pack |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| main | [![build](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fbuild.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![unit tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Funit-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![architecture tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Farchitecture-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![integration tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fintegration-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![e2e tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fe2e-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![samples](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fsamples.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![pack](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fpack.json&style=flat-square&logo=nuget&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) |
+
+### Workflows
+
+| Branch | SQL Server and PostgreSQL | Release |
+| --- | --- | --- |
+| main | [![providers.yml](https://img.shields.io/github/actions/workflow/status/jimmykurian/tenantguard/providers.yml?branch=main&style=flat-square&logo=docker&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/providers.yml?query=branch%3Amain) | [![release.yml](https://img.shields.io/github/actions/workflow/status/jimmykurian/tenantguard/release.yml?branch=main&style=flat-square&logo=nuget&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/release.yml?query=branch%3Amain) |
+
+## Code metrics
+
+The size and complexity of the C# code: files and lines of code without blanks or
+comments, and the cyclomatic complexity of every method, read with Roslyn's syntax API by
+[`tools/Metrics`](tools/Metrics/). `task metrics:readme` writes them here, and CI and the
+pre-push hook fail while they're out of date, so each change updates them. Run
+`task metrics` to see them locally.
+
+<!-- METRICS:START -->
+
+| Metric | Packages | Tests | Samples | Total |
+| --- | --- | --- | --- | --- |
+| Files | 60 | 57 | 14 | 131 |
+| Lines of code | 2,497 | 3,527 | 218 | 6,242 |
+| Methods | 203 | 388 | 21 | 612 |
+| Average complexity | 3.0 | 1.1 | 1.2 | 1.7 |
+| Max complexity | 25 | 4 | 4 | 25 |
+
+<details>
+<summary>The 10 most complex methods</summary>
+
+| Method | Where | Complexity |
+| --- | --- | --- |
+| `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 25 |
+| `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:38` | 20 |
+| `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:28` | 14 |
+| `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:58` | 13 |
+| `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:33` | 12 |
+| `CrossTenantAccess.IsAllowed` | `src/TenantGuard.Analyzers/CrossTenantAccess.cs:19` | 11 |
+| `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:37` | 11 |
+| `TenantValues.Convert` | `src/TenantGuard.Testing/Seeding/TenantValues.cs:15` | 11 |
+| `OperandClassifier.ClassifyConstant` | `src/TenantGuard.EntityFrameworkCore/Model/OperandClassifier.cs:102` | 10 |
+| `ProbeRun.SeedAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:164` | 10 |
+
+</details>
+
+<!-- METRICS:END -->
 
 ## License
 
-[Apache-2.0](https://github.com/jimmykurian/tenantguard/blob/main/LICENSE)
+[Apache-2.0](LICENSE)
