@@ -8,7 +8,7 @@ and a local `task ci` run the same commands.
 
 | Workflow | Runs | Does |
 | --- | --- | --- |
-| `ci.yml` | Every pull request, every push to `main` | One step per check: format, public API, license headers, LightBDD scenarios, code metrics, build, the unit, architecture, integration and end-to-end tests, pack, samples, scrub and the docs site, each running even after an earlier one failed. A `ci-parity` job checks the workflows. On `main`, a `badges` job writes one shields.io endpoint file per check to the `badges` branch for the README's status table. |
+| `ci.yml` | Every pull request, every push to `main` | One step per check: format, public API, license headers, LightBDD scenarios, code metrics, build, the unit, architecture, integration and end-to-end tests, pack, samples, scrub and the docs site, each running even after an earlier one failed. A `ci-parity` job checks the workflows. On a pull request, a `report` job posts a comment with a table of every check's result, and updates it on each push. On `main`, a `badges` job writes one shields.io endpoint file per check to the `badges` branch for the README's status table. |
 | `providers.yml` | On demand, nightly, and on pull requests that change the runtime or test kit packages, the shared probe test models, the package versions or the provider tests | The isolation probe on SQL Server and PostgreSQL in Testcontainers; never required to merge |
 | `release.yml` | Every push to `main` | Release Please, then the publish job for a new release |
 | `site.yml` | Pushes to `main` that change `docs/`, `site/`, the logo or the changelog | Builds the docs site and deploys it to GitHub Pages |

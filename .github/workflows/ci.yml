@@ -11,15 +11,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
   DOTNET_NOLOGO: "1"
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
 
-# One step per check, each with an id, so the badges job can report each one. Every check runs
-# even when an earlier one failed (!cancelled()), so each badge shows its own result.
+# Every check, then their results:
+#
+#   ci ─────────┬─ report (pull requests: a table of every check, as a PR comment)
+#   ci-parity ──┴─ badges (main only: the README status table)
+#
+# One step per check, each with an id, so the report and badges jobs can show each one. Every
+# check runs even when an earlier one failed (!cancelled()), so each shows its own result.
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -37,6 +42,7 @@ jobs:
       samples: ${{ steps.samples.outcome }}
       e2e: ${{ steps.e2e.outcome }}
       scrub: ${{ steps.scrub.outcome }}
+      site_install: ${{ steps.site_install.outcome }}
       site: ${{ steps.site.outcome }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -114,6 +120,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: task scrub
       - name: Docs site install
+        id: site_install
         if: ${{ !cancelled() }}
         run: task site:install
       - name: Docs site
@@ -129,6 +136,117 @@ jobs:
         with:
           # A SHA ref would otherwise resolve to the latest release, which may be a new major.
           version: v0.10.0
+
+  # Posts one comment on the pull request with a table of every check, and updates it on each
+  # push, like ci-parity's.
+  report:
+    name: Check table
+    needs: [ci, ci-parity]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write # creates and updates the comment
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const needs = JSON.parse(process.env.NEEDS);
+            const marker = '<!-- pr-check-table -->';
+            // Each result is a word; the symbol only repeats it.
+            const shown = {
+              success: '✅ Passed',
+              failure: '❌ Failed',
+              cancelled: '⏹️ Cancelled',
+              skipped: '⏭️ Skipped',
+            };
+            const result = (outcome) => shown[outcome] ?? '⚠️ Not run';
+
+            // [check, how it runs, the ci job's output, or '' for the job's own result] per section.
+            const sections = [
+              {
+                title: 'Lint',
+                job: 'ci',
+                rows: [
+                  ['Format and Roslyn analyzers (dotnet format)', '`task lint:format`', 'format'],
+                  ['Public API files (PublicApiAnalyzers)', '`task lint:api`', 'api'],
+                  ['License headers', '`task lint:headers`', 'headers'],
+                  ['No LightBDD [Scenario]', '`task lint:scenarios`', 'scenarios'],
+                  ['Code metrics in the README', '`task metrics:check`', 'metrics'],
+                  ['Clean room scrub', '`task scrub`', 'scrub'],
+                ],
+              },
+              {
+                title: 'Build and tests',
+                job: 'ci',
+                rows: [
+                  ['Build, warnings as errors', '`task build`', 'build'],
+                  ['Unit tests', '`task test:unit`', 'unit'],
+                  ['Architecture tests (NetArchTest)', '`task test:architecture`', 'architecture'],
+                  ['Integration tests (behavior pins, LightBDD)', '`task test:integration`', 'integration'],
+                  ['End-to-end tests (the sample apps)', '`task test:e2e`', 'e2e'],
+                ],
+              },
+              {
+                title: 'Packages and docs',
+                job: 'ci',
+                rows: [
+                  ['NuGet packages, packed and validated', '`task pack`', 'pack'],
+                  ['Samples, built and smoke-tested', '`task samples`', 'samples'],
+                  ['Docs site install', '`task site:install`', 'site_install'],
+                  ['Docs site sync tests, build and link check', '`task site:check`', 'site'],
+                ],
+              },
+              {
+                title: 'Workflows',
+                job: 'ci-parity',
+                rows: [['Every run step calls a task (ci-parity)', '`uses: jimmykurian/ci-parity`', '']],
+              },
+            ];
+
+            const failed = Object.values(needs).some(({ result: r }) => r !== 'success');
+            const lines = [];
+            for (const { title, job, rows } of sections) {
+              const { result: jobResult, outputs = {} } = needs[job] ?? {};
+              lines.push(`### ${title}`, '');
+              if (jobResult === 'cancelled') {
+                lines.push('⏹️ *Cancelled*', '');
+                continue;
+              }
+              lines.push('| Check | Task | Result |', '|:------|:-----|:-------|');
+              for (const [label, how, key] of rows) {
+                lines.push(`| ${label} | ${how} | ${result(key ? outputs[key] : jobResult)} |`);
+              }
+              lines.push('');
+            }
+
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '## PR check results',
+              '',
+              `**Overall:** ${failed ? '❌ Some checks failed or didn\'t run' : '✅ All checks passed'}`,
+              '',
+              ...lines,
+              '---',
+              `<sub>Commit \`${process.env.HEAD_SHA.slice(0, 7)}\` · [View run](${run})</sub>`,
+              '',
+              marker,
+            ].join('\n');
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find((c) => c.user?.type === 'Bot' && c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
 
   # Writes one shields.io endpoint JSON per check to the badges branch, for the README's
   # status table. Only main's results count. One commit through the Git Data API, so no git
