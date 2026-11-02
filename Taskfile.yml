@@ -98,7 +98,8 @@ tasks:
         # files); the paths are read as data, never expanded by the shell.
         if [ -n "${HEADER_FILES:-}" ]; then cat "$HEADER_FILES"; else git ls-files; fi > "$tmp/all"
         # grep exits 1 when no path matches; that isn't a failure.
-        grep -E '\.ya?ml$|^\.githooks/' "$tmp/all" > "$tmp/files" || [ $? -eq 1 ]
+        # The pnpm lockfile is generated, so it has no header.
+        grep -E '\.ya?ml$|^\.githooks/' "$tmp/all" | grep -vx 'site/pnpm-lock.yaml' > "$tmp/files" || [ $? -eq 1 ]
         status=0
         while IFS= read -r file; do
           [ -f "$file" ] || continue
@@ -135,6 +136,51 @@ tasks:
     desc: Fail when the README's code metrics are out of date (CI and the pre-push hook run this)
     cmds:
       - dotnet run --project "{{.ROOT_DIR}}/tools/Metrics" -c {{.CONFIGURATION}} -- --check README.md
+
+  site:install:
+    desc: Install the docs site's packages (site/, pinned in its lockfile)
+    dir: site
+    preconditions:
+      - sh: command -v pnpm
+        msg: "pnpm not found on PATH; install Node.js 22 or later and pnpm (corepack enable pnpm)"
+      # A registry mirror in ~/.npmrc makes pnpm record its own download URLs. They don't
+      # resolve elsewhere and name the mirror, so the lockfile keeps integrity hashes only.
+      - sh: "! grep -q 'tarball:' pnpm-lock.yaml"
+        msg: "site/pnpm-lock.yaml records tarball URLs from a registry mirror; remove them (keep the integrity hashes) before committing"
+    cmds:
+      - pnpm install --frozen-lockfile
+
+  site:sync:
+    desc: Copy docs/ into the docs site's pages
+    dir: site
+    cmds:
+      - node scripts/sync-docs.mjs
+
+  site:test:
+    desc: Run the docs sync script's unit tests
+    dir: site
+    cmds:
+      - pnpm test
+
+  site:build:
+    desc: Build the docs site into site/dist, failing on a broken link or anchor
+    dir: site
+    cmds:
+      - task: site:sync
+      - pnpm build
+
+  site:check:
+    desc: Test the docs sync script, then build the docs site (CI runs this)
+    cmds:
+      - task: site:test
+      - task: site:build
+
+  site:dev:
+    desc: Serve the docs site with live reload (run task site:sync after editing docs/)
+    dir: site
+    cmds:
+      - task: site:sync
+      - pnpm dev
 
   fmt:
     desc: Format the solution and the samples
@@ -211,10 +257,11 @@ tasks:
           echo "scrub: warning: SCRUB_TERMS_FILE has no terms; skipping"
           exit 0
         fi
+        # What git would commit: tracked files and new ones it doesn't ignore, so build
+        # output and installed packages (bin/, obj/, site/node_modules/) are never scanned.
         # File names only: the terms themselves must not reach the log.
-        hits="$(grep -rIilF -f "$terms" \
-          --exclude-dir=.git --exclude-dir=bin --exclude-dir=obj \
-          --exclude-dir=artifacts --exclude-dir=TestResults . || true)"
+        hits="$(git ls-files -z --cached --others --exclude-standard \
+          | xargs -0 grep -IilF -f "$terms" -- 2>/dev/null || true)"
         if [ -n "$hits" ]; then
           echo "scrub: private terms found in:" >&2
           echo "$hits" >&2
@@ -228,7 +275,7 @@ tasks:
       - git config core.hooksPath .githooks
 
   ci:
-    desc: Run lint, build, test, pack, samples and scrub
+    desc: Run lint, build, test, pack, samples, scrub and the docs site, as CI does
     cmds:
       - task: lint
       - task: build
@@ -236,3 +283,5 @@ tasks:
       - task: pack
       - task: samples
       - task: scrub
+      - task: site:install
+      - task: site:check

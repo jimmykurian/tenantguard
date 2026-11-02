@@ -12,3 +12,12 @@ TestResults/
 
 # Verify snapshot files from a failing run; the .verified.* files are committed.
 *.received.*
+
+# The docs site: its packages, its build, and what scripts/sync-docs.mjs copies in.
+site/node_modules/
+site/dist/
+site/.astro/
+site/public/
+site/src/assets/
+site/src/content/docs/*
+!site/src/content/docs/index.mdx

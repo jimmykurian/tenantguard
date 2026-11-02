@@ -70,8 +70,11 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | `task release:push` | pushes the packages to nuget.org with the key in `$NUGET_API_KEY`; the release workflow runs it |
 | `task release:attach -- vX.Y.Z` | attaches the packages to that GitHub Release; the release workflow runs it |
 | `task samples` | builds the samples and smoke-tests each one |
+| `task site:install` | installs the docs site's packages from `site/pnpm-lock.yaml`; refuses a lockfile that records a registry mirror's URLs |
+| `task site:check` | runs the docs sync script's tests, then builds the site, failing on a broken link or anchor |
+| `task site:dev` | serves the docs site with live reload; run `task site:sync` after editing `docs/` |
 | `task scrub` | greps the tree for the private terms in `$SCRUB_TERMS_FILE`; warns and passes when it isn't set |
-| `task ci` | lint, build, test, pack, samples and scrub, in order |
+| `task ci` | lint, build, test, pack, samples, scrub and the docs site, in order |
 | `task hooks:install` | turns on the git hooks in `.githooks/` |
 
 ## How the code is organized

@@ -1,0 +1,14 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+# pnpm settings for the docs site (task site:install).
+
+# Install scripts are off unless listed here. esbuild and sharp get their binaries from
+# platform packages, so their postinstall checks aren't needed.
+allowBuilds:
+  esbuild: false
+  sharp: false
+
+overrides:
+  # mermaid's 11.x line pins katex ^0.16, which has a published advisory fixed in 0.18.2. The
+  # docs' diagrams use no math, so katex isn't exercised either way.
+  'katex@<0.18.2': '^0.18.2'
