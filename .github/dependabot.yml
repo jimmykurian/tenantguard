@@ -1,0 +1,46 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+# Dependabot opens security updates only: open-pull-requests-limit 0 turns version updates
+# off, and security updates don't count against it. Each commit message is a Conventional
+# Commit: a fix to a package the NuGet packages ship with releases a patch through Release
+# Please; the docs site's packages and the workflows' actions don't release anything.
+version: 2
+updates:
+  # Directory.Packages.props, for the packages, tests, samples and tools/.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    # zizmor asks for a cooldown; it delays version updates only, so it never holds back a
+    # security update.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: fix(deps)
+
+  # The docs site in site/ (pnpm).
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    # zizmor asks for a cooldown; it delays version updates only, so it never holds back a
+    # security update.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: build(deps)
+
+  # The actions the workflows in .github/workflows use.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    # zizmor asks for a cooldown; it delays version updates only, so it never holds back a
+    # security update.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci(deps)
