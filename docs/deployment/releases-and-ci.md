@@ -33,3 +33,15 @@ what changes for the first stable release.
 
 `main` takes changes through pull requests only, with the `ci` and `ci-parity` checks
 passing; force pushes and deletion are blocked. Merged branches are deleted automatically.
+
+## Security
+
+GitHub runs secret scanning, with push protection that blocks a push carrying a secret, and
+CodeQL's default setup, which scans the C#, the workflows and the docs site's scripts on
+every pull request and weekly. Private vulnerability reporting takes reports as
+[SECURITY.md](../../SECURITY.md) describes.
+
+Dependabot raises alerts and opens security updates only; `.github/dependabot.yml` turns
+version updates off. Its pull requests have Conventional Commit titles: `fix(deps):` for
+NuGet packages, so a fix to a package TenantGuard ships with releases a patch, `build(deps):`
+for the docs site's packages and `ci(deps):` for the workflows' actions.
