@@ -31,7 +31,7 @@ It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query 
 
 [![NuGet](https://img.shields.io/nuget/vpre/TenantGuard.EntityFrameworkCore?style=flat-square&label=nuget)](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore) [![Latest release](https://img.shields.io/github/v/release/jimmykurian/tenantguard?include_prereleases&style=flat-square&label=release)](https://github.com/jimmykurian/tenantguard/releases) [![License: Apache-2.0](https://img.shields.io/github/license/jimmykurian/tenantguard?style=flat-square)](LICENSE)
 
-[Documentation](docs/README.md) · [Rules](docs/reference/rules.md) · [Analyzers](docs/reference/analyzers.md) · [Guides](docs/guides/README.md) · [Changelog](CHANGELOG.md) · [NuGet](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore)
+[Documentation](https://jimmykurian.github.io/tenantguard/) · [Rules](https://jimmykurian.github.io/tenantguard/reference/rules/) · [Analyzers](https://jimmykurian.github.io/tenantguard/reference/analyzers/) · [Guides](https://jimmykurian.github.io/tenantguard/guides/) · [Changelog](CHANGELOG.md) · [NuGet](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore)
 
 ![A terminal session: dotnet build warns TG001 on IgnoreQueryFilters; dotnet run fails at startup with TGM001, an entity with a tenant property and no query filter; after the filter is added, dotnet run starts and TenantGuard logs 0 errors.](docs/assets/tenantguard-demo.svg)
 
@@ -196,7 +196,8 @@ check looks for the column's name in the SQL text; it doesn't parse SQL.
 
 ## Documentation
 
-Every page reads here on GitHub, starting at [docs/](docs/README.md).
+The full documentation is at **<https://jimmykurian.github.io/tenantguard/>**, with search. It's built from
+[`docs/`](docs/README.md) by [`site/`](site/), so every page also reads here on GitHub.
 
 | | |
 | --- | --- |
@@ -246,7 +247,8 @@ a dependency that points outward. [DECISIONS.md](docs/DECISIONS.md) records why.
 Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.dev). Every
 command runs through the [Taskfile](Taskfile.yml), and CI calls the same tasks: `task ci`
 runs lint, build, the unit, architecture, integration and end-to-end tests, pack, the
-samples and scrub. `task --list` shows the rest.
+samples and scrub. `task --list` shows the rest. The docs site needs Node.js 22 or later
+and pnpm: `task site:install`, then `task site:dev` serves it with live reload.
 
 Commits follow [Conventional Commits](https://conventionalcommits.org).
 `git config commit.template .gitmessage` loads a template with the types and scopes.
@@ -271,15 +273,15 @@ checks.
 
 ### Build and tests
 
-| Branch | Build | Unit tests | Architecture tests | Integration tests | End-to-end tests | Samples | Pack |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| main | [![build](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fbuild.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![unit tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Funit-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![architecture tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Farchitecture-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![integration tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fintegration-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![e2e tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fe2e-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![samples](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fsamples.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![pack](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fpack.json&style=flat-square&logo=nuget&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) |
+| Branch | Build | Unit tests | Architecture tests | Integration tests | End-to-end tests | Samples | Pack | Docs site |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| main | [![build](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fbuild.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![unit tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Funit-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![architecture tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Farchitecture-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![integration tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fintegration-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![e2e tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fe2e-tests.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![samples](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fsamples.json&style=flat-square&logo=dotnet&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![pack](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fpack.json&style=flat-square&logo=nuget&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) | [![docs site](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjimmykurian%2Ftenantguard%2Fbadges%2Fbuild%2Fdocs-site.json&style=flat-square&logo=astro&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/ci.yml?query=branch%3Amain) |
 
 ### Workflows
 
-| Branch | SQL Server and PostgreSQL | Release |
-| --- | --- | --- |
-| main | [![providers.yml](https://img.shields.io/github/actions/workflow/status/jimmykurian/tenantguard/providers.yml?branch=main&style=flat-square&logo=docker&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/providers.yml?query=branch%3Amain) | [![release.yml](https://img.shields.io/github/actions/workflow/status/jimmykurian/tenantguard/release.yml?branch=main&style=flat-square&logo=nuget&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/release.yml?query=branch%3Amain) |
+| Branch | SQL Server and PostgreSQL | Release | Docs site deploy |
+| --- | --- | --- | --- |
+| main | [![providers.yml](https://img.shields.io/github/actions/workflow/status/jimmykurian/tenantguard/providers.yml?branch=main&style=flat-square&logo=docker&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/providers.yml?query=branch%3Amain) | [![release.yml](https://img.shields.io/github/actions/workflow/status/jimmykurian/tenantguard/release.yml?branch=main&style=flat-square&logo=nuget&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/release.yml?query=branch%3Amain) | [![site.yml](https://img.shields.io/github/actions/workflow/status/jimmykurian/tenantguard/site.yml?branch=main&style=flat-square&logo=githubpages&logoColor=white&label=%20&labelColor=555)](https://github.com/jimmykurian/tenantguard/actions/workflows/site.yml?query=branch%3Amain) |
 
 ## Code metrics
 

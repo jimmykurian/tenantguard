@@ -1,0 +1,39 @@
+---
+title: TenantGuard
+description: Prove an EF Core multi-tenant model leaks nothing.
+template: splash
+hero:
+  tagline: Startup model validation, a SaveChanges guard, Roslyn analyzers and an isolation test kit that prove an EF Core multi-tenant model leaks nothing.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Get started
+      link: /tenantguard/guides/
+      icon: right-arrow
+    - text: Rules and analyzers
+      link: /tenantguard/reference/
+      variant: minimal
+    - text: GitHub
+      link: https://github.com/jimmykurian/tenantguard
+      variant: minimal
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="At startup" icon="warning">
+    TGM001 to TGM008 fail the host when an entity with a tenant property has no query filter, or when the filter is frozen to one value.
+  </Card>
+  <Card title="On SaveChanges" icon="seti:lock">
+    The write guard throws before the database sees a write, move or delete of another tenant's row.
+  </Card>
+  <Card title="At build" icon="seti:c-sharp">
+    TG001 to TG004 flag IgnoreQueryFilters() and raw SQL without a tenant predicate, unless the code says why.
+  </Card>
+  <Card title="In your tests" icon="approve-check">
+    The isolation probe seeds a row per tenant and proves, entity by entity, that one tenant can't reach another's.
+  </Card>
+</CardGrid>
+
+It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query filters. Install it with `dotnet add package TenantGuard.EntityFrameworkCore --prerelease`.

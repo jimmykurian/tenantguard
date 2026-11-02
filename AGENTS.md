@@ -28,8 +28,11 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
 - `task release:push` and `task release:attach` publish the packages; only `release.yml`
   runs them
 - `task samples` builds and smoke-tests `samples/`
+- `task site:install`, `task site:check` (sync tests and build, failing on a broken link) and
+  `task site:dev` work on the docs site in `site/` (Astro Starlight, built from `docs/`;
+  Node.js 22+ and pnpm); `site.yml` deploys it to GitHub Pages
 - `task scrub` greps the tree for terms in `$SCRUB_TERMS_FILE` (see Clean room)
-- `task ci` runs lint, build, test, pack, samples, scrub
+- `task ci` runs lint, build, test, pack, samples, scrub and the docs site
 - `task hooks:install` turns on the git hooks in `.githooks/` (pre-commit, commit-msg,
   pre-push)
 
