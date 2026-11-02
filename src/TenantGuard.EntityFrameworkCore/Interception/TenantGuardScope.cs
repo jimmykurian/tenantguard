@@ -18,10 +18,12 @@ internal sealed class TenantGuardScope : IResettableService
     // Bumped when a pooled context goes back to the pool, so a scope from an earlier lease ends nothing.
     private int _generation;
 
-    public TenantGuardScope(IDbContextOptions contextOptions)
+    // The composition root (TenantGuardOptionsExtension) hands in the context's options and
+    // logger, so the write guard never reaches out to the hosting layer for them.
+    public TenantGuardScope(TenantGuardOptions options, ILogger logger)
     {
-        Options = contextOptions.FindExtension<TenantGuardOptionsExtension>()?.Options ?? TenantGuardOptions.Default;
-        Logger = TenantGuardLogging.CreateLogger(contextOptions);
+        Options = options;
+        Logger = logger;
     }
 
     public TenantGuardOptions Options { get; }

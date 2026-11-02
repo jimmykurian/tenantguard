@@ -7,6 +7,30 @@ proposal is accepted or rejected. Newest first.
 Each entry: date, the decision, the problem, the proposed change, status (open, accepted,
 rejected).
 
+## 2026-11-01: The runtime's folders are rings with an enforced direction (accepted)
+
+Decision: "`src/TenantGuard.EntityFrameworkCore`: `Options/`, `Model/` (conventions, rules),
+`Interception/`, `Diagnostics/`" (AGENTS.md).
+
+Problem: applying Clean Architecture's Dependency Rule (dependencies point inward, and the
+build enforces it) to the runtime package. Between packages it held, and the architecture
+tests check it. Inside the runtime it didn't: `Model/` held the rules next to the EF
+convention plumbing, and `Options/` held the configuration everything reads next to the
+composition root that depends on everything, so the folders depended on each other both ways.
+The write guard's scope also read `TenantGuardOptionsExtension` from the context options
+itself.
+
+Change: the folders become rings, innermost first, and a ring depends only on rings further
+in: `Options/` (configuration and the user's markers), `Model/` (the rules), `Diagnostics/`
+(logging), `Interception/` (the write guard), and a new `Hosting/` (the composition root:
+`TenantGuardOptionsExtension`, `UseTenantGuard`, `AddTenantGuardStartupValidation`, the EF
+convention plugin and convention, the startup check). `TenantGuardScope` takes its options
+and logger in its constructor, from the composition root. Files moved; the namespace stays
+`TenantGuard` (SPEC 2), so the public API is unchanged. `RingRules` in tests/architecture
+reads each type's folder from the symbols and fails on an outward dependency. The rest of
+Clean Architecture's layering (Domain, Application, Infrastructure, API) doesn't apply to a
+library whose domain is the user's EF model.
+
 ## 2026-11-01: Test libraries beyond xUnit (accepted)
 
 Decision: "Tests use xUnit v3, `Microsoft.EntityFrameworkCore.Sqlite`,

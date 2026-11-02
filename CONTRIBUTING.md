@@ -73,10 +73,12 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 
 ## How the code is organized
 
-- `src/TenantGuard.EntityFrameworkCore`: the runtime package. `Options/` holds
-  `UseTenantGuard` and its options, `Model/` the model rules and the convention that runs
-  them, `Interception/` the write guard, and `Diagnostics/` the logging and
-  `AllowCrossTenantAccessAttribute`.
+- `src/TenantGuard.EntityFrameworkCore`: the runtime package, in rings from the inside out.
+  `Options/` holds the options, the builder and the attributes users put on their code,
+  `Model/` the model rules, `Diagnostics/` the logging, `Interception/` the write guard, and
+  `Hosting/` the composition root: `UseTenantGuard`, `AddTenantGuardStartupValidation`, and
+  the EF convention that runs the rules. A ring depends only on rings further in, and
+  `RingRules` in `tests/architecture/` fails on a dependency that points outward.
 - `src/TenantGuard.Analyzers`: TG001 to TG004, one file per rule, on
   `Microsoft.CodeAnalysis.CSharp` 4.8.0. The runtime package carries them too.
 - `src/TenantGuard.Testing`: the isolation probe. `Probe/` runs the checks, `Seeding/`

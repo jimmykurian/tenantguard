@@ -65,8 +65,10 @@ If a decision turns out to be wrong, write the problem and the proposed change i
 
 ## Code conventions
 
-- `src/TenantGuard.EntityFrameworkCore`: `Options/`, `Model/` (conventions, rules),
-  `Interception/`, `Diagnostics/`. `src/TenantGuard.Analyzers`: one file per rule.
+- `src/TenantGuard.EntityFrameworkCore`: rings, innermost first; a ring depends only on rings
+  further in (tests/architecture enforces it): `Options/` (configuration), `Model/` (rules),
+  `Diagnostics/` (logging), `Interception/` (write guard), `Hosting/` (composition root, EF
+  convention, DI). `src/TenantGuard.Analyzers`: one file per rule.
   `src/TenantGuard.Testing`: `Probe/`, `Seeding/`, `Report/`.
 - Public surface is small and documented with XML docs; everything else `internal`
   with `InternalsVisibleTo` for the test projects.
