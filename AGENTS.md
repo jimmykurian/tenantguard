@@ -17,10 +17,12 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
   one folder of `tests/`
 - `task test:providers` runs the probe on SQL Server and PostgreSQL in Testcontainers;
   it needs Docker, so `task test` leaves it out and `providers.yml` runs it
-- `task lint` runs `dotnet format --verify-no-changes`, the Roslyn analyzers,
-  `task lint:api` (PublicAPI.Shipped/Unshipped are up to date), `task lint:headers`
-  (YAML files and git hooks start with the copyright line) and `task lint:scenarios`
-  (no LightBDD `[Scenario]`, which xunit.v3 4 silently skips)
+- `task lint` runs `task lint:format` (`dotnet format --verify-no-changes` and the Roslyn
+  analyzers), `task lint:api` (PublicAPI.Shipped/Unshipped are up to date),
+  `task lint:headers` (YAML files and git hooks start with the copyright line),
+  `task lint:scenarios` (no LightBDD `[Scenario]`, which xunit.v3 4 silently skips) and
+  `task metrics:check` (the README's code metrics are current; `task metrics:readme` writes
+  them)
 - `task fmt` formats
 - `task pack` builds the NuGet packages into `./artifacts/` and validates them
 - `task release:push` and `task release:attach` publish the packages; only `release.yml`
