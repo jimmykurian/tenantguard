@@ -19,7 +19,8 @@ export default defineConfig({
     starlight({
       title: 'TenantGuard',
       description: 'Prove an EF Core multi-tenant model leaks nothing: startup model validation, a SaveChanges guard, Roslyn analyzers and an isolation test kit.',
-      logo: { src: './src/assets/logo.svg' },
+      // The README's wordmark, the shield and the name in one image, in place of the title.
+      logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo-dark.svg', replacesTitle: true },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/jimmykurian/tenantguard' }],
       customCss: ['./src/styles/custom.css'],
       // favicon.svg is Starlight's default favicon; the PNG covers the rest.

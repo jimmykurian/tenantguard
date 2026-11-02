@@ -142,11 +142,14 @@ function main() {
     writeFileSync(target, convert(readFileSync(join(docs, rel), 'utf8'), rel, isDir));
   }
 
-  // The logo for Starlight's header and the home page, every docs asset for links to it,
-  // and the favicons.
+  // The wordmark for Starlight's header, the logo for the home page, every docs asset for
+  // links to it, and the favicons.
   rmSync(join(site, 'src', 'assets'), { recursive: true, force: true });
   mkdirSync(join(site, 'src', 'assets'), { recursive: true });
   cpSync(join(repo, 'assets', 'logo.svg'), join(site, 'src', 'assets', 'logo.svg'));
+  for (const mode of ['light', 'dark']) {
+    cpSync(join(docs, 'assets', `logo-${mode}.svg`), join(site, 'src', 'assets', `logo-${mode}.svg`));
+  }
   rmSync(join(site, 'public'), { recursive: true, force: true });
   cpSync(join(docs, 'assets'), join(site, 'public'), { recursive: true });
   // The logo as the favicon (Starlight's default path), and the package icon as a PNG for
