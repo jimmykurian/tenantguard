@@ -260,6 +260,8 @@ Commits follow [Conventional Commits](https://conventionalcommits.org).
 
 [CONTRIBUTING.md](CONTRIBUTING.md) covers the tasks, the tests, the hooks and how to send a
 change. Report a vulnerability through [SECURITY.md](SECURITY.md), not an issue.
+[ACCESSIBILITY.md](ACCESSIBILITY.md) says how messages, output and docs stay readable with
+assistive technology, and lists the known gaps.
 
 ## Status
 
