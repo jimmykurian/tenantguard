@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="464" height="96" viewBox="0 0 464 96" role="img" aria-labelledby="title">
+  <title id="title">TenantGuard</title>
+  <!-- The logo's shield, then the name: the light version of the README heading. -->
+  <g transform="scale(0.75)">
+    <defs>
+    <clipPath id="tenants"><path d="M 32 20 L 96 20 Q 104 20 104 28 L 104 61.6 C 104 85.6 86.4 100 64 108.8 C 41.6 100 24 85.6 24 61.6 L 24 28 Q 24 20 32 20 Z"/></clipPath>
+  </defs>
+  <path d="M 24 10 L 104 10 Q 114 10 114 20 L 114 62 C 114 92 92 110 64 121 C 36 110 14 92 14 62 L 14 20 Q 14 10 24 10 Z" fill="#1B2F4E"/>
+  <g clip-path="url(#tenants)">
+    <rect x="0" y="0" width="60.5" height="56.5" fill="#2FC98E"/>
+    <rect x="67.5" y="0" width="60.5" height="56.5" fill="#5BA4E6"/>
+    <rect x="0" y="63.5" width="60.5" height="64.5" fill="#5BA4E6"/>
+    <rect x="67.5" y="63.5" width="60.5" height="64.5" fill="#5BA4E6"/>
+  </g>
+  </g>
+  <text x="104" y="65" fill="#1B2F4E" font-family="'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="52" font-weight="600">TenantGuard</text>
+</svg>
