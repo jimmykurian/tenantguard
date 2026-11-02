@@ -18,9 +18,25 @@ env:
   DOTNET_NOLOGO: "1"
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
 
+# One step per check, each with an id, so the badges job can report each one. Every check runs
+# even when an earlier one failed (!cancelled()), so each badge shows its own result.
 jobs:
   ci:
     runs-on: ubuntu-latest
+    outputs:
+      format: ${{ steps.format.outcome }}
+      api: ${{ steps.api.outcome }}
+      headers: ${{ steps.headers.outcome }}
+      scenarios: ${{ steps.scenarios.outcome }}
+      metrics: ${{ steps.metrics.outcome }}
+      build: ${{ steps.build.outcome }}
+      unit: ${{ steps.unit.outcome }}
+      architecture: ${{ steps.architecture.outcome }}
+      integration: ${{ steps.integration.outcome }}
+      pack: ${{ steps.pack.outcome }}
+      samples: ${{ steps.samples.outcome }}
+      e2e: ${{ steps.e2e.outcome }}
+      scrub: ${{ steps.scrub.outcome }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -35,23 +51,57 @@ jobs:
         with:
           version: 3.x
 
-      - name: Lint
-        run: task lint
+      - name: Format
+        id: format
+        if: ${{ !cancelled() }}
+        run: task lint:format
+      - name: Public API
+        id: api
+        if: ${{ !cancelled() }}
+        run: task lint:api
+      - name: License headers
+        id: headers
+        if: ${{ !cancelled() }}
+        run: task lint:headers
+      - name: LightBDD scenarios
+        id: scenarios
+        if: ${{ !cancelled() }}
+        run: task lint:scenarios
+      - name: Code metrics
+        id: metrics
+        if: ${{ !cancelled() }}
+        run: task metrics:check
       - name: Build
+        id: build
+        if: ${{ !cancelled() }}
         run: task build
       - name: Unit tests
+        id: unit
+        if: ${{ !cancelled() }}
         run: task test:unit
       - name: Architecture tests
+        id: architecture
+        if: ${{ !cancelled() }}
         run: task test:architecture
       - name: Integration tests
+        id: integration
+        if: ${{ !cancelled() }}
         run: task test:integration
       - name: Pack
+        id: pack
+        if: ${{ !cancelled() }}
         run: task pack
       - name: Samples
+        id: samples
+        if: ${{ !cancelled() }}
         run: task samples
       - name: End-to-end tests
+        id: e2e
+        if: ${{ !cancelled() }}
         run: task test:e2e
       - name: Scrub
+        id: scrub
+        if: ${{ !cancelled() }}
         run: task scrub
 
   ci-parity:
@@ -62,3 +112,80 @@ jobs:
         with:
           # A SHA ref would otherwise resolve to the latest release, which may be a new major.
           version: v0.10.0
+
+  # Writes one shields.io endpoint JSON per check to the badges branch, for the README's
+  # status table. Only main's results count. One commit through the Git Data API, so no git
+  # credentials stay on the runner.
+  badges:
+    name: Badges
+    needs: [ci, ci-parity]
+    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # commits to the badges branch
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const needs = JSON.parse(process.env.NEEDS);
+            const badge = (message, color) => ({ schemaVersion: 1, label: '', message, color });
+            const status = (outcome) =>
+              outcome === 'success'
+                ? badge('passing', 'brightgreen')
+                : outcome === 'failure'
+                  ? badge('failing', 'red')
+                  : badge(outcome || 'not run', 'lightgrey');
+
+            const c = needs.ci?.outputs ?? {};
+            const files = {
+              'checks/format.json': status(c.format),
+              'checks/public-api.json': status(c.api),
+              'checks/headers.json': status(c.headers),
+              'checks/scenarios.json': status(c.scenarios),
+              'checks/metrics.json': status(c.metrics),
+              'checks/scrub.json': status(c.scrub),
+              'checks/ci-parity.json': status(needs['ci-parity']?.result),
+              'build/build.json': status(c.build),
+              'build/unit-tests.json': status(c.unit),
+              'build/architecture-tests.json': status(c.architecture),
+              'build/integration-tests.json': status(c.integration),
+              'build/e2e-tests.json': status(c.e2e),
+              'build/samples.json': status(c.samples),
+              'build/pack.json': status(c.pack),
+            };
+
+            const { owner, repo } = context.repo;
+            const ref = 'heads/badges';
+            let parent;
+            try {
+              parent = (await github.rest.git.getRef({ owner, repo, ref })).data.object.sha;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            const tree = await github.rest.git.createTree({
+              owner,
+              repo,
+              tree: Object.entries(files).map(([path, data]) => ({
+                path,
+                mode: '100644',
+                type: 'blob',
+                content: `${JSON.stringify(data)}\n`,
+              })),
+            });
+            if (parent) {
+              const { data: last } = await github.rest.git.getCommit({ owner, repo, commit_sha: parent });
+              if (last.tree.sha === tree.data.sha) return core.info('Badges unchanged');
+            }
+            const commit = await github.rest.git.createCommit({
+              owner,
+              repo,
+              message: `chore: update the CI badges for ${context.sha.slice(0, 7)}`,
+              tree: tree.data.sha,
+              parents: parent ? [parent] : [],
+            });
+            if (parent) await github.rest.git.updateRef({ owner, repo, ref, sha: commit.data.sha });
+            else await github.rest.git.createRef({ owner, repo, ref: `refs/${ref}`, sha: commit.data.sha });
+            core.info(`Updated ${Object.keys(files).length} badges`);
