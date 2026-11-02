@@ -4,6 +4,8 @@ How to put TenantGuard to work. The [reference](../reference/README.md) lists ev
 option and message.
 
 - [Why TenantGuard](why.md): the gap it closes, and how it compares with other tools
+- [A use case](use-case.md): one invoicing app, four ordinary changes that leak, and where
+  TenantGuard catches each
 - [Hand-rolled query filters](hand-rolled.md): a context with its own tenant and a
   `HasQueryFilter` per entity
 - [Finbuckle.MultiTenant](finbuckle.md): entities marked with `IsMultiTenant()`

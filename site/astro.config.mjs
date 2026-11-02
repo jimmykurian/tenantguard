@@ -20,6 +20,7 @@ export default defineConfig({
       description: 'Prove an EF Core multi-tenant model leaks nothing: startup model validation, a SaveChanges guard, Roslyn analyzers and an isolation test kit.',
       logo: { src: './src/assets/logo.svg' },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/jimmykurian/tenantguard' }],
+      customCss: ['./src/styles/custom.css'],
       lastUpdated: false,
       sidebar: [
         { label: 'Overview', link: '/overview/' },
