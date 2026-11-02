@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0-preview.6](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.5...v0.1.0-preview.6) (2026-11-02)
+
+
+### Documentation
+
+* add a walkthrough, coverage visuals and a use case to the site home ([#43](https://github.com/jimmykurian/tenantguard/issues/43)) ([924b6b2](https://github.com/jimmykurian/tenantguard/commit/924b6b2f41e219a0ea07a4059476011b5001f2f4))
+* fan out the spec, plan and decisions log, with ADRs ([#41](https://github.com/jimmykurian/tenantguard/issues/41)) ([1a413f2](https://github.com/jimmykurian/tenantguard/commit/1a413f2423ab89e8dbe2adf51edd7db1c788cd7e))
+
 ## [0.1.0-preview.5](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.4...v0.1.0-preview.5) (2026-11-02)
 
 
