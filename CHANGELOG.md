@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0-preview.8](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.7...v0.1.0-preview.8) (2026-11-02)
+
+
+### Documentation
+
+* make the README heading a TenantGuard wordmark, and drop its license section ([#49](https://github.com/jimmykurian/tenantguard/issues/49)) ([7756594](https://github.com/jimmykurian/tenantguard/commit/7756594160e39298016522aa9a08daa2816b74eb))
+* use the TenantGuard wordmark in the docs site's header ([#51](https://github.com/jimmykurian/tenantguard/issues/51)) ([187374c](https://github.com/jimmykurian/tenantguard/commit/187374c9be205cc54ba2d6731cec88d012afd204))
+
 ## [0.1.0-preview.7](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.6...v0.1.0-preview.7) (2026-11-02)
 
 
