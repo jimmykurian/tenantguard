@@ -32,6 +32,8 @@ builder.Services.AddTenantGuardStartupValidation<AppDbContext>();
 
 var app = builder.Build();
 
+// The sample's database lives in memory, so it is created at startup. A real app applies
+// migrations as a reviewed deployment step instead, never EnsureCreated or Migrate at startup.
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();

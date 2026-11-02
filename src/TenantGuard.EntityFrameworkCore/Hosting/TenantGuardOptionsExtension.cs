@@ -30,7 +30,13 @@ internal sealed class TenantGuardOptionsExtension : IDbContextOptionsExtension
             .TryAdd<IConventionSetPlugin, TenantGuardConventionSetPlugin>()
             .TryAdd<IInterceptor, TenantGuardSaveChangesInterceptor>()
             .TryAdd<IResettableService, TenantGuardScope>(provider => provider.GetRequiredService<TenantGuardScope>());
-        services.TryAddScoped<TenantGuardScope>();
+        services.TryAddScoped(provider =>
+        {
+            var contextOptions = provider.GetRequiredService<IDbContextOptions>();
+            return new TenantGuardScope(
+                contextOptions.FindExtension<TenantGuardOptionsExtension>()?.Options ?? TenantGuardOptions.Default,
+                TenantGuardLogging.CreateLogger(contextOptions));
+        });
     }
 
     public void Validate(IDbContextOptions options)
