@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-preview.4](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.3...v0.1.0-preview.4) (2026-11-02)
+
+
+### Code Refactoring
+
+* arrange the runtime in rings with an enforced inward direction ([#34](https://github.com/jimmykurian/tenantguard/issues/34)) ([3d30e21](https://github.com/jimmykurian/tenantguard/commit/3d30e212c71e96e2d67622e0591d30746759be62))
+
 ## [0.1.0-preview.3](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.2...v0.1.0-preview.3) (2026-10-31)
 
 
