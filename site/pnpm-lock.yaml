@@ -26,6 +26,9 @@ importers:
       starlight-links-validator:
         specifier: 0.27.0
         version: 0.27.0(@astrojs/starlight@0.42.6(astro@7.4.1(@types/node@24.19.2)(yaml@2.9.1)))(astro@7.4.1(@types/node@24.19.2)(yaml@2.9.1))
+      starlight-theme-rapide:
+        specifier: 0.6.0
+        version: 0.6.0(@astrojs/starlight@0.42.6(astro@7.4.1(@types/node@24.19.2)(yaml@2.9.1)))
 
 packages:
 
@@ -1763,6 +1766,12 @@ packages:
     peerDependencies:
       '@astrojs/starlight': '>=0.42.0'
       astro: '>=7.2.10'
+
+  starlight-theme-rapide@0.6.0:
+    resolution: {integrity: sha512-pKfOQh7duWFYXed6RNv75zoRs32b8aeWMu14xlRd35UWeGtgZholOABXM3B0ZRan9uQzjwTxqehmrZv6oskBog==}
+    engines: {node: '>=22.12.0'}
+    peerDependencies:
+      '@astrojs/starlight': '>=0.42.0'
 
   std-env@4.3.0:
     resolution: {integrity: sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag==}
@@ -4023,6 +4032,10 @@ snapshots:
       yaml: 2.9.1
     transitivePeerDependencies:
       - supports-color
+
+  starlight-theme-rapide@0.6.0(@astrojs/starlight@0.42.6(astro@7.4.1(@types/node@24.19.2)(yaml@2.9.1))):
+    dependencies:
+      '@astrojs/starlight': 0.42.6(astro@7.4.1(@types/node@24.19.2)(yaml@2.9.1))
 
   std-env@4.3.0: {}
 
