@@ -49,6 +49,14 @@ Change, all test-only:
   `Runner.RunScenarioAsync`, which works, and `task lint:scenarios` fails on `[Scenario]`.
   When LightBDD supports xunit.v3 4, switch to `[Scenario]` and drop the check. The
   argument-checking probe tests and the FsCheck properties stay plain facts.
+- **NetArchTest.eNhancedEdition** (MIT) in a new `tests/architecture/` project, which turns
+  rules this file and AGENTS.md state in prose into tests over the shipped assemblies: the
+  runtime and the test kit depend on System, EF Core, Microsoft.Extensions and TenantGuard
+  only, the test kit on no test framework, the analyzers on Roslyn only; public types live
+  in `TenantGuard` and `TenantGuard.Testing`; exceptions are public, sealed and end in
+  `Exception`; reports, results and options can't be changed from outside; interceptors
+  implement both the sync and the async path; and the analyzers' attribute name matches
+  `AllowCrossTenantAccessAttribute`.
 - **AutoFixture and AutoFixture.AutoNSubstitute are not used.** Each test's EF model is the
   point of the test, so anonymous objects have nothing to fill.
 

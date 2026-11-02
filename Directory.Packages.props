@@ -34,6 +34,7 @@
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="FsCheck" Version="3.6.0" />
     <PackageVersion Include="LightBDD.XUnit3" Version="3.12.1" />
+    <PackageVersion Include="NetArchTest.eNhancedEdition" Version="1.4.5" />
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <PackageVersion Include="Verify.XunitV3" Version="33.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />

@@ -15,6 +15,7 @@ src/TenantGuard.EntityFrameworkCore/
 src/TenantGuard.Analyzers/
 src/TenantGuard.Testing/
 tests/unit/                      TenantGuard.EntityFrameworkCore.Tests, TenantGuard.Analyzers.Tests
+tests/architecture/              TenantGuard.Architecture.Tests
 tests/integration/               TenantGuard.BehaviorPins, TenantGuard.Testing.Tests, TenantGuard.Providers.Tests
 tests/e2e/                       HandRolled.Api.Tests, Finbuckle.Api.Tests
 samples/HandRolled.Api/          minimal API, own ITenantContext, own filters

@@ -52,8 +52,9 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | Task | What it does |
 | --- | --- |
 | `task build` | restores and builds the solution, warnings as errors |
-| `task test` | runs the unit, integration and end-to-end tests |
+| `task test` | runs the unit, architecture, integration and end-to-end tests |
 | `task test:unit` | `tests/unit/`: the runtime and analyzer tests |
+| `task test:architecture` | `tests/architecture/`: the dependency and public-surface rules over the shipped assemblies |
 | `task test:integration` | `tests/integration/`: the EF Core behavior pins (SPEC 9) and the test kit's own tests |
 | `task test:e2e` | `tests/e2e/`: the isolation probe against each sample app |
 | `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
@@ -81,6 +82,9 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 - `src/TenantGuard.Testing`: the isolation probe. `Probe/` runs the checks, `Seeding/`
   creates the rows, and `Report/` holds the report and its table.
 - `tests/unit/`: the runtime and analyzer tests, in process.
+- `tests/architecture/`: [NetArchTest](https://github.com/NeVeSpl/NetArchTest.eNhancedEdition)
+  rules over the three shipped assemblies: what each may depend on, where public types
+  live, sealed exceptions, and that every interceptor has both its sync and async path.
 - `tests/integration/`: the EF Core behavior pins, the test kit's own tests, and the
   provider tests.
 - `tests/e2e/`: a test project per sample app.

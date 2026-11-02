@@ -12,8 +12,9 @@ to work in this repo. Read all three before writing code.
 Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enforces that.
 
 - `task build` restores and builds the solution, warnings as errors
-- `task test` runs the unit, integration and end-to-end tests; `task test:unit`,
-  `task test:integration`, `task test:e2e` run one folder of `tests/`
+- `task test` runs the unit, architecture, integration and end-to-end tests;
+  `task test:unit`, `task test:architecture`, `task test:integration`, `task test:e2e` run
+  one folder of `tests/`
 - `task test:providers` runs the probe on SQL Server and PostgreSQL in Testcontainers;
   it needs Docker, so `task test` leaves it out and `providers.yml` runs it
 - `task lint` runs `dotnet format --verify-no-changes`, the Roslyn analyzers,
@@ -77,8 +78,10 @@ If a decision turns out to be wrong, write the problem and the proposed change i
 
 ## Testing
 
-- `tests/unit/` runs in process (SQLite in memory at most), `tests/integration/` pins EF
-  Core and runs the probe on real databases, `tests/e2e/` drives the sample apps.
+- `tests/unit/` runs in process (SQLite in memory at most), `tests/architecture/` checks
+  the shipped assemblies' dependencies and public shape with NetArchTest,
+  `tests/integration/` pins EF Core and runs the probe on real databases, `tests/e2e/`
+  drives the sample apps. A dependency or public-surface rule here is enforced there.
 - Integration tests are LightBDD scenarios: Given/When/Then step methods run through
   `Runner.RunScenarioAsync` from a `[Fact]`, never `[Scenario]` (see DECISIONS).
 - Every rule has a positive and a negative model in `tests/unit/.../Models/`.

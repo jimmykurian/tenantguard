@@ -41,6 +41,8 @@ jobs:
         run: task build
       - name: Unit tests
         run: task test:unit
+      - name: Architecture tests
+        run: task test:architecture
       - name: Integration tests
         run: task test:integration
       - name: Pack

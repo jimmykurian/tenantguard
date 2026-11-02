@@ -23,9 +23,10 @@ tasks:
       - dotnet build {{.SOLUTION}} -c {{.CONFIGURATION}}
 
   test:
-    desc: Run the unit, integration and end-to-end tests
+    desc: Run the unit, architecture, integration and end-to-end tests
     cmds:
       - task: test:unit
+      - task: test:architecture
       - task: test:integration
       - task: test:e2e
 
@@ -34,6 +35,11 @@ tasks:
     cmds:
       - dotnet test --project "{{.TESTS}}/unit/TenantGuard.Analyzers.Tests" -c {{.CONFIGURATION}}
       - dotnet test --project "{{.TESTS}}/unit/TenantGuard.EntityFrameworkCore.Tests" -c {{.CONFIGURATION}}
+
+  test:architecture:
+    desc: Run the architecture rules (tests/architecture) over the shipped assemblies
+    cmds:
+      - dotnet test --project "{{.TESTS}}/architecture/TenantGuard.Architecture.Tests" -c {{.CONFIGURATION}}
 
   test:integration:
     desc: Run the integration tests (tests/integration) except the provider tests
