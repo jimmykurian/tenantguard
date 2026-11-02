@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0-preview.5](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.4...v0.1.0-preview.5) (2026-11-02)
+
+
+### Documentation
+
+* follow ci-parity's README, with CI badges and code metrics ([#38](https://github.com/jimmykurian/tenantguard/issues/38)) ([f6c6681](https://github.com/jimmykurian/tenantguard/commit/f6c6681527925cf782f60a1b805aeb8b7a3981fe))
+* publish the docs as an Astro site on GitHub Pages ([#39](https://github.com/jimmykurian/tenantguard/issues/39)) ([2f7e5cc](https://github.com/jimmykurian/tenantguard/commit/2f7e5cc598b2aa35dd9b4d99f339e07380644d6a))
+
 ## [0.1.0-preview.4](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.3...v0.1.0-preview.4) (2026-11-02)
 
 
