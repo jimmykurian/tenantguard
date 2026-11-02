@@ -1,0 +1,58 @@
+/* The home page's stat tiles and walkthrough. Colors come from Starlight's own tokens, so
+   they follow its light and dark themes. */
+
+.tg-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+
+.tg-tile {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--sl-color-bg-nav);
+}
+
+.tg-tile-number {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--sl-color-white);
+  font-variant-numeric: tabular-nums;
+}
+
+.tg-tile-label {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+
+.tg-tile-detail {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-3);
+}
+
+.tg-walkthrough {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.6rem;
+  box-shadow: var(--sl-shadow-md);
+}
+
+.tg-matrix td,
+.tg-matrix th {
+  text-align: left;
+  vertical-align: top;
+}
+
+/* Starlight spaces each element after another in page content; tiles sit in a grid instead. */
+.sl-markdown-content .tg-tiles > .tg-tile {
+  margin: 0;
+}
