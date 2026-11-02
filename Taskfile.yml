@@ -60,16 +60,23 @@ tasks:
       - dotnet test --project "{{.TESTS}}/integration/TenantGuard.Providers.Tests" -c {{.CONFIGURATION}}
 
   lint:
-    desc: Check formatting and analyzers, then the public API files, the copyright headers and the LightBDD scenarios
+    desc: Check formatting and analyzers, the public API files, the copyright headers, the LightBDD scenarios and the README's code metrics
+    cmds:
+      - task: lint:format
+      - task: lint:api
+      - task: lint:headers
+      - task: lint:scenarios
+      - task: metrics:check
+
+  lint:format:
+    desc: Check formatting and analyzers (dotnet format) on the solution, the samples, the end-to-end tests and tools/
     cmds:
       - dotnet format {{.SOLUTION}} --verify-no-changes
       - for: { var: SAMPLES, split: " " }
         cmd: dotnet format samples/{{.ITEM}} --verify-no-changes
       - for: { var: E2E_TESTS, split: " " }
         cmd: dotnet format tests/e2e/{{.ITEM}} --verify-no-changes
-      - task: lint:api
-      - task: lint:headers
-      - task: lint:scenarios
+      - dotnet format tools/Metrics --verify-no-changes
 
   lint:api:
     desc: Fail when PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt are out of date
@@ -114,6 +121,21 @@ tasks:
           exit 1
         fi
 
+  metrics:
+    desc: Print the code metrics (lines of code, method complexity) of the C# code git tracks
+    cmds:
+      - dotnet run --project "{{.ROOT_DIR}}/tools/Metrics" -c {{.CONFIGURATION}} -- --print
+
+  metrics:readme:
+    desc: Write the code metrics into the README's METRICS block
+    cmds:
+      - dotnet run --project "{{.ROOT_DIR}}/tools/Metrics" -c {{.CONFIGURATION}} -- --write README.md
+
+  metrics:check:
+    desc: Fail when the README's code metrics are out of date (CI and the pre-push hook run this)
+    cmds:
+      - dotnet run --project "{{.ROOT_DIR}}/tools/Metrics" -c {{.CONFIGURATION}} -- --check README.md
+
   fmt:
     desc: Format the solution and the samples
     cmds:
@@ -122,6 +144,7 @@ tasks:
         cmd: dotnet format samples/{{.ITEM}}
       - for: { var: E2E_TESTS, split: " " }
         cmd: dotnet format tests/e2e/{{.ITEM}}
+      - dotnet format tools/Metrics
 
   pack:
     desc: Build the NuGet packages into ./artifacts/ and validate them
