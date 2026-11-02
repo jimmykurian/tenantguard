@@ -45,7 +45,7 @@ fixed, unless you'd rather stay anonymous.
 
 - A way for one tenant to read, change or delete another tenant's rows that the model
   rules or the write guard should stop and don't, in an app configured as
-  `docs/SPEC.md` describes
+  [the reference](docs/reference/README.md) describes
 - A way for the data a request sends to switch the write guard off, such as by opening
   a bypass or changing the current tenant
 - An exception message or log entry that carries entity values other than tenant ids
@@ -58,9 +58,10 @@ fixed, unless you'd rather stay anonymous.
 
 - A rule, analyzer or probe check that misreports code with no security impact; open a
   "Wrong Finding" issue instead
-- Limits the spec documents: raw SQL built at runtime, which TG004 can only point out,
-  dependents a filtered required navigation drops (behavior pin 7), and the open items
-  in `docs/DECISIONS.md`
+- Limits the docs record: raw SQL built at runtime, which TG004 can only point out,
+  dependents a filtered required navigation drops (behavior pin 7), and the Proposed
+  records in [docs/architecture/decisions/](docs/architecture/decisions/README.md), such as
+  writes through an owned entity
 - Code that opts out on purpose, with `[AllowCrossTenantAccess]`, a `Bypass` scope or
   `NoTenantPolicy.Allow`
 - Vulnerabilities in EF Core, a database provider or a tenancy package such as

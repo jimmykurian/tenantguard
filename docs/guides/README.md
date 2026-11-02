@@ -3,6 +3,7 @@
 How to put TenantGuard to work. The [reference](../reference/README.md) lists every rule,
 option and message.
 
+- [Why TenantGuard](why.md): the gap it closes, and how it compares with other tools
 - [Hand-rolled query filters](hand-rolled.md): a context with its own tenant and a
   `HasQueryFilter` per entity
 - [Finbuckle.MultiTenant](finbuckle.md): entities marked with `IsMultiTenant()`

@@ -15,14 +15,15 @@ test('a README becomes its folder index, and the top one the overview', () => {
 });
 
 test('routes sit under the GitHub Pages base, lowercased, ending in a slash', () => {
-  assert.equal(route('SPEC.md'), '/tenantguard/spec/');
+  assert.equal(route('architecture/decisions/README.md'), '/tenantguard/architecture/decisions/');
+  assert.equal(route('guides/WHY.md'), '/tenantguard/guides/why/');
   assert.equal(route('guides/README.md'), '/tenantguard/guides/');
   assert.equal(route('reference/rules.md'), '/tenantguard/reference/rules/');
 });
 
 test('links between docs pages become routes and keep their anchor', () => {
   assert.equal(rewriteLink('rules.md#tgm001', 'reference/analyzers.md', noDirs), '/tenantguard/reference/rules/#tgm001');
-  assert.equal(rewriteLink('../SPEC.md', 'reference/README.md', noDirs), '/tenantguard/spec/');
+  assert.equal(rewriteLink('../architecture/README.md', 'reference/README.md', noDirs), '/tenantguard/architecture/');
 });
 
 test('links out of docs/ point at the file on GitHub', () => {

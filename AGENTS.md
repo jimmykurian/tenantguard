@@ -4,8 +4,10 @@ EF Core packages that prove a multi-tenant model leaks nothing: startup model va
 a SaveChanges interceptor, Roslyn analyzers and a test kit. Library-agnostic: it works on
 Finbuckle, on any of the tenancy packages, and on hand-rolled query filters.
 
-`docs/SPEC.md` says what to build. `docs/PLAN.md` says in what order. This file says how
-to work in this repo. Read all three before writing code.
+`docs/reference/` says what TenantGuard does, word for word, and `docs/architecture/` how it
+is built; the records in `docs/architecture/decisions/` say why. The roadmap (GitHub project
+2, by milestone) says what's next. This file says how to work in this repo. Read the
+architecture overview and the decisions index before writing code.
 
 ## Commands
 
@@ -40,33 +42,32 @@ Everything runs through the Taskfile. CI calls the same tasks, and ci-parity enf
 
 ## Decisions already made (do not relitigate)
 
-- Library targets `net10.0` and `net11.0`. The `net10.0` build references EF Core 10.x,
-  the `net11.0` build references EF Core 11.x. EF 11 only APIs sit behind
-  `#if NET11_0_OR_GREATER`.
-- Analyzer targets `netstandard2.0`, references `Microsoft.CodeAnalysis.CSharp` 4.8.0
-  (lowest version that supports what we use; keeps VS 2022 working), and is bundled into
-  the runtime package under `analyzers/dotnet/cs`.
-- .NET SDK 11 pinned in `global.json` with `rollForward: latestFeature`. C# latest.
-- Central Package Management (`Directory.Packages.props`). Nullable on,
-  `TreatWarningsAsErrors`, deterministic builds, SourceLink, `PublicApiAnalyzers`,
-  StyleCop.Analyzers (settings in `stylecop.json` and `.editorconfig`).
-- Runtime package dependencies: `Microsoft.EntityFrameworkCore` only. No provider, no
-  tenancy library, no logging package beyond what EF already brings. Tests use xUnit v3 with
-  AwesomeAssertions (FsCheck, NSubstitute, Bogus and Verify where they fit; see DECISIONS),
-  `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`,
-  and the ASP.NET Core shared framework for a generic host; the opt-in provider tests
-  (SPEC 12) add Testcontainers and the SQL Server and PostgreSQL providers. Finbuckle
-  appears only in `samples/` and `tests/e2e/`.
+Each has a record in `docs/architecture/decisions/`:
+
+- Targets `net10.0` (EF Core 10.x) and `net11.0` (EF Core 11.x); EF 11 only APIs sit behind
+  `#if NET11_0_OR_GREATER` (0010). Releases are previews until EF Core 11 is stable (0016).
+- Analyzers on `netstandard2.0` and `Microsoft.CodeAnalysis.CSharp` 4.8.0, bundled into the
+  runtime package under `analyzers/dotnet/cs` (0004).
+- Build: .NET SDK 11 pinned in `global.json` with `rollForward: latestFeature`, C# latest,
+  Central Package Management, nullable, `TreatWarningsAsErrors`, deterministic, SourceLink,
+  `PublicApiAnalyzers`, StyleCop.Analyzers (0005).
+- The runtime package depends on `Microsoft.EntityFrameworkCore` only: no provider, no
+  tenancy library, nothing beyond what EF brings (0002). Finbuckle appears only in
+  `samples/` and `tests/e2e/` (0017).
 - Model validation runs as an EF convention (`IModelFinalizedConvention` via an
-  `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator`.
-- Rule IDs, messages, option names and exception types are fixed by `docs/SPEC.md`.
-  Changing one is a spec change.
+  `IDbContextOptionsExtension` plugin), not by replacing `IModelValidator` (0003); startup
+  validation goes through `ValidateOnStart` (0009).
+- Rule IDs, messages, option names, exception types and the public API are the contract in
+  `docs/reference/` (0006). Changing one is a breaking change.
+- Public namespaces are `TenantGuard` and `TenantGuard.Testing`, whatever the folder (0007).
+- Tests use xUnit v3 with AwesomeAssertions, and FsCheck, NSubstitute, Bogus, Verify,
+  LightBDD and NetArchTest where they fit (0018); the provider tests add Testcontainers.
 - License Apache-2.0, one LICENSE at the root. C# files start with the StyleCop copyright
   header set in `stylecop.json`; YAML files and scripts start with the same copyright line
-  as a `#` comment. Other files have no header.
+  as a comment. Other files have no header (0011).
 
-If a decision turns out to be wrong, write the problem and the proposed change in
-`docs/DECISIONS.md`, then stop and ask. Do not quietly work around it.
+If a decision turns out to be wrong, write a record with status Proposed in
+`docs/architecture/decisions/`, then stop and ask. Do not quietly work around it.
 
 ## Code conventions
 
@@ -90,10 +91,10 @@ If a decision turns out to be wrong, write the problem and the proposed change i
   `tests/integration/` pins EF Core and runs the probe on real databases, `tests/e2e/`
   drives the sample apps. A dependency or public-surface rule here is enforced there.
 - Integration tests are LightBDD scenarios: Given/When/Then step methods run through
-  `Runner.RunScenarioAsync` from a `[Fact]`, never `[Scenario]` (see DECISIONS).
+  `Runner.RunScenarioAsync` from a `[Fact]`, never `[Scenario]` (0018).
 - Every rule has a positive and a negative model in `tests/unit/.../Models/`.
-- `tests/integration/TenantGuard.BehaviorPins` holds tests that pin the EF Core behaviors the design
-  relies on (SPEC section 9). If a pin fails on a new EF version, stop and ask.
+- `tests/integration/TenantGuard.BehaviorPins` pins the EF Core behaviors the design relies
+  on (`docs/testing/strategy.md`). If a pin fails on a new EF version, stop and ask.
 - Analyzer tests use the `CSharpAnalyzerTest` verifier with `{|TG001:...|}` markup.
 - The test kit is tested against itself: a deliberately leaky model must make the probe
   fail with the expected rows.
@@ -112,20 +113,21 @@ and passes.
 
 ## Workflow
 
-- Work one phase of `docs/PLAN.md` at a time. Tick its checkboxes as you go.
-- When a phase's acceptance criteria pass and `task ci` is green, commit, summarize in a
-  few lines, and stop. Do not start the next phase until asked.
+- Work one issue at a time. A feature issue (labelled `spec`) gets its reference page, and a
+  record when it changes a decision, agreed before any code.
+- When the issue's acceptance criteria pass and `task ci` is green, commit, summarize in a
+  few lines, and stop. Do not start the next issue until asked.
 - Conventional commits with the types and scopes in `.gitmessage`, which
   `.githooks/commit-msg` checks. Small commits. Branch and PR; never commit to `main`.
 - Fill in `.github/PULL_REQUEST_TEMPLATE.md` in every pull request description.
 - Every `run:` step in this repo's workflows calls `task`. Third-party actions pinned to
   a full SHA with a version comment.
-- Keep this file under 150 lines and `README.md` accurate at the end of every phase.
+- Keep this file under 150 lines, and `README.md` and `docs/` accurate with every change.
 
 ## Do not
 
-- Do not implement anything under Phase 6 (backlog) in `docs/PLAN.md`.
-- Do not add an option, rule or public type the spec does not list. Propose it first.
+- Do not start a roadmap issue until asked.
+- Do not add an option, rule or public type `docs/reference/` does not list. Propose it first.
 - Do not take a dependency on Finbuckle or any tenancy library outside `samples/` and
   `tests/e2e/`.
 - Do not add a `CLAUDE.md`. Claude Code (2.1.277 or later) reads `AGENTS.md` directly, but

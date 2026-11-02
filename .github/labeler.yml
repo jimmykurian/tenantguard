@@ -41,8 +41,8 @@ samples:
 spec:
   - changed-files:
       - any-glob-to-any-file:
-          - "docs/SPEC.md"
-          - "docs/DECISIONS.md"
+          - "docs/reference/**"
+          - "docs/architecture/decisions/**"
           - "**/PublicAPI.*.txt"
           - "src/TenantGuard.Analyzers/AnalyzerReleases.*.md"
 

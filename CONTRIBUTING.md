@@ -9,14 +9,18 @@ requests are all welcome. Everyone taking part follows the
 
 TenantGuard's behavior is a contract, so most changes start in the docs:
 
-- [docs/SPEC.md](docs/SPEC.md) says what TenantGuard does: the model rules, the write
-  guard, the analyzers, the test kit, their messages and the public API. A new option,
-  rule, public type or dependency, or a change to a rule ID, a message, an option name or
-  an exception type, needs agreement in an issue first, and updates the spec in the same
-  pull request as the code.
-- [docs/PLAN.md](docs/PLAN.md) says in what order it is built.
-- [docs/DECISIONS.md](docs/DECISIONS.md) records each problem found with a decision and
-  the change proposed for it. Work on a proposal waits until it is accepted or rejected.
+- [docs/reference/](docs/reference/README.md) says what TenantGuard does, word for word: the
+  model rules, the write guard, the analyzers, the probe, their messages and the options;
+  the `PublicAPI.Shipped.txt` files list the public API. A new option, rule, public type or
+  dependency, or a change to a rule ID, a message, an option name or an exception type,
+  needs agreement in an issue first, and updates the reference in the same pull request as
+  the code ([Compatibility](docs/reference/compatibility.md)).
+- [docs/architecture/](docs/architecture/README.md) says how it is built, and
+  [its decision records](docs/architecture/decisions/README.md) say why. A change to a
+  decision starts as a record with status Proposed; work on it waits until it is accepted
+  or rejected.
+- The [roadmap](https://github.com/users/jimmykurian/projects/2) says what's planned next,
+  by milestone.
 - [AGENTS.md](AGENTS.md) has the working rules for this repo, for people and coding
   agents alike.
 
@@ -55,7 +59,7 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | `task test` | runs the unit, architecture, integration and end-to-end tests |
 | `task test:unit` | `tests/unit/`: the runtime and analyzer tests |
 | `task test:architecture` | `tests/architecture/`: the dependency and public-surface rules over the shipped assemblies |
-| `task test:integration` | `tests/integration/`: the EF Core behavior pins (SPEC 9) and the test kit's own tests |
+| `task test:integration` | `tests/integration/`: the EF Core behavior pins and the test kit's own tests |
 | `task test:e2e` | `tests/e2e/`: the isolation probe against each sample app |
 | `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
 | `task lint` | `lint:format`, `lint:api`, `lint:headers`, `lint:scenarios` and `metrics:check` |
@@ -123,7 +127,7 @@ released API, and `PublicAPI.Unshipped.txt` every change since.
 - **Analyzer tests** run each rule through `CSharpAnalyzerTest` and mark where a
   diagnostic lands with `{|TG001:...|}`.
 - **Behavior pins** in `tests/integration/TenantGuard.BehaviorPins` pin the EF Core behaviors the
-  design relies on (SPEC 9). If one fails on a new EF Core version, stop and open an
+  design relies on ([the list](docs/testing/strategy.md#behavior-pins)). If one fails on a new EF Core version, stop and open an
   issue.
 - **The test kit is tested against itself:** a deliberately leaky model must make the
   probe fail with the expected rows.

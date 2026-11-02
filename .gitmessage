@@ -41,7 +41,7 @@
 #   Add ! after type/scope: feat!: or feat(options)!:
 #   Or add footer: BREAKING CHANGE: <description>
 #   Rule IDs, messages, option names, exception types and the public API are public
-#   contracts, fixed by docs/SPEC.md.
+#   contracts, listed in docs/reference/.
 #
 # Examples:
 #   feat(model): report TGM003 when a tenant filter captures a local

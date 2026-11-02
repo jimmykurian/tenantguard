@@ -1,0 +1,35 @@
+# Releases and CI
+
+How this repository checks every change and ships every release. Every `run:` step in its
+workflows calls a task from the `Taskfile.yml`, and `ci-parity` checks that they do, so CI
+and a local `task ci` run the same commands.
+
+## Workflows
+
+| Workflow | Runs | Does |
+| --- | --- | --- |
+| `ci.yml` | Every pull request, every push to `main` | One step per check: format, public API, license headers, LightBDD scenarios, code metrics, build, the unit, architecture, integration and end-to-end tests, pack, samples, scrub and the docs site, each running even after an earlier one failed. A `ci-parity` job checks the workflows. On `main`, a `badges` job writes one shields.io endpoint file per check to the `badges` branch for the README's status table. |
+| `providers.yml` | On demand, nightly, and on pull requests that change the runtime or test kit packages, the shared probe test models, the package versions or the provider tests | The isolation probe on SQL Server and PostgreSQL in Testcontainers; never required to merge |
+| `release.yml` | Every push to `main` | Release Please, then the publish job for a new release |
+| `site.yml` | Pushes to `main` that change `docs/`, `site/`, the logo or the changelog | Builds the docs site and deploys it to GitHub Pages |
+| `labeler.yml`, `pr-assign-author.yml` | Pull requests | Labels by changed paths; assigns the author, or the owner for a bot's |
+
+## Releases
+
+Release Please keeps one release pull request open, bumping the `Version` in
+`Directory.Build.props` and `CHANGELOG.md` from the Conventional Commits on `main`. Merging
+it creates the tag and the GitHub Release; the publish job then runs `task pack`, signs in
+to nuget.org with GitHub's OIDC token through NuGet Trusted Publishing (no stored API key),
+pushes the packages with `task release:push`, and attaches the `.nupkg` and `.snupkg` files
+to the GitHub Release with `task release:attach`.
+
+Until EF Core 11 is generally available, releases are previews (`0.1.0-preview.N`), marked
+as prereleases on NuGet and GitHub
+([0016](../architecture/decisions/0016-first-release-is-a-preview.md)).
+[CONTRIBUTING.md](https://github.com/jimmykurian/tenantguard/blob/main/CONTRIBUTING.md) lists
+what changes for the first stable release.
+
+## Branch protection
+
+`main` takes changes through pull requests only, with the `ci` and `ci-parity` checks
+passing; force pushes and deletion are blocked. Merged branches are deleted automatically.

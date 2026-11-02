@@ -10,10 +10,10 @@ Delete the options that don't apply.
 
 - [ ] Bug fix: a wrong or missing model finding, analyzer diagnostic, write guard
       decision or probe row, or a crash
-- [ ] New behavior within `docs/SPEC.md` (a rule case, an analyzer case, a probe check)
+- [ ] New behavior within `docs/reference/` (a rule case, an analyzer case, a probe check)
 - [ ] Contract change: a rule ID, message, option name, exception type or public API
-      (agreed in an issue first; `docs/SPEC.md` updated, and `docs/DECISIONS.md` when it
-      changes a decision)
+      (agreed in an issue first; `docs/reference/` updated, and a decision record in
+      `docs/architecture/decisions/` when it changes a decision)
 - [ ] Sample change
 - [ ] Packaging or release change
 - [ ] Build, CI or tooling change
@@ -37,7 +37,7 @@ Delete the options that don't apply.
 - [ ] Tests and samples use synthetic tenants such as `acme`, `globex` and `initech`, and
       no client names, finding IDs, ticket IDs or internal URLs
 - [ ] No new dependency, option, rule or public type unless agreed first, with
-      `docs/SPEC.md` updated
+      `docs/reference/` updated
 - [ ] `PublicAPI.Unshipped.txt` lists every public API change (`task lint:api`)
 - [ ] Error messages name the entity, the property and the fix, and messages and logs
       carry no entity values other than tenant ids and key values
