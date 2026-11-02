@@ -22,6 +22,12 @@ export default defineConfig({
       logo: { src: './src/assets/logo.svg' },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/jimmykurian/tenantguard' }],
       customCss: ['./src/styles/custom.css'],
+      // favicon.svg is Starlight's default favicon; the PNG covers the rest.
+      favicon: '/favicon.svg',
+      head: [
+        { tag: 'link', attrs: { rel: 'icon', type: 'image/png', sizes: '128x128', href: '/tenantguard/favicon.png' } },
+        { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/tenantguard/favicon.png' } },
+      ],
       lastUpdated: false,
       sidebar: [
         { label: 'Overview', link: '/overview/' },

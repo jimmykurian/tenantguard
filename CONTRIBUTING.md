@@ -106,6 +106,26 @@ The public surface is small and documented with XML docs; everything else is `in
 with `InternalsVisibleTo` for the test projects. `PublicAPI.Shipped.txt` holds the
 released API, and `PublicAPI.Unshipped.txt` every change since.
 
+## Code conventions
+
+What the analyzers and tests don't check for you:
+
+- **Messages name the entity, the property and the fix.** An exception, log message or
+  diagnostic is part of the contract, and reads as a sentence on its own
+  ([ACCESSIBILITY.md](ACCESSIBILITY.md)). It never includes an entity's property values
+  other than tenant ids and key values; `NoValueLeakTests` checks it.
+- **No reflection over user types at query time.** Per-model metadata is computed once and
+  cached on the `IModel`, as an annotation or in a `ConditionalWeakTable`.
+- **No async-over-sync and no `Task.Result`.** Interceptors implement both the sync and the
+  async path; `tests/architecture/` checks both exist.
+- **EF Core 11-only APIs** sit behind `#if NET11_0_OR_GREATER`
+  ([0010](docs/architecture/decisions/0010-target-net10-and-net11.md)).
+- **Public types** live in the `TenantGuard` and `TenantGuard.Testing` namespaces, whatever
+  their folder ([0007](docs/architecture/decisions/0007-flat-public-namespaces.md)).
+- **File headers:** C# files start with the StyleCop header set in `stylecop.json`, and YAML
+  files and scripts with the same copyright line as a comment. Other files have none
+  ([0011](docs/architecture/decisions/0011-per-file-copyright-headers.md)).
+
 ## Tests
 
 - **Tests** use xUnit v3 and assert with
