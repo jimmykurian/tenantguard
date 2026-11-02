@@ -3,13 +3,14 @@
 name: Pull request assignee
 
 # Assigns each new pull request to whoever opened it, unless someone is already
-# assigned. Pull requests from bots go to the repository owner. Reviews are requested
-# by .github/CODEOWNERS, not here. Runs on pull_request, not pull_request_target, so
-# the token never acts on code from a fork.
+# assigned, whatever branch it targets: a pull request stacked on another one targets that
+# branch, and GitHub moving it to main later is an edit, not an open. Pull requests from
+# bots go to the repository owner. Reviews are requested by .github/CODEOWNERS, not here.
+# Runs on pull_request, not pull_request_target, so the token never acts on code from a
+# fork.
 on:
   pull_request:
     types: [opened, reopened]
-    branches: [main]
 
 permissions:
   contents: read
