@@ -1,6 +1,9 @@
-<img src="https://raw.githubusercontent.com/jimmykurian/tenantguard/main/assets/icon.png" alt="TenantGuard logo: a shield divided into separate cells, one per tenant" width="96" height="96">
-
-# TenantGuard
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
+    <img src="docs/assets/logo-light.svg" alt="TenantGuard" width="464" height="96">
+  </picture>
+</h1>
 
 > **Preview.** The 0.1.0 previews build their net11.0 target against the EF Core 11
 > release candidate, so they are prereleases on NuGet. The stable v0.1.0 follows .NET 11
@@ -324,7 +327,3 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 </details>
 
 <!-- METRICS:END -->
-
-## License
-
-[Apache-2.0](LICENSE)
