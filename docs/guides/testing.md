@@ -50,9 +50,12 @@ For each tenant-scoped entity type, as tenant B, against tenant A's row:
 | UpdateGuard | Saving a change to an attached copy of the row throws `TenantIsolationViolationException` |
 | InsertGuard | Saving a new row stamped with A throws |
 | DeleteGuard | Saving the removal of the row throws |
+| NavigationLeak | `Include` of a navigation on B's own row loads none of A's rows, once B's row is linked to A's |
 
 Each check runs for every ordered pair of tenants, and the report has one row per entity
-type and check, failed if any pair failed. The read checks run before any check writes.
+type and check, failed if any pair failed. NavigationLeak has one row per navigation to a
+tenant-scoped type, such as `NavigationLeak(Lines)`; the probe seeds the link it needs and
+deletes it afterwards. The read checks and NavigationLeak run before any check writes.
 On a relational provider, each check that writes runs in a transaction that is rolled
 back, so a leak can't change what a later check sees.
 

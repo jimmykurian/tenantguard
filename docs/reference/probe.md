@@ -102,7 +102,8 @@ When the relationship's foreign key includes the tenant property, the database c
 a link across tenants, so the row passes without seeding one. A skip navigation whose join
 entity type is tenant-scoped isn't checked as a skip navigation: the join type's own
 navigations are. The row is skipped, naming the reason, when the type of the new dependent
-couldn't be seeded or can't be probed.
+couldn't be seeded or can't be probed, or when saving the link fails, as it does for a
+one-to-one relationship whose row already has its dependent.
 
 The rows come after the entity's six checks, one per navigation, by name:
 
