@@ -70,4 +70,31 @@ internal static class RuleMessages
             owned,
             property,
             $"{owned} is owned by {owner}; its '{property}' is ignored, isolation follows the owner.");
+
+    public static ModelFinding UnindexedTenant(string entity, string property)
+        => new(
+            "TGM009",
+            Severity.Warning,
+            entity,
+            property,
+            $"{entity} has no index or key that starts with '{property}', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.{property}), or put '{property}' first in an existing index or key.");
+
+    public static ModelFinding TenantFreeUniqueIndex(string entity, string property, IReadOnlyList<string> columns)
+        => new(
+            "TGM010",
+            Severity.Error,
+            entity,
+            property,
+            $"{entity}: the unique index on ({string.Join(", ", columns)}) doesn't include '{property}', so a value one tenant has used is refused to every other tenant, which tells them it exists. Make it unique per tenant: HasIndex(e => new {{ e.{property}, {Members(columns)} }}).IsUnique().");
+
+    public static ModelFinding TenantFreeAlternateKey(string entity, string property, IReadOnlyList<string> columns)
+        => new(
+            "TGM010",
+            Severity.Error,
+            entity,
+            property,
+            $"{entity}: the alternate key ({string.Join(", ", columns)}) doesn't include '{property}', so a value one tenant has used is refused to every other tenant, which tells them it exists. Make it unique per tenant: HasAlternateKey(e => new {{ e.{property}, {Members(columns)} }}).");
+
+    private static string Members(IReadOnlyList<string> columns)
+        => string.Join(", ", columns.Select(column => "e." + column));
 }

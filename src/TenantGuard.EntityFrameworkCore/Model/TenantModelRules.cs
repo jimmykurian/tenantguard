@@ -6,12 +6,15 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
-// Runs rules TGM001 to TGM008 over every entity type in name order, so the findings are
+// Runs rules TGM001 to TGM010 over every entity type in name order, so the findings are
 // deterministic.
 internal static class TenantModelRules
 {
-    public static TenantModelCheck Check(IReadOnlyModel model, TenantGuardOptions options, Type? contextType = null)
+    // relational says whether the model's provider is relational, for TGM009 and TGM010; when it's
+    // null, the model's annotations tell.
+    public static TenantModelCheck Check(IReadOnlyModel model, TenantGuardOptions options, Type? contextType = null, bool? relational = null)
     {
+        var checksIndexes = relational ?? RelationalProvider.Built(model);
         var findings = new List<ModelFinding>();
         var tenantProperties = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -27,7 +30,7 @@ internal static class TenantModelRules
             }
             else
             {
-                CheckRoot(entityType, options, findings, tenantProperties, contextType);
+                CheckRoot(entityType, options, findings, tenantProperties, contextType, checksIndexes);
             }
         }
 
@@ -39,7 +42,8 @@ internal static class TenantModelRules
         TenantGuardOptions options,
         List<ModelFinding> findings,
         Dictionary<string, string> tenantProperties,
-        Type? contextType)
+        Type? contextType,
+        bool checksIndexes)
     {
         var entity = entityType.DisplayName();
         var tenantProperty = TenantPropertyDiscovery.Find(entityType, options);
@@ -82,6 +86,11 @@ internal static class TenantModelRules
         if (filters.ReferencesTenantProperty && (filters.HasUnclassifiedOperand || !filters.HasComparison))
         {
             findings.Add(RuleMessages.FilterNotParameterized(entity, property));
+        }
+
+        if (checksIndexes)
+        {
+            TenantIndexRules.Check(entityType, tenantProperty, findings);
         }
     }
 

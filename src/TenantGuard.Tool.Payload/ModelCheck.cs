@@ -40,7 +40,7 @@ internal static class ModelCheck
             return modelException.Report;
         }
 
-        return TenantModelRules.Check(model, options, contextType).Report;
+        return TenantModelRules.Check(model, options, contextType, RelationalProvider.Uses(contextOptions)).Report;
     }
 
     /// <summary>

@@ -9,12 +9,13 @@ using Microsoft.Extensions.Logging;
 namespace TenantGuard;
 
 // Runs the rules on the finalized model, stores the per-entity metadata, then throws or logs per
-// Enforcement. contextType is the type of the context whose model it is.
-internal sealed class TenantModelConvention(TenantGuardOptions options, ILogger logger, Type contextType) : IModelFinalizedConvention
+// Enforcement. contextType is the type of the context whose model it is, and relational whether its
+// provider is relational.
+internal sealed class TenantModelConvention(TenantGuardOptions options, ILogger logger, Type contextType, bool relational) : IModelFinalizedConvention
 {
     public IModel ProcessModelFinalized(IModel model)
     {
-        var check = TenantModelRules.Check(model, options, contextType);
+        var check = TenantModelRules.Check(model, options, contextType, relational);
         model.GetOrAddRuntimeAnnotationValue(
             TenantGuardEntities.AnnotationName,
             static arguments => TenantGuardEntities.Create(arguments.Model, arguments.TenantProperties),
