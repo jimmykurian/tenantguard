@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Runs the xUnit v3 and TUnit fixtures, as built, as processes and reads their reports: each
+       probe row of ProbeAdapters.Store has to be a test of its own. The references only build them. -->
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProbeAdapters.XunitFixture/ProbeAdapters.XunitFixture.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../ProbeAdapters.TUnitFixture/ProbeAdapters.TUnitFixture.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="XunitFixture" Value="$(MSBuildThisFileDirectory)../ProbeAdapters.XunitFixture/bin/$(Configuration)/$(TargetFramework)/ProbeAdapters.XunitFixture.dll" />
+    <AssemblyMetadata Include="TUnitFixture" Value="$(MSBuildThisFileDirectory)../ProbeAdapters.TUnitFixture/bin/$(Configuration)/$(TargetFramework)/ProbeAdapters.TUnitFixture.dll" />
+  </ItemGroup>
+
+</Project>

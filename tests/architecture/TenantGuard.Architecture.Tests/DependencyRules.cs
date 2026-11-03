@@ -39,6 +39,18 @@ public sealed class DependencyRules
             .GetResult().ShouldPass();
 
     [Fact]
+    public void XunitV3_adapter_depends_on_xUnit_and_the_test_kit_only()
+        => Types.FromFile(Assemblies.XunitV3AdapterPath)
+            .Should().OnlyHaveDependencyOn("System", "Xunit", "TenantGuard.Testing")
+            .GetResult().ShouldPass();
+
+    [Fact]
+    public void TUnit_adapter_depends_on_TUnit_and_the_test_kit_only()
+        => Types.FromFile(Assemblies.TUnitAdapterPath)
+            .Should().OnlyHaveDependencyOn("System", "TUnit", "TenantGuard.Testing")
+            .GetResult().ShouldPass();
+
+    [Fact]
     public void Tool_loads_no_EF_Core_or_TenantGuard_of_its_own()
         => Types.FromFile(Assemblies.ToolPath)
             .Should().OnlyHaveDependencyOn("System", "TenantGuard.Tool")

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The model and probe source both adapter fixtures run: Invoice is guarded, Customer has no
+       filter and leaks, and the keyless InvoiceTotal can't be seeded, so its rows are skipped. -->
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="xunit.v3" />
+    <PackageReference Remove="AwesomeAssertions" />
+    <Using Remove="Xunit" />
+    <Using Remove="AwesomeAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/TenantGuard.Testing/TenantGuard.Testing.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+  </ItemGroup>
+
+</Project>

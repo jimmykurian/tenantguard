@@ -23,4 +23,12 @@ internal static class Assemblies
     public static string ToolPath => Path.Combine(AppContext.BaseDirectory, "TenantGuard.Tool.dll");
 
     public static string PayloadPath => Path.Combine(AppContext.BaseDirectory, "TenantGuard.Tool.Payload.dll");
+
+    // The test adapters, read from their own output folders.
+    public static string XunitV3AdapterPath => Metadata("XunitV3Adapter");
+
+    public static string TUnitAdapterPath => Metadata("TUnitAdapter");
+
+    private static string Metadata(string key)
+        => Path.GetFullPath(typeof(Assemblies).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(attribute => attribute.Key == key).Value!);
 }
