@@ -186,8 +186,9 @@ the write guard doesn't see them. The query filter scopes them, the probe's Bulk
 check proves it for each entity, and TG001 flags an `IgnoreQueryFilters()` that would
 switch the filter off first.
 
-**And raw SQL?** TG002 and TG004 flag it at build time. `FromSql` on an entity type isn't
-flagged: EF Core applies the query filters over it.
+**And raw SQL?** TG002 and TG004 flag it at build time, through EF Core, Dapper, ADO.NET
+commands and any wrapper you list in `tenantguard.raw_sql_methods`. `FromSql` on an entity
+type isn't flagged: EF Core applies the query filters over it.
 
 **Named query filters?** Supported. A named filter that reads the tenant property counts
 for TGM001, and with `tenantguard.tenant_filter_names` set, TG001 lets
@@ -305,9 +306,9 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 78 | 78 | 14 | 170 |
-| Lines of code | 3,375 | 4,521 | 228 | 8,124 |
-| Methods | 256 | 498 | 21 | 775 |
+| Files | 78 | 79 | 14 | 171 |
+| Lines of code | 3,442 | 4,761 | 228 | 8,431 |
+| Methods | 260 | 509 | 21 | 790 |
 | Average complexity | 3.2 | 1.1 | 1.2 | 1.8 |
 | Max complexity | 25 | 4 | 4 | 25 |
 

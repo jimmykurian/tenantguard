@@ -9,12 +9,14 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace TenantGuard.Analyzers;
 
-// The analyzers' .editorconfig keys, read for the file being analyzed. Both take a comma-separated list.
+// The analyzers' .editorconfig keys, read for the file being analyzed. Each takes a comma-separated list.
 internal static class AnalyzerSettings
 {
     public const string TenantColumnKey = "tenantguard.tenant_column";
 
     public const string TenantFilterNamesKey = "tenantguard.tenant_filter_names";
+
+    public const string RawSqlMethodsKey = "tenantguard.raw_sql_methods";
 
     private static readonly ImmutableArray<string> _defaultTenantColumns = ImmutableArray.Create("TenantId");
 
@@ -30,6 +32,10 @@ internal static class AnalyzerSettings
     // The names of the tenant query filters, or none when not set.
     public static ImmutableArray<string> TenantFilterNames(AnalyzerOptions options, SyntaxTree tree)
         => Read(options, tree, TenantFilterNamesKey);
+
+    // More methods that take raw SQL, as Namespace.Type.Method, or none when not set.
+    public static ImmutableArray<string> RawSqlMethods(AnalyzerOptions options, SyntaxTree tree)
+        => Read(options, tree, RawSqlMethodsKey);
 
     private static ImmutableArray<string> Read(AnalyzerOptions options, SyntaxTree tree, string key)
         => options.AnalyzerConfigOptionsProvider.GetOptions(tree).TryGetValue(key, out var value)

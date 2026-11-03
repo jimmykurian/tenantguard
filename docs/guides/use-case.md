@@ -70,8 +70,8 @@ with the entity, its key and both tenants in the message, and no other entity va
 
 - Each tenant has its own database or schema, chosen per request: query filters aren't
   what isolates tenants there.
-- Most data access goes through Dapper or plain ADO.NET: the analyzers check only EF Core's
-  raw SQL methods today.
+- Most data access goes through Dapper or plain ADO.NET: the analyzers check that SQL
+  for a tenant column, but query filters, the write guard and the probe only cover EF Core.
 - The app has one tenant.
 
 Next: [Hand-rolled query filters](hand-rolled.md) or [Finbuckle](finbuckle.md) to set it

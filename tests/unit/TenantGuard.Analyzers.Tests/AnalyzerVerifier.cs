@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.Analyzers.Tests;
 
-// Runs one analyzer over app code that sees EF Core, its relational extensions and the TenantGuard
-// runtime, the way a project with the package does. Diagnostics come from {|TG00n:...|} markup.
+// Runs one analyzer over app code that sees EF Core, its relational extensions, Microsoft.Data.Sqlite
+// and the TenantGuard runtime, the way a project with the package does. Diagnostics come from {|TG00n:...|} markup.
 internal static class AnalyzerVerifier<TAnalyzer>
     where TAnalyzer : DiagnosticAnalyzer, new()
 {
@@ -51,6 +51,7 @@ internal static class AnalyzerVerifier<TAnalyzer>
         };
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(DbContext).Assembly.Location));
         test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(RelationalDatabaseFacadeExtensions).Assembly.Location));
+        test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(Microsoft.Data.Sqlite.SqliteCommand).Assembly.Location));
         if (withRuntime)
         {
             test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(AllowCrossTenantAccessAttribute).Assembly.Location));

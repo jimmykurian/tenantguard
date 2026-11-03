@@ -18,13 +18,14 @@ Change a severity in `.editorconfig` like any other diagnostic:
 
 ## Configuration
 
-Two `.editorconfig` keys, read for each file. Both take a comma-separated list, and a
+Three `.editorconfig` keys, read for each file. Each takes a comma-separated list, and a
 `#` comment after the value is ignored.
 
 ```ini
 [*.cs]
 tenantguard.tenant_column = TenantId           # the default
 tenantguard.tenant_filter_names = TenantFilter # optional: the names of your tenant filters
+tenantguard.raw_sql_methods = Acme.Data.Sql.Query, Acme.Data.Sql.Execute # optional
 ```
 
 - `tenantguard.tenant_column`: the columns raw SQL has to mention (TG002), matched
@@ -32,6 +33,32 @@ tenantguard.tenant_filter_names = TenantFilter # optional: the names of your ten
 - `tenantguard.tenant_filter_names`: the names of the query filters that hold the tenant
   predicate (TG001), matched exactly, case included. Set it if you use EF Core's named
   filters.
+- `tenantguard.raw_sql_methods`: more methods that take raw SQL, checked by TG002 and
+  TG004 beside the [built-in ones](#which-calls-take-raw-sql). Each entry is the
+  containing type's full name, a dot and the method name, such as `Acme.Data.Sql.Query`,
+  matched exactly, case included, and it covers every overload, generic or not, and
+  extension methods called either way. A nested type is written with dots:
+  `Acme.Data.Outer.Inner.Query`.
+
+## Which calls take raw SQL
+
+TG002 and TG004 check the SQL handed to these calls. They're matched by full name, so the
+analyzers take no dependency on Dapper or a database provider.
+
+| Library | Calls | The SQL |
+|---|---|---|
+| EF Core | `ExecuteSqlRaw`, `ExecuteSqlInterpolated`, `ExecuteSql`, their `Async` forms, `SqlQueryRaw` and `SqlQuery` on `Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions` | the `sql` argument |
+| Dapper | `Query`, `QueryFirst`, `QueryFirstOrDefault`, `QuerySingle`, `QuerySingleOrDefault`, `QueryMultiple`, `Execute`, `ExecuteScalar` and `ExecuteReader`, their `Async` forms, and `QueryUnbufferedAsync`, on `Dapper.SqlMapper` | the `sql` argument |
+| ADO.NET | An assignment to `CommandText` on a type that derives from `System.Data.Common.DbCommand` or implements `System.Data.IDbCommand`, in a statement or an object initializer | the value assigned |
+| ADO.NET | A constructor of such a type whose first parameter is a `string` named `cmdText` or `commandText`, such as `new SqlCommand(sql, connection)`, `NpgsqlCommand` or `SqliteCommand` | that argument |
+| `tenantguard.raw_sql_methods` | Each method listed | the first parameter of type `string` or `System.FormattableString`, after the receiver of an extension method |
+
+A call whose SQL isn't in one of those places, such as Dapper's overloads that take a
+`CommandDefinition`, or a `+=` on `CommandText`, isn't checked.
+
+The text check doesn't know what the SQL means. A stored procedure's name passed to Dapper
+with `CommandType.StoredProcedure`, or a `SELECT 1` health check, mentions no tenant
+column, so it is TG002: justify the method.
 
 ## Justifying cross-tenant code
 
@@ -77,9 +104,8 @@ The diagnostic underlines the call, from the method name to its closing parenthe
 Raw SQL bypasses query filters and does not mention '{Column}'. Add a tenant predicate, or [AllowCrossTenantAccess("why")].
 ```
 
-Reported on the SQL passed to `ExecuteSqlRaw`, `ExecuteSqlInterpolated` and `ExecuteSql`,
-their `Async` forms, `SqlQueryRaw` and `SqlQuery`, when the SQL is one the compiler can
-read and it mentions none of `tenantguard.tenant_column`, ignoring case. Readable SQL is a
+Reported on the SQL handed to a [call that takes raw SQL](#which-calls-take-raw-sql),
+when the SQL is one the compiler can read and it mentions none of `tenantguard.tenant_column`, ignoring case. Readable SQL is a
 constant (a literal, a `const`, or constants joined with `+`) or an interpolated string,
 whose literal parts and constant holes, such as `nameof(Invoice.TenantId)`, are checked.
 With several columns, `{Column}` lists them: `does not mention 'TenantId' or 'OrgId'`.
@@ -87,9 +113,12 @@ With several columns, `{Column}` lists them: `does not mention 'TenantId' or 'Or
 ```csharp
 // TG002
 await db.Database.ExecuteSqlRawAsync("DELETE FROM Invoices WHERE Paid = 1");
+var unpaid = await connection.QueryAsync<Invoice>("SELECT * FROM Invoices WHERE Paid = 0");
+command.CommandText = "DELETE FROM Invoices WHERE Paid = 1";
 
 // Passes
 await db.Database.ExecuteSqlAsync($"DELETE FROM Invoices WHERE Paid = 1 AND TenantId = {tenantId}");
+var mine = await connection.QueryAsync<Invoice>("SELECT * FROM Invoices WHERE TenantId = @tenantId", new { tenantId });
 ```
 
 The check looks for the column's name in the SQL text; it doesn't parse SQL, so a mention
@@ -112,5 +141,5 @@ Raw SQL built at runtime cannot be checked for a tenant predicate.
 ```
 
 Reported on SQL the compiler can't read, such as a variable or a string joined from
-runtime values, passed to the methods TG002 covers. It's information: check the SQL by
+runtime values, handed to a [call that takes raw SQL](#which-calls-take-raw-sql). It's information: check the SQL by
 hand, or justify the method.

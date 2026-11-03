@@ -126,7 +126,8 @@ through instead, and logs each one at Information.
 The analyzers come with the package and run as you build:
 
 - `IgnoreQueryFilters()` is TG001, a warning.
-- Raw SQL that doesn't mention `TenantId` is TG002, a warning.
+- Raw SQL that doesn't mention `TenantId` is TG002, a warning, whether it goes through EF
+  Core, Dapper or an ADO.NET command.
 - Raw SQL built at runtime, which can't be checked, is TG004, information.
 
 Fix the query, or say why it crosses tenants:
@@ -142,6 +143,13 @@ If your tenant column has another name, tell TG002 in `.editorconfig`:
 ```ini
 [*.cs]
 tenantguard.tenant_column = OrgId
+```
+
+If your own data access helpers take SQL, list them so TG002 and TG004 check it too:
+
+```ini
+[*.cs]
+tenantguard.raw_sql_methods = Acme.Data.Sql.Query, Acme.Data.Sql.Execute
 ```
 
 ## Prove it
