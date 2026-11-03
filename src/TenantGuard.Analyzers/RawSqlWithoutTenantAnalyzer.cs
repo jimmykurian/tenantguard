@@ -7,7 +7,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace TenantGuard.Analyzers;
 
@@ -32,26 +31,22 @@ internal sealed class RawSqlWithoutTenantAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
-        {
-            if (RawSqlCall.FindExtensions(start.Compilation) is { } extensions)
-            {
-                start.RegisterOperationAction(operation => Analyze(operation, extensions), OperationKind.Invocation);
-            }
-        });
+        context.RegisterOperationAction(Analyze, RawSqlCall.Kinds);
     }
 
-    private static void Analyze(OperationAnalysisContext context, INamedTypeSymbol extensions)
+    private static void Analyze(OperationAnalysisContext context)
     {
-        var invocation = (IInvocationOperation)context.Operation;
-        if (RawSqlCall.FindSql(invocation, extensions) is not { } sql || RawSqlCall.KnownText(sql) is not { } text)
+        var operation = context.Operation;
+        var tree = operation.Syntax.SyntaxTree;
+        if (RawSqlCall.FindSql(operation, AnalyzerSettings.RawSqlMethods(context.Options, tree)) is not { } sql
+            || RawSqlCall.KnownText(sql) is not { } text)
         {
             return;
         }
 
-        var columns = AnalyzerSettings.TenantColumns(context.Options, invocation.Syntax.SyntaxTree);
+        var columns = AnalyzerSettings.TenantColumns(context.Options, tree);
         if (columns.Any(column => text.IndexOf(column, StringComparison.OrdinalIgnoreCase) >= 0)
-            || CrossTenantAccess.IsAllowed(invocation, context.ContainingSymbol))
+            || CrossTenantAccess.IsAllowed(operation, context.ContainingSymbol))
         {
             return;
         }

@@ -6,7 +6,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace TenantGuard.Analyzers;
 
@@ -31,21 +30,15 @@ internal sealed class UnverifiableRawSqlAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(start =>
-        {
-            if (RawSqlCall.FindExtensions(start.Compilation) is { } extensions)
-            {
-                start.RegisterOperationAction(operation => Analyze(operation, extensions), OperationKind.Invocation);
-            }
-        });
+        context.RegisterOperationAction(Analyze, RawSqlCall.Kinds);
     }
 
-    private static void Analyze(OperationAnalysisContext context, INamedTypeSymbol extensions)
+    private static void Analyze(OperationAnalysisContext context)
     {
-        var invocation = (IInvocationOperation)context.Operation;
-        if (RawSqlCall.FindSql(invocation, extensions) is { } sql
+        var operation = context.Operation;
+        if (RawSqlCall.FindSql(operation, AnalyzerSettings.RawSqlMethods(context.Options, operation.Syntax.SyntaxTree)) is { } sql
             && RawSqlCall.KnownText(sql) is null
-            && !CrossTenantAccess.IsAllowed(invocation, context.ContainingSymbol))
+            && !CrossTenantAccess.IsAllowed(operation, context.ContainingSymbol))
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, sql.Syntax.GetLocation()));
         }
