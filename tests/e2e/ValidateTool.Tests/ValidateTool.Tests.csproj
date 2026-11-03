@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Runs dotnet tenantguard validate, as built, on tests/e2e/ValidateTool.Fixture and on the
+       sample apps. The references only build them; the tests start the tool as CI would. -->
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/TenantGuard.Tool/TenantGuard.Tool.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../ValidateTool.Fixture/ValidateTool.Fixture.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../../samples/HandRolled.Api/HandRolled.Api.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../../samples/Finbuckle.Api/Finbuckle.Api.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="Tool" Value="$(MSBuildThisFileDirectory)../../../src/TenantGuard.Tool/bin/$(Configuration)/$(TargetFramework)/TenantGuard.Tool.dll" />
+    <AssemblyMetadata Include="Fixture" Value="$(MSBuildThisFileDirectory)../ValidateTool.Fixture/bin/$(Configuration)/$(TargetFramework)/ValidateTool.Fixture.dll" />
+    <AssemblyMetadata Include="Samples" Value="$(MSBuildThisFileDirectory)../../../samples/SAMPLE/bin/$(Configuration)/net10.0/SAMPLE.dll" />
+  </ItemGroup>
+
+</Project>

@@ -39,6 +39,18 @@ public sealed class DependencyRules
             .GetResult().ShouldPass();
 
     [Fact]
+    public void Tool_loads_no_EF_Core_or_TenantGuard_of_its_own()
+        => Types.FromFile(Assemblies.ToolPath)
+            .Should().OnlyHaveDependencyOn("System", "TenantGuard.Tool")
+            .GetResult().ShouldPass();
+
+    [Fact]
+    public void Payload_depends_on_EF_Core_its_Design_package_and_the_runtime_only()
+        => Types.FromFile(Assemblies.PayloadPath)
+            .Should().OnlyHaveDependencyOn("System", "Microsoft.EntityFrameworkCore", "Microsoft.Extensions", "TenantGuard")
+            .GetResult().ShouldPass();
+
+    [Fact]
     public void Analyzers_depend_on_Roslyn_only()
         => Types.FromFile(Assemblies.AnalyzersPath)
             .Should().OnlyHaveDependencyOn("System", "Microsoft.CodeAnalysis", "TenantGuard.Analyzers")

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs inside the app's process: dotnet exec starts it under the app's .deps.json and
+    .runtimeconfig.json (ADR 0024), so EF Core, the provider, the Design package and TenantGuard
+    resolve to the app's own copies. TenantGuard.Tool ships it in payload/<tfm>/.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <UseAppHost>false</UseAppHost>
+    <!-- dotnet exec runs it under the app's .runtimeconfig.json and .deps.json, never its own. -->
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <RootNamespace>TenantGuard.Tool</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../TenantGuard.Tool/CommandLine.cs" Link="CommandLine.cs" />
+    <Compile Include="../TenantGuard.Tool/ExitCodes.cs" Link="ExitCodes.cs" />
+    <Compile Include="../TenantGuard.Tool/ParseResult.cs" Link="ParseResult.cs" />
+    <Compile Include="../TenantGuard.Tool/ValidateArguments.cs" Link="ValidateArguments.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="TenantGuard.Tool.Tests" />
+  </ItemGroup>
+
+</Project>

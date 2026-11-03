@@ -9,6 +9,8 @@
     <!-- The analyzers, which the TenantGuard.EntityFrameworkCore package brings with it. -->
     <ProjectReference Include="../../src/TenantGuard.Analyzers/TenantGuard.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!-- Lets dotnet ef and dotnet tenantguard validate create the context from the app's host. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

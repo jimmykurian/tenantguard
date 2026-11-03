@@ -45,6 +45,7 @@ It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query 
 | `TenantGuard.EntityFrameworkCore` | net10.0, net11.0 | Model validation, SaveChanges guard, bypass scope; bundles the analyzers |
 | `TenantGuard.Analyzers` | netstandard2.0 | The analyzers on their own, for projects without EF Core |
 | `TenantGuard.Testing` | net10.0, net11.0 | `TenantIsolationProbe`, seeding, `ProbeReport` |
+| `TenantGuard.Tool` | net10.0, net11.0 | `dotnet tenantguard validate`: the model rules in CI, without a database |
 
 The net10.0 build runs on EF Core 10, the net11.0 build on EF Core 11. The only
 dependency is `Microsoft.EntityFrameworkCore`, so it works with any provider.
@@ -302,10 +303,10 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 60 | 57 | 14 | 131 |
-| Lines of code | 2,497 | 3,527 | 218 | 6,242 |
-| Methods | 203 | 388 | 21 | 612 |
-| Average complexity | 3.0 | 1.1 | 1.2 | 1.7 |
+| Files | 73 | 73 | 14 | 160 |
+| Lines of code | 3,057 | 3,927 | 218 | 7,202 |
+| Methods | 228 | 435 | 21 | 684 |
+| Average complexity | 3.2 | 1.1 | 1.2 | 1.8 |
 | Max complexity | 25 | 4 | 4 | 25 |
 
 <details>
@@ -314,15 +315,15 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Method | Where | Complexity |
 | --- | --- | --- |
 | `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 25 |
+| `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:38` | 20 |
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:28` | 14 |
 | `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:58` | 13 |
 | `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:33` | 12 |
+| `Validation.Run` | `src/TenantGuard.Tool.Payload/Validation.cs:27` | 12 |
+| `ValidateCommand.Run` | `src/TenantGuard.Tool/ValidateCommand.cs:25` | 12 |
 | `CrossTenantAccess.IsAllowed` | `src/TenantGuard.Analyzers/CrossTenantAccess.cs:19` | 11 |
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:37` | 11 |
-| `TenantValues.Convert` | `src/TenantGuard.Testing/Seeding/TenantValues.cs:15` | 11 |
-| `OperandClassifier.ClassifyConstant` | `src/TenantGuard.EntityFrameworkCore/Model/OperandClassifier.cs:102` | 10 |
-| `ProbeRun.SeedAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:164` | 10 |
 
 </details>
 

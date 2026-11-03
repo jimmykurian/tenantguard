@@ -12,6 +12,8 @@ and hand-rolled query filters.
   `Options/`, `Model/`, `Diagnostics/`, `Interception/`, `Hosting/`
 - `src/TenantGuard.Analyzers`: TG001 to TG004, one file per rule
 - `src/TenantGuard.Testing`: the isolation probe (`Probe/`, `Seeding/`, `Report/`)
+- `src/TenantGuard.Tool`: `dotnet tenantguard validate`; `src/TenantGuard.Tool.Payload` runs
+  inside the app
 - `tests/unit/`, `tests/architecture/`, `tests/integration/`, `tests/e2e/`: one task each
 - `samples/`: a hand-rolled app and a Finbuckle app; `site/`: the docs site, built from `docs/`
 - `docs/reference/`: what TenantGuard does, word for word. It is the contract: rule IDs,
