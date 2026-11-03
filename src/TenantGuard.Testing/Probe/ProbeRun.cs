@@ -68,28 +68,39 @@ internal sealed class ProbeRun<TContext>(
         var checks = new IsolationChecks<TContext>(createContext, factory, PrincipalsOf, relational, guarded);
         var targets = probed.Where(type => !notSeeded.ContainsKey(type)).Select(type => new ProbeTarget(type, EntityQueries.For(type), _rows[type])).ToList();
         var results = new Dictionary<(IEntityType, string), List<CheckResult>>();
+        var navigations = scoped.ToDictionary(type => type, type => NavigationCase.For(type, _entities));
+        var seeded = targets.ToDictionary(target => target.Type, target => target.Rows);
+        var navigationChecks = new NavigationChecks<TContext>(
+            createContext,
+            factory,
+            _entities,
+            tenants,
+            PrincipalsOf,
+            type => seeded.GetValueOrDefault(type),
+            type => cannotProbe.GetValueOrDefault(type) ?? notSeeded.GetValueOrDefault(type) ?? "it is not tenant-scoped");
 
         // Every read check runs before any write check, so a leaking write cannot change what a read sees.
-        foreach (var batch in new[] { ProbeChecks.Reads, ProbeChecks.Writes })
+        // NavigationLeak reads too, and deletes the links it seeds, so it runs between them.
+        await RunChecksAsync(targets, ProbeChecks.Reads, checks, results, cancellationToken);
+        foreach (var target in targets)
         {
-            foreach (var target in targets)
+            foreach (var navigation in navigations[target.Type])
             {
-                foreach (var check in batch)
+                var pairs = results[(target.Type, navigation.Check)] = [];
+                foreach (var (viewer, owner) in Pairs())
                 {
-                    var pairs = results[(target.Type, check)] = [];
-                    foreach (var (viewer, owner) in Pairs())
-                    {
-                        pairs.Add(await checks.RunAsync(check, target, viewer, owner, cancellationToken));
-                    }
+                    pairs.Add(await navigationChecks.RunAsync(navigation, viewer, owner, cancellationToken));
                 }
             }
         }
+
+        await RunChecksAsync(targets, ProbeChecks.Writes, checks, results, cancellationToken);
 
         var rows = new List<ProbeRow>();
         foreach (var type in scoped)
         {
             var skipped = cannotProbe[type] ?? (notSeeded.TryGetValue(type, out var reason) ? $"Needs a seeder: {reason}." : null);
-            rows.AddRange(ProbeChecks.All.Select(check => skipped is null
+            rows.AddRange(ProbeChecks.All.Concat(navigations[type].Select(navigation => navigation.Check)).Select(check => skipped is null
                 ? Combine(type.DisplayName(), check, results[(type, check)])
                 : new ProbeRow(type.DisplayName(), check, ProbeOutcome.Skipped, skipped)));
         }
@@ -143,6 +154,26 @@ internal sealed class ProbeRun<TContext>(
 
     private static string Message(Exception exception)
         => (exception is DbUpdateException ? exception.GetBaseException().Message : exception.Message).ReplaceLineEndings(" ");
+
+    private async Task RunChecksAsync(
+        IReadOnlyList<ProbeTarget> targets,
+        IReadOnlyList<string> batch,
+        IsolationChecks<TContext> checks,
+        Dictionary<(IEntityType Type, string Check), List<CheckResult>> results,
+        CancellationToken cancellationToken)
+    {
+        foreach (var target in targets)
+        {
+            foreach (var check in batch)
+            {
+                var pairs = results[(target.Type, check)] = [];
+                foreach (var (viewer, owner) in Pairs())
+                {
+                    pairs.Add(await checks.RunAsync(check, target, viewer, owner, cancellationToken));
+                }
+            }
+        }
+    }
 
     // Every tenant has to fit every tenant property, or seeding would fail half way.
     private void CheckTenants(IEnumerable<IEntityType> probed)

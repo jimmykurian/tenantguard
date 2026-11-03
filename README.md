@@ -240,7 +240,7 @@ flowchart LR
     model -->|"SaveChanges"| guard
     rules -->|"error"| fail["Startup fails:<br/>TenantGuardModelException"]
     guard -->|"cross-tenant write"| block["TenantIsolationViolationException,<br/>before the database"]
-    probe -->|"seeds a row per tenant,<br/>runs six checks per entity"| model
+    probe -->|"seeds a row per tenant,<br/>runs its checks per entity<br/>and navigation"| model
     probe --> report["ProbeReport"]
 ```
 
@@ -303,9 +303,9 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 73 | 73 | 14 | 160 |
-| Lines of code | 3,057 | 3,927 | 218 | 7,202 |
-| Methods | 228 | 435 | 21 | 684 |
+| Files | 76 | 75 | 14 | 165 |
+| Lines of code | 3,280 | 4,209 | 218 | 7,707 |
+| Methods | 243 | 464 | 21 | 728 |
 | Average complexity | 3.2 | 1.1 | 1.2 | 1.8 |
 | Max complexity | 25 | 4 | 4 | 25 |
 
@@ -317,13 +317,13 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 25 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:38` | 20 |
-| `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:28` | 14 |
+| `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:28` | 15 |
+| `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
 | `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:58` | 13 |
 | `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:33` | 12 |
 | `Validation.Run` | `src/TenantGuard.Tool.Payload/Validation.cs:27` | 12 |
 | `ValidateCommand.Run` | `src/TenantGuard.Tool/ValidateCommand.cs:25` | 12 |
 | `CrossTenantAccess.IsAllowed` | `src/TenantGuard.Analyzers/CrossTenantAccess.cs:19` | 11 |
-| `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:37` | 11 |
 
 </details>
 
