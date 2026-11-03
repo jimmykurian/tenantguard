@@ -1,1 +1,4 @@
 #nullable enable
+TenantGuard.Testing.IProbeSource
+TenantGuard.Testing.IProbeSource.RunAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<TenantGuard.Testing.ProbeReport!>!
+TenantGuard.Testing.ProbeRow.AssertPassed() -> void
