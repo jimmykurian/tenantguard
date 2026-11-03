@@ -10,6 +10,8 @@ ID, a message, an option name or an exception type is a breaking change
 - [Write guard](write-guard.md): what `SaveChanges` checks for each Added, Modified and
   Deleted entry
 - [Isolation probe](probe.md): how the probe seeds rows and what each check proves
+- [Test adapters](test-adapters.md): each probe row as a test of its own, in xUnit v3 and
+  TUnit
 - [Validate tool](validate-tool.md): `dotnet tenantguard validate`, the model rules in CI
   without a database
 - [Options](options.md): `UseTenantGuard`, startup validation, `TenantGuardModel.Validate`
