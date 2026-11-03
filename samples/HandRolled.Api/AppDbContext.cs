@@ -5,7 +5,7 @@
 using Microsoft.EntityFrameworkCore;
 
 // Every tenant-scoped entity is filtered on TenantId, a member of the context, so each context instance
-// sees only its own tenant's rows.
+// sees only its own tenant's rows, and indexed on it, so those queries don't scan other tenants' rows.
 internal sealed class AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext tenant) : DbContext(options)
 {
     // The tenant this context reads and writes as.
@@ -17,11 +17,16 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options, ITena
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Customer>().HasQueryFilter(customer => customer.TenantId == TenantId);
+        modelBuilder.Entity<Customer>(customer =>
+        {
+            customer.HasQueryFilter(row => row.TenantId == TenantId);
+            customer.HasIndex(row => row.TenantId);
+        });
         modelBuilder.Entity<Invoice>(invoice =>
         {
             invoice.HasOne<Customer>().WithMany().HasForeignKey(row => row.CustomerId);
             invoice.HasQueryFilter(row => row.TenantId == TenantId);
+            invoice.HasIndex(row => row.TenantId);
         });
     }
 }

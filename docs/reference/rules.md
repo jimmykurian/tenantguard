@@ -46,6 +46,8 @@ tenant-scoped, and TGM001 still applies to it.
 | TGM006 | tenant-on-derived | error | A derived type declares a tenant property and its root has none |
 | TGM007 | filter-not-parameterized | warning | The tenant filter's other operand can't be classified, or the filter never compares the tenant property |
 | TGM008 | owned-tenant | warning | An owned type has a tenant property |
+| TGM009 | unindexed-tenant | warning | No index or key of a tenant-scoped entity type starts with its tenant property |
+| TGM010 | tenant-free-unique | error | A unique index or alternate key of a tenant-scoped entity type doesn't include its tenant property |
 
 ### TGM001 unguarded-entity
 
@@ -153,6 +155,67 @@ An owned type is stored with its owner and filtered through it, so its own tenan
 property plays no part. The write guard skips owned entries, so it checks the owner's
 tenant only when the owner's own row is written: a save that changes only the owned part
 of another tenant's row isn't blocked yet.
+
+### TGM009 unindexed-tenant
+
+```text
+{Entity} has no index or key that starts with '{Property}', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.{Property}), or put '{Property}' first in an existing index or key.
+```
+
+Every query of a tenant-scoped table filters on the tenant column, so without an index
+that starts with it the database scans every tenant's rows. The primary key, alternate
+keys and indexes all count, including the ones EF Core adds for foreign keys, such as the
+index a foreign key of `(TenantId, OrderId)` gets.
+
+```csharp
+// TGM009: the only key is Id, and no index starts with TenantId.
+modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == TenantId);
+
+// Passes.
+modelBuilder.Entity<Invoice>(invoice =>
+{
+    invoice.HasQueryFilter(row => row.TenantId == TenantId);
+    invoice.HasIndex(row => row.TenantId);
+});
+```
+
+### TGM010 tenant-free-unique
+
+```text
+{Entity}: the unique index on ({Columns}) doesn't include '{Property}', so a value one tenant has used is refused to every other tenant, which tells them it exists. Make it unique per tenant: HasIndex(e => new { e.{Property}, {Members} }).IsUnique().
+```
+
+```text
+{Entity}: the alternate key ({Columns}) doesn't include '{Property}', so a value one tenant has used is refused to every other tenant, which tells them it exists. Make it unique per tenant: HasAlternateKey(e => new { e.{Property}, {Members} }).
+```
+
+A unique index on `InvoiceNumber` alone is unique across all tenants: one tenant's insert
+fails because another tenant already used the number, and the failure tells the first
+tenant that the number exists. `{Columns}` lists the index's properties, comma-separated,
+and `{Members}` the same properties as `e.{Name}`. The primary key isn't checked: a
+generated key is unique across tenants by design. Nor is the unique index EF Core makes for
+a one-to-one foreign key, whose values are keys of the principal's rows. A unique index with a filter, set with
+`HasFilter`, is checked like any other.
+
+```csharp
+// TGM010
+modelBuilder.Entity<Invoice>().HasIndex(invoice => invoice.InvoiceNumber).IsUnique();
+
+// Passes, and also satisfies TGM009.
+modelBuilder.Entity<Invoice>().HasIndex(invoice => new { invoice.TenantId, invoice.InvoiceNumber }).IsUnique();
+```
+
+### Which tables TGM009 and TGM010 check
+
+Both rules check the indexes and keys declared anywhere in the hierarchy, so an index on a
+derived type in a table-per-hierarchy mapping counts. They skip keyless entity types and
+the ones mapped to a view, a SQL query or a function, since the database holds no index of
+theirs, and every entity type when the provider isn't relational, such as Cosmos DB. When EF Core
+builds the model, TenantGuard tells a relational provider by its options extension, which
+derives from `RelationalOptionsExtension`; `TenantGuardModel.Validate` tells by the
+`Relational:` annotations a relational provider puts on each entity type of the model
+`context.Model` returns. Both are matched by name, so the runtime package needs no
+relational reference.
 
 ## How the operand is classified
 

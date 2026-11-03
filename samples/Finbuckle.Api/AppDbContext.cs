@@ -28,11 +28,17 @@ internal sealed class AppDbContext(IMultiTenantContextAccessor<TenantInfo> acces
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Customer>().IsMultiTenant();
+        // IsMultiTenant() adds TenantId and the filter but no index on it (TGM009).
+        modelBuilder.Entity<Customer>(customer =>
+        {
+            customer.IsMultiTenant();
+            customer.HasIndex("TenantId");
+        });
         modelBuilder.Entity<Invoice>(invoice =>
         {
             invoice.IsMultiTenant();
             invoice.HasOne<Customer>().WithMany().HasForeignKey(row => row.CustomerId);
+            invoice.HasIndex("TenantId");
         });
     }
 }

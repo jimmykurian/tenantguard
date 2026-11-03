@@ -17,7 +17,11 @@ internal sealed class TenantGuardConventionSetPlugin(IDbContextOptions contextOp
         if (contextOptions.FindExtension<TenantGuardOptionsExtension>() is { } extension)
         {
             conventionSet.ModelFinalizedConventions.Add(
-                new TenantModelConvention(extension.Options, TenantGuardLogging.CreateLogger(contextOptions), currentContext.Context.GetType()));
+                new TenantModelConvention(
+                    extension.Options,
+                    TenantGuardLogging.CreateLogger(contextOptions),
+                    currentContext.Context.GetType(),
+                    RelationalProvider.Uses(contextOptions)));
         }
 
         return conventionSet;
