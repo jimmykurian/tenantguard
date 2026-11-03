@@ -106,6 +106,11 @@ A captured variable whose type the context implements, such as the
 `IMultiTenantDbContext` Finbuckle's filter captures, isn't TGM003: EF Core puts the
 current context in its place, so it is read per query (behavior pin 5).
 
+An app whose `IModelCacheKeyFactory` keys the model cache by tenant builds one model per
+tenant, and captures the tenant on purpose: `AllowCapturedValues()` leaves TGM003 out when
+the context's cache key passes the check in [per-tenant models](options.md#per-tenant-models)
+(behavior pin 8).
+
 ### TGM004 literal-tenant
 
 ```text

@@ -59,6 +59,14 @@ TenantGuard blocked 1 write because the context has no current tenant:
 Set the current tenant before saving, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
 ```
 
+When the context's model was built for another tenant, under
+[`AllowCapturedValues()`](options.md#per-tenant-models), `Violations` is empty and the
+message names both tenants:
+
+```text
+TenantGuard blocked a save to AppDbContext: its model was built for tenant "acme", so its query filters read "acme"'s rows, but the current tenant is "globex". Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.
+```
+
 ## TenantIsolationProbeException
 
 `TenantIsolationProbeException : Exception`, thrown by `ProbeReport.AssertAllPassed()`

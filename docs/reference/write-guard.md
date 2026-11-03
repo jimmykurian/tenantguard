@@ -45,6 +45,15 @@ lists each one: the entity type, its state, its key values (when `IncludeKeysInE
 on, the default), and the expected and actual tenant. [Exceptions](exceptions.md) has the
 message. No other value of the entity is in the exception or the logs.
 
+## A model built for another tenant
+
+Under [`AllowCapturedValues()`](options.md#per-tenant-models), a model whose filters capture
+the tenant remembers the tenant it was built for. When a save writes a tenant-scoped row
+and the context's current tenant is a different one, the guard blocks the whole save, before
+it checks any entry: the context has another tenant's model, so what it read came from that
+tenant. The [exception](exceptions.md#tenantisolationviolationexception) names both tenants
+and has no `Violations`. With no current tenant, `NoTenantPolicy` applies as before.
+
 ## Bypass
 
 `using (context.TenantGuard().Bypass("why"))` switches the write guard off for that context

@@ -32,6 +32,7 @@ accepted record isn't edited later except to mark it superseded
 | [0023](0023-docs-site-uses-the-rapide-theme.md) | The docs site uses the Rapide theme | Accepted | 2026-11-02 |
 | [0024](0024-a-dotnet-tool-for-model-validation.md) | A .NET tool package for model validation in CI | Accepted | 2026-11-03 |
 | [0025](0025-a-package-per-test-framework-for-probe-rows.md) | A package per test framework for probe rows | Accepted | 2026-11-03 |
+| [0026](0026-tgm003-allows-a-captured-tenant-in-a-per-tenant-model.md) | TGM003 allows a captured tenant in a per-tenant model | Accepted | 2026-11-03 |
 
 ## Proposing a change
 
