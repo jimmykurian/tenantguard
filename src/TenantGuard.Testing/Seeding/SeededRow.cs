@@ -33,7 +33,7 @@ internal sealed class SeededRow
 
     // The key of a row a query returned, matched by the key's comparers.
     public bool HasKey(EntityEntry entry)
-        => Key.Properties.Select((property, index) => property.GetKeyValueComparer().Equals(entry.Property(property).CurrentValue, KeyValues[index])).All(equal => equal);
+        => Key.Properties.Select((property, index) => property.GetKeyValueComparer().Equals(entry.Property(property.Name).CurrentValue, KeyValues[index])).All(equal => equal);
 
     // Such as (Id: 7), formatted the way TenantGuard's own messages format key values.
     public string FormatKey()

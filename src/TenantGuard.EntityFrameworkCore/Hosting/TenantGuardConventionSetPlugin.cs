@@ -21,7 +21,8 @@ internal sealed class TenantGuardConventionSetPlugin(IDbContextOptions contextOp
                     extension.Options,
                     TenantGuardLogging.CreateLogger(contextOptions),
                     currentContext.Context.GetType(),
-                    RelationalProvider.Uses(contextOptions)));
+                    RelationalProvider.Uses(contextOptions),
+                    PerTenantModel.TenantFor(currentContext.Context, extension.Options)));
         }
 
         return conventionSet;
