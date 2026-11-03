@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>TenantGuard.Tool</RootNamespace>
+    <!-- The tool parses options and starts the payload; it runs on whichever runtime is newest. -->
+    <RollForward>Major</RollForward>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>dotnet-tenantguard</ToolCommandName>
+    <PackageId>TenantGuard.Tool</PackageId>
+    <Description>dotnet tenantguard validate: runs TenantGuard's model rules on a compiled app's DbContext in CI, without starting the app or opening a database connection.</Description>
+  </PropertyGroup>
+
+  <!--
+    The payload runs inside the app's own process, under its .deps.json, so it is built for each
+    target the tool supports and shipped beside the tool in payload/<tfm>/ (ADR 0024). Only the
+    payload and the runtime package go in; the app brings EF Core, its provider and the Design package.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../TenantGuard.Tool.Payload/TenantGuard.Tool.Payload.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net10.0" />
+    <ProjectReference Include="../TenantGuard.Tool.Payload/TenantGuard.Tool.Payload.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../TenantGuard.Tool.Payload/bin/$(Configuration)/net10.0/TenantGuard.Tool.Payload.dll" Link="payload/net10.0/TenantGuard.Tool.Payload.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Visible="false" />
+    <None Include="../TenantGuard.Tool.Payload/bin/$(Configuration)/net10.0/TenantGuard.EntityFrameworkCore.dll" Link="payload/net10.0/TenantGuard.EntityFrameworkCore.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Visible="false" />
+    <None Include="../TenantGuard.Tool.Payload/bin/$(Configuration)/net11.0/TenantGuard.Tool.Payload.dll" Link="payload/net11.0/TenantGuard.Tool.Payload.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Visible="false" />
+    <None Include="../TenantGuard.Tool.Payload/bin/$(Configuration)/net11.0/TenantGuard.EntityFrameworkCore.dll" Link="payload/net11.0/TenantGuard.EntityFrameworkCore.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="TenantGuard.Tool.Tests" />
+    <!-- NSubstitute's proxies of the internal IPayloadRunner. -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+</Project>

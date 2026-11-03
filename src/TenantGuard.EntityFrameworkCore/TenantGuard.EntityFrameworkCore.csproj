@@ -24,6 +24,8 @@
     <InternalsVisibleTo Include="TenantGuard.Testing" />
     <InternalsVisibleTo Include="TenantGuard.Testing.Tests" />
     <InternalsVisibleTo Include="TenantGuard.BehaviorPins" />
+    <!-- Runs the model rules with the context type, as the EF convention does (ADR 0024). -->
+    <InternalsVisibleTo Include="TenantGuard.Tool.Payload" />
   </ItemGroup>
 
 </Project>

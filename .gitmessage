@@ -2,7 +2,7 @@
 # │       │             │
 # │       │             └─> Summary in present tense. Not capitalized. No period at the end.
 # │       │
-# │       └─> Scope: options|model|interception|diagnostics|analyzers|probe|seeding|report|pins|samples|release|deps|docs|tooling (optional)
+# │       └─> Scope: options|model|interception|diagnostics|analyzers|probe|seeding|report|tool|pins|samples|release|deps|docs|tooling (optional)
 # │
 # └─> Type: feat, fix, docs, style, refactor, perf, test, build, ci, chore
 
@@ -33,6 +33,7 @@
 #   options, model, interception, diagnostics   src/TenantGuard.EntityFrameworkCore
 #   analyzers                                   src/TenantGuard.Analyzers
 #   probe, seeding, report                      src/TenantGuard.Testing
+#   tool                                        src/TenantGuard.Tool, src/TenantGuard.Tool.Payload
 #   pins                                        tests/integration/TenantGuard.BehaviorPins
 #   samples                                     samples/
 #   release, deps, docs, tooling                packaging, dependencies, docs, repo setup
