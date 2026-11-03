@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- An xUnit v3 test project that ProbeAdapters.Tests runs as a process: each probe row of
+       ProbeAdapters.Store is a test. Some fail on purpose, so task test doesn't run it itself. -->
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Remove="AwesomeAssertions" />
+    <Using Remove="AwesomeAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/TenantGuard.Testing.XunitV3/TenantGuard.Testing.XunitV3.csproj" />
+    <ProjectReference Include="../ProbeAdapters.Store/ProbeAdapters.Store.csproj" />
+  </ItemGroup>
+
+</Project>

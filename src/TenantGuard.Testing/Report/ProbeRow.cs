@@ -13,4 +13,16 @@ namespace TenantGuard.Testing;
 /// </param>
 /// <param name="Outcome">Passed, Failed or Skipped.</param>
 /// <param name="Detail">What leaked, or why the check was skipped. Empty when it passed.</param>
-public sealed record ProbeRow(string Entity, string Check, ProbeOutcome Outcome, string Detail);
+public sealed record ProbeRow(string Entity, string Check, ProbeOutcome Outcome, string Detail)
+{
+    /// <summary>
+    /// Throws <see cref="TenantIsolationProbeException"/>, with a table of this row, unless it passed.
+    /// </summary>
+    public void AssertPassed()
+    {
+        if (Outcome != ProbeOutcome.Passed)
+        {
+            throw new TenantIsolationProbeException(ProbeTable.Format([this], $"{Entity} {Check} did not pass."));
+        }
+    }
+}

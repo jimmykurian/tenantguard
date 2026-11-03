@@ -15,6 +15,9 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="TenantGuard.Testing.Tests" />
+    <!-- The adapters share the run-once cache and the test names. -->
+    <InternalsVisibleTo Include="TenantGuard.Testing.XunitV3" />
+    <InternalsVisibleTo Include="TenantGuard.Testing.TUnit" />
   </ItemGroup>
 
 </Project>

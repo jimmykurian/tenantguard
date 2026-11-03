@@ -23,6 +23,8 @@ hand-rolled query filters, and:
 | `TenantGuard.Analyzers` | The analyzers on their own, for projects without EF Core |
 | `TenantGuard.Testing` | `TenantIsolationProbe`, seeding and `ProbeReport` |
 | `TenantGuard.Tool` | `dotnet tenantguard validate`: the model rules in CI, without a database |
+| `TenantGuard.Testing.XunitV3` | Each probe row as an xUnit v3 test |
+| `TenantGuard.Testing.TUnit` | Each probe row as a TUnit test |
 
 ## Install
 

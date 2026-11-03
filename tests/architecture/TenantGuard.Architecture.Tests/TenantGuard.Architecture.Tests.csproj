@@ -10,7 +10,16 @@
     <ProjectReference Include="../../../src/TenantGuard.Analyzers/TenantGuard.Analyzers.csproj" />
     <ProjectReference Include="../../../src/TenantGuard.Tool/TenantGuard.Tool.csproj" />
     <ProjectReference Include="../../../src/TenantGuard.Tool.Payload/TenantGuard.Tool.Payload.csproj" />
+    <!-- Built, not referenced: TUnit.Core doesn't belong in an xUnit project. The rules read both
+         adapters from their output folders. -->
+    <ProjectReference Include="../../../src/TenantGuard.Testing.XunitV3/TenantGuard.Testing.XunitV3.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../../src/TenantGuard.Testing.TUnit/TenantGuard.Testing.TUnit.csproj" ReferenceOutputAssembly="false" />
     <PackageReference Include="NetArchTest.eNhancedEdition" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="XunitV3Adapter" Value="$(MSBuildThisFileDirectory)../../../src/TenantGuard.Testing.XunitV3/bin/$(Configuration)/$(TargetFramework)/TenantGuard.Testing.XunitV3.dll" />
+    <AssemblyMetadata Include="TUnitAdapter" Value="$(MSBuildThisFileDirectory)../../../src/TenantGuard.Testing.TUnit/bin/$(Configuration)/$(TargetFramework)/TenantGuard.Testing.TUnit.dll" />
   </ItemGroup>
 
 </Project>

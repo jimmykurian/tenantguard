@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+    <RootNamespace>TenantGuard.Testing</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>TenantGuard.Testing.XunitV3</PackageId>
+    <Description>xUnit v3 adapter for the TenantGuard isolation probe: each entity type and check is a test of its own, named after them, that fails with what leaked.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../TenantGuard.Testing/TenantGuard.Testing.csproj" />
+    <PackageReference Include="xunit.v3.extensibility.core" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

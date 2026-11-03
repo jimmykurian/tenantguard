@@ -28,7 +28,7 @@ public sealed class ProbeReport
         var notPassed = Rows.Where(row => row.Outcome != ProbeOutcome.Passed).ToList();
         if (notPassed.Count > 0)
         {
-            throw new TenantIsolationProbeException(ProbeTable.Format(notPassed, Rows.Count));
+            throw new TenantIsolationProbeException(ProbeTable.Format(notPassed, $"{notPassed.Count} of {Rows.Count} checks did not pass."));
         }
     }
 }

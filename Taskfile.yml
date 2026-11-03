@@ -6,8 +6,8 @@ vars:
   SOLUTION: TenantGuard.slnx
   CONFIGURATION: Release
   SAMPLES: HandRolled.Api Finbuckle.Api
-  # The end-to-end tests in tests/e2e: one per sample app, and the validate tool's.
-  E2E_TESTS: HandRolled.Api.Tests Finbuckle.Api.Tests ValidateTool.Tests
+  # The end-to-end tests in tests/e2e: one per sample app, the validate tool's and the probe adapters'.
+  E2E_TESTS: HandRolled.Api.Tests Finbuckle.Api.Tests ValidateTool.Tests ProbeAdapters.Tests
   # Absolute: `dotnet test` in the .NET 11 RC SDK resolves a relative --project against the
   # project's own directory.
   TESTS: "{{.ROOT_DIR}}/tests"
@@ -78,6 +78,8 @@ tasks:
       - for: { var: E2E_TESTS, split: " " }
         cmd: dotnet format tests/e2e/{{.ITEM}} --verify-no-changes
       - dotnet format tests/e2e/ValidateTool.Fixture --verify-no-changes
+      - for: [ProbeAdapters.Store, ProbeAdapters.XunitFixture, ProbeAdapters.TUnitFixture]
+        cmd: dotnet format tests/e2e/{{.ITEM}} --verify-no-changes
       - dotnet format tools/Metrics --verify-no-changes
 
   lint:api:

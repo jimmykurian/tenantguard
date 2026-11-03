@@ -2,7 +2,6 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
-using System.Globalization;
 using System.Text;
 
 namespace TenantGuard.Testing;
@@ -13,14 +12,15 @@ internal static class ProbeTable
 {
     private const string Gap = "  ";
 
-    public static string Format(IReadOnlyList<ProbeRow> rows, int checks)
+    // summary follows "TenantGuard isolation probe: ", such as "3 of 12 checks did not pass."
+    public static string Format(IReadOnlyList<ProbeRow> rows, string summary)
     {
         string[] header = ["Entity", "Check", "Outcome", "Detail"];
         var cells = rows.Select(row => new[] { row.Entity, row.Check, row.Outcome.ToString(), row.Detail }).ToList();
         var widths = Enumerable.Range(0, 3).Select(column => cells.Prepend(header).Max(cell => cell[column].Length)).ToArray();
 
         var table = new StringBuilder();
-        table.Append(CultureInfo.InvariantCulture, $"TenantGuard isolation probe: {rows.Count} of {checks} checks did not pass.\n\n");
+        table.Append("TenantGuard isolation probe: ").Append(summary).Append("\n\n");
         AppendLine(table, header, widths);
         AppendLine(table, [.. header.Select((title, column) => new string('-', column < 3 ? widths[column] : title.Length))], widths);
         foreach (var cell in cells)

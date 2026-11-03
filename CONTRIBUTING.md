@@ -95,6 +95,8 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
   `src/TenantGuard.Tool.Payload` inside the app's own runtime and dependencies (ADR 0024).
 - `src/TenantGuard.Testing`: the isolation probe. `Probe/` runs the checks, `Seeding/`
   creates the rows, and `Report/` holds the report and its table.
+- `src/TenantGuard.Testing.XunitV3` and `src/TenantGuard.Testing.TUnit`: the test adapters,
+  one attribute each, that make each probe row a test (ADR 0025).
 - `tests/unit/`: the runtime, analyzer and tool tests, in process.
 - `tests/architecture/`: [NetArchTest](https://github.com/NeVeSpl/NetArchTest.eNhancedEdition)
   rules over the shipped assemblies: what each may depend on, where public types
@@ -122,7 +124,7 @@ What the analyzers and tests don't check for you:
   async path; `tests/architecture/` checks both exist.
 - **EF Core 11-only APIs** sit behind `#if NET11_0_OR_GREATER`
   ([0010](docs/architecture/decisions/0010-target-net10-and-net11.md)).
-- **Public types** live in the `TenantGuard` and `TenantGuard.Testing` namespaces, whatever
+- **Public types** live in the `TenantGuard` and `TenantGuard.Testing` namespaces, the test adapters' too, whatever
   their folder ([0007](docs/architecture/decisions/0007-flat-public-namespaces.md)).
 - **File headers:** C# files start with the StyleCop header set in `stylecop.json`, and YAML
   files and scripts with the same copyright line as a comment. Other files have none

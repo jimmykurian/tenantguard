@@ -80,6 +80,39 @@ generator doesn't know, is reported as skipped with the reason.
 To look at the rows yourself, read `report.Rows`: each `ProbeRow` has the `Entity`, the
 `Check`, an `Outcome` (`Passed`, `Failed` or `Skipped`) and a `Detail`.
 
+## One test per row
+
+`AssertAllPassed()` fails one test with every row that didn't pass. To see each entity and
+check as a test of its own, add the adapter for your test framework and put the probe in a
+class of its own:
+
+```sh
+dotnet add package TenantGuard.Testing.XunitV3 --prerelease   # or TenantGuard.Testing.TUnit
+```
+
+```csharp
+public sealed class AppProbe : IProbeSource
+{
+    public Task<ProbeReport> RunAsync(CancellationToken cancellationToken)
+        => new TenantIsolationProbe<AppDbContext>(tenant => TestDatabase.CreateContext(tenant))
+            .WithTenants("acme", "globex")
+            .RunAsync(cancellationToken);
+}
+
+public sealed class IsolationTests
+{
+    [Theory]                    // [Test] in TUnit
+    [ProbeRows<AppProbe>]
+    public void Tenant_isolation(ProbeRow row) => row.AssertPassed();
+}
+```
+
+The tests are named `Invoice.ReadIsolation`, `Order.NavigationLeak(Lines)` and so on, a
+failed one fails with that row's table, and a skipped row is a skipped test. The probe runs
+once per test process. xUnit runs it when the theory runs; TUnit runs it when it builds its
+tests, so a test explorer needs the database to discover them. The
+[test adapters](../reference/test-adapters.md) page has the details.
+
 ## Model tests
 
 `TenantGuardModel.Validate` runs the model rules on a model and returns what they found,

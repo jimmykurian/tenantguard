@@ -1,0 +1,3 @@
+#nullable enable
+TenantGuard.Testing.ProbeRowsAttribute<TSource>
+TenantGuard.Testing.ProbeRowsAttribute<TSource>.ProbeRowsAttribute() -> void

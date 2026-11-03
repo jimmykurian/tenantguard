@@ -1,6 +1,6 @@
 # Packages
 
-TenantGuard ships four NuGet packages. The runtime package bundles the analyzers, so
+TenantGuard ships six NuGet packages. The runtime package bundles the analyzers, so
 installing it turns them on.
 
 | Package | Targets | Contents |
@@ -9,6 +9,8 @@ installing it turns them on.
 | `TenantGuard.Analyzers` | netstandard2.0 | TG001 to TG004, also shipped on their own for projects without EF Core |
 | `TenantGuard.Testing` | net10.0, net11.0 | `TenantIsolationProbe`, seeding and `ProbeReport` |
 | `TenantGuard.Tool` | net10.0, net11.0 | `dotnet tenantguard validate`, a .NET tool, with a payload for each target ([0024](decisions/0024-a-dotnet-tool-for-model-validation.md)) |
+| `TenantGuard.Testing.XunitV3` | net10.0, net11.0 | `ProbeRowsAttribute<TSource>`: each probe row an xUnit v3 test ([0025](decisions/0025-a-package-per-test-framework-for-probe-rows.md)) |
+| `TenantGuard.Testing.TUnit` | net10.0, net11.0 | `ProbeRowsAttribute<TSource>`: each probe row a TUnit test ([0025](decisions/0025-a-package-per-test-framework-for-probe-rows.md)) |
 
 The net10.0 build references EF Core 10.x and the net11.0 build EF Core 11.x
 ([0010](decisions/0010-target-net10-and-net11.md)).
@@ -19,6 +21,9 @@ The net10.0 build references EF Core 10.x and the net11.0 build EF Core 11.x
   already brings in ([0002](decisions/0002-runtime-depends-on-ef-core-only.md)).
 - The test kit depends on the runtime package and EF Core, and on no test framework, so it
   works under xUnit, NUnit, MSTest and TUnit alike.
+- Each test adapter depends on the test kit and its framework's extensibility package only:
+  `xunit.v3.extensibility.core` or `TUnit.Core`
+  ([0025](decisions/0025-a-package-per-test-framework-for-probe-rows.md)).
 - The analyzers depend on `Microsoft.CodeAnalysis.CSharp` 4.8.0 only, with
   `EnforceExtendedAnalyzerRules`, and know nothing of EF Core or the runtime package
   ([0004](decisions/0004-analyzers-on-netstandard2-and-roslyn-4-8.md)). They recognize
@@ -34,8 +39,8 @@ The architecture tests in `tests/architecture/` check each of these on every bui
 
 ## Namespaces
 
-The runtime package's public types are in `TenantGuard`, the test kit's in
-`TenantGuard.Testing`, whatever folder they are in
+The runtime package's public types are in `TenantGuard`, the test kit's and the test
+adapters' in `TenantGuard.Testing`, whatever folder they are in
 ([0007](decisions/0007-flat-public-namespaces.md)).
 
 ## Rings inside the runtime package
@@ -99,11 +104,13 @@ global.json                      .NET SDK 11, rollForward latestFeature
 src/TenantGuard.EntityFrameworkCore/
 src/TenantGuard.Analyzers/
 src/TenantGuard.Testing/
+src/TenantGuard.Testing.XunitV3/ the xUnit v3 adapter; src/TenantGuard.Testing.TUnit/ the TUnit one
 src/TenantGuard.Tool/            the dotnet tool; src/TenantGuard.Tool.Payload/ runs inside the app
 tests/unit/                      TenantGuard.EntityFrameworkCore.Tests, TenantGuard.Analyzers.Tests, TenantGuard.Tool.Tests
 tests/architecture/              TenantGuard.Architecture.Tests
 tests/integration/               TenantGuard.BehaviorPins, TenantGuard.Testing.Tests, TenantGuard.Providers.Tests
-tests/e2e/                       HandRolled.Api.Tests, Finbuckle.Api.Tests, ValidateTool.Tests and its fixture app
+tests/e2e/                       HandRolled.Api.Tests, Finbuckle.Api.Tests, ValidateTool.Tests and its fixture app,
+                                 ProbeAdapters.Tests and its xUnit v3 and TUnit fixtures
 samples/HandRolled.Api/          minimal API, its own ITenantContext and filters
 samples/Finbuckle.Api/           Finbuckle.MultiTenant, showing TenantGuard is library-agnostic
 tools/Metrics/                   the README's code metrics

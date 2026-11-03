@@ -25,6 +25,15 @@ public sealed class PublicSurfaceRules
             .Should().ResideInNamespaceMatching("^TenantGuard\\.Testing$")
             .GetResult().ShouldPass();
 
+    [Theory]
+    [InlineData("XunitV3")]
+    [InlineData("TUnit")]
+    public void Test_adapter_public_types_live_in_the_TenantGuard_Testing_namespace(string adapter)
+        => Types.FromFile(adapter == "TUnit" ? Assemblies.TUnitAdapterPath : Assemblies.XunitV3AdapterPath)
+            .That().ArePublic()
+            .Should().ResideInNamespaceMatching("^TenantGuard\\.Testing$")
+            .GetResult().ShouldPass();
+
     [Fact]
     public void Exceptions_are_public_sealed_and_named_for_what_they_are()
         => Types.InAssemblies([Assemblies.Runtime, Assemblies.TestKit])
