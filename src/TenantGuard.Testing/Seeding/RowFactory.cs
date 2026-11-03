@@ -73,7 +73,7 @@ internal sealed class RowFactory<TContext>(
             {
                 if (foreignKey.Properties[index] != tenantProperty)
                 {
-                    values.Add((foreignKey.Properties[index], principal.Values[foreignKey.PrincipalKey.Properties[index]], seeded));
+                    values.Add((foreignKey.Properties[index], principal.Values[foreignKey.PrincipalKey.Properties[index].Name], seeded));
                 }
             }
         }
@@ -97,7 +97,7 @@ internal sealed class RowFactory<TContext>(
         var entry = context.Add(entity);
         foreach (var (property, value, onlyIfUnset) in afterTracking)
         {
-            var current = entry.Property(property);
+            var current = entry.Property(property.Name);
             if (!onlyIfUnset || IsUnset(property, current.CurrentValue))
             {
                 current.CurrentValue = value;

@@ -65,3 +65,6 @@ Core version, stop and open an issue: the design rests on it.
 6. `IgnoreQueryFilters()` returns other tenants' rows, which is why TG001 matters.
 7. A query that reaches a filtered principal through a required navigation joins it with an
    inner join, so dependents of rows the filter hides drop out: a documented caveat.
+8. An `IModelCacheKeyFactory` whose key includes the tenant gives each tenant's context a
+   model of its own, so a filter that captures the tenant returns only that tenant's rows
+   ([0026](../architecture/decisions/0026-tgm003-allows-a-captured-tenant-in-a-per-tenant-model.md)).

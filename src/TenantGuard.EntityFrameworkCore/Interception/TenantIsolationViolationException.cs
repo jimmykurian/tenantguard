@@ -23,8 +23,19 @@ public sealed class TenantIsolationViolationException : InvalidOperationExceptio
         Violations = violations;
     }
 
+    // A save through a model built for another tenant, under AllowCapturedValues: no entry is at fault.
+    internal TenantIsolationViolationException(string context, object modelTenant, object currentTenant)
+        : base(
+            $"TenantGuard blocked a save to {context}: its model was built for tenant {TenantValueFormatter.Format(modelTenant)}, "
+            + $"so its query filters read {TenantValueFormatter.Format(modelTenant)}'s rows, but the current tenant is {TenantValueFormatter.Format(currentTenant)}. "
+            + "Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.")
+    {
+        Violations = [];
+    }
+
     /// <summary>
-    /// Gets every blocked write.
+    /// Gets every blocked write; empty when the save was blocked because the context's model was built
+    /// for another tenant.
     /// </summary>
     public IReadOnlyList<TenantViolation> Violations { get; }
 

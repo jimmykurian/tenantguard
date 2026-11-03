@@ -59,6 +59,14 @@ TenantGuard blocked 1 write because the context has no current tenant:
 Set the current tenant before saving, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
 ```
 
+When the context's model was built for another tenant, under
+[`AllowCapturedValues()`](options.md#per-tenant-models), `Violations` is empty and the
+message names both tenants:
+
+```text
+TenantGuard blocked a save to AppDbContext: its model was built for tenant "acme", so its query filters read "acme"'s rows, but the current tenant is "globex". Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.
+```
+
 ## TenantIsolationProbeException
 
 `TenantIsolationProbeException : Exception`, thrown by `ProbeReport.AssertAllPassed()`
@@ -96,6 +104,7 @@ message of an argument exception ends with the parameter's name, as in
 | `RunAsync`, when `Seed<T>` names a type the model doesn't have | `InvalidOperationException`: `Seed<{Type}> names a type that is not an entity type of {Context}.` |
 | `RunAsync`, when a tenant doesn't fit a tenant property | `InvalidOperationException`: `The tenant "{Tenant}" is not a {Type}, the type of {Entity}.{Property}. Pass WithTenants values the tenant property can hold.` |
 | `RunAsync`, when the write guard blocks the probe's own seeding | `InvalidOperationException`: `The write guard blocked seeding {Entity} as {Tenant}. Does the context factory make {Tenant} the context's current tenant?` |
+| `RunAsync`, when the write guard blocks seeding because the context's model was built for another tenant ([per-tenant models](options.md#per-tenant-models)) | `InvalidOperationException`: `The write guard blocked seeding {Entity} as {Tenant}, because the context's model was built for another tenant. Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.` |
 
 A null argument to `UseTenantGuard`, `CurrentTenant`, `TenantGuardModel.Validate`, the
 probe's constructor, `WithTenants` or `Seed<T>` throws `ArgumentNullException`.

@@ -26,6 +26,8 @@ public sealed class TenantGuardOptions
 
     internal bool RequireAllEntitiesScoped { get; private set; }
 
+    internal bool AllowCapturedValues { get; private set; }
+
     // Throw, the first value, is the default.
     internal Enforcement Enforcement { get; private set; }
 
@@ -52,6 +54,9 @@ public sealed class TenantGuardOptions
     internal TenantGuardOptions WithRequireAllEntitiesScoped()
         => With(options => options.RequireAllEntitiesScoped = true);
 
+    internal TenantGuardOptions WithAllowCapturedValues()
+        => With(options => options.AllowCapturedValues = true);
+
     internal TenantGuardOptions WithEnforcement(Enforcement enforcement)
         => With(options => options.Enforcement = enforcement);
 
@@ -75,6 +80,7 @@ public sealed class TenantGuardOptions
             && ExplicitTenantProperties.All(pair => other.ExplicitTenantProperties.TryGetValue(pair.Key, out var name) && name == pair.Value)
             && SharedTypes.SetEquals(other.SharedTypes)
             && RequireAllEntitiesScoped == other.RequireAllEntitiesScoped
+            && AllowCapturedValues == other.AllowCapturedValues
             && Enforcement == other.Enforcement;
 
     internal int GetEquivalenceHashCode()
@@ -88,6 +94,7 @@ public sealed class TenantGuardOptions
         hash.Add(ExplicitTenantProperties.Count);
         hash.Add(SharedTypes.Count);
         hash.Add(RequireAllEntitiesScoped);
+        hash.Add(AllowCapturedValues);
         hash.Add(Enforcement);
         return hash.ToHashCode();
     }

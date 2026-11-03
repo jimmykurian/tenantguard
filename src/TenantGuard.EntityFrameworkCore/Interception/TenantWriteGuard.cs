@@ -50,6 +50,13 @@ internal static class TenantWriteGuard
                     TenantGuardLog.NoTenantAllowed(scope.Logger, context.GetType().Name);
                     return;
                 }
+
+                // A per-tenant model handed to another tenant's context: what it read came from the model's tenant.
+                if (currentTenant is not null && entities.ModelTenant is { } modelTenant && !Equals(modelTenant, currentTenant))
+                {
+                    TenantGuardLog.ViolationBlocked(scope.Logger, context.GetType().Name, 0);
+                    throw new TenantIsolationViolationException(context.GetType().Name, modelTenant, currentTenant);
+                }
             }
 
             if (currentTenant is not null && !tenant.Property.ClrType.IsInstanceOfType(currentTenant))

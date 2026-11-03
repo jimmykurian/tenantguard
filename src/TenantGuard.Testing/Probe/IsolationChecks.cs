@@ -37,8 +37,16 @@ internal sealed class IsolationChecks<TContext>(
     internal static EntityEntry AttachCopy(DbContext context, SeededRow row)
     {
         var entry = context.Attach(row.Values.ToObject());
-        entry.CurrentValues.SetValues(row.Values);
-        entry.OriginalValues.SetValues(row.Values);
+
+        // By name: with a model per tenant, the row's values belong to another model.
+        foreach (var property in entry.Metadata.GetProperties())
+        {
+            var value = row.Values[property.Name];
+            var current = entry.Property(property);
+            current.CurrentValue = value;
+            current.OriginalValue = value;
+        }
+
         entry.State = EntityState.Unchanged;
         return entry;
     }
@@ -106,7 +114,7 @@ internal sealed class IsolationChecks<TContext>(
         var entry = AttachCopy(context, theirs);
         if (factory.PropertyToChange(target.Type) is { } property)
         {
-            entry.Property(property).CurrentValue = factory.NextValue(property);
+            entry.Property(property.Name).CurrentValue = factory.NextValue(property);
         }
 
         entry.State = EntityState.Modified;

@@ -109,6 +109,19 @@ public sealed class TenantGuardOptionsBuilder
     }
 
     /// <summary>
+    /// Lets a tenant filter capture the tenant when the model cache is keyed by tenant, so each tenant
+    /// gets a model of its own (rule TGM003). TGM003 is left out only for a context whose current tenant
+    /// is set and whose <c>IModelCacheKeyFactory</c> isn't EF Core's own; the write guard then blocks
+    /// a save through a model built for another tenant.
+    /// </summary>
+    /// <returns>The same builder, for chaining.</returns>
+    public TenantGuardOptionsBuilder AllowCapturedValues()
+    {
+        Options = Options.WithAllowCapturedValues();
+        return this;
+    }
+
+    /// <summary>
     /// Sets what happens when the model breaks a rule with <see cref="Severity.Error"/> severity. The
     /// default is <see cref="TenantGuard.Enforcement.Throw"/>.
     /// </summary>

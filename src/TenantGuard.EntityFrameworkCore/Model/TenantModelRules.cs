@@ -11,8 +11,14 @@ namespace TenantGuard;
 internal static class TenantModelRules
 {
     // relational says whether the model's provider is relational, for TGM009 and TGM010; when it's
-    // null, the model's annotations tell.
-    public static TenantModelCheck Check(IReadOnlyModel model, TenantGuardOptions options, Type? contextType = null, bool? relational = null)
+    // null, the model's annotations tell. capturedValuesAllowed leaves TGM003 out, when the context
+    // passed the AllowCapturedValues check (PerTenantModel).
+    public static TenantModelCheck Check(
+        IReadOnlyModel model,
+        TenantGuardOptions options,
+        Type? contextType = null,
+        bool? relational = null,
+        bool capturedValuesAllowed = false)
     {
         var checksIndexes = relational ?? RelationalProvider.Built(model);
         var findings = new List<ModelFinding>();
@@ -30,7 +36,7 @@ internal static class TenantModelRules
             }
             else
             {
-                CheckRoot(entityType, options, findings, tenantProperties, contextType, checksIndexes);
+                CheckRoot(entityType, options, findings, tenantProperties, contextType, checksIndexes, capturedValuesAllowed);
             }
         }
 
@@ -43,7 +49,8 @@ internal static class TenantModelRules
         List<ModelFinding> findings,
         Dictionary<string, string> tenantProperties,
         Type? contextType,
-        bool checksIndexes)
+        bool checksIndexes,
+        bool capturedValuesAllowed)
     {
         var entity = entityType.DisplayName();
         var tenantProperty = TenantPropertyDiscovery.Find(entityType, options);
@@ -67,7 +74,7 @@ internal static class TenantModelRules
         }
         else
         {
-            if (filters.CapturesLocal)
+            if (filters.CapturesLocal && !capturedValuesAllowed)
             {
                 findings.Add(RuleMessages.CapturedValue(entity, property));
             }

@@ -219,8 +219,11 @@ internal sealed class ProbeRun<TContext>(
                     }
                     catch (TenantIsolationViolationException exception)
                     {
+                        // No violations: the context's model was built for another tenant (AllowCapturedValues).
                         throw new InvalidOperationException(
-                            $"The write guard blocked seeding {type.DisplayName()} as {tenant}. Does the context factory make {tenant} the context's current tenant?",
+                            exception.Violations.Count == 0
+                                ? $"The write guard blocked seeding {type.DisplayName()} as {tenant}, because the context's model was built for another tenant. Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own."
+                                : $"The write guard blocked seeding {type.DisplayName()} as {tenant}. Does the context factory make {tenant} the context's current tenant?",
                             exception);
                     }
                     catch (Exception exception) when (exception is not OperationCanceledException)

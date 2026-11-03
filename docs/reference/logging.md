@@ -11,7 +11,7 @@ these events.
 | 2 | `ModelFinding` | Warning, or Error | `{RuleId}: {Finding}` | For each warning, and for each error under `Enforcement.Log`; under `Enforcement.Throw` the errors are in the exception instead |
 | 3 | `NoTenantAllowed` | Information | `TenantGuard let {Context} save without a current tenant (NoTenantPolicy.Allow)` | Once per `SaveChanges` that writes tenant-scoped rows with no current tenant, under `NoTenantPolicy.Allow` |
 | 4 | `Bypass` | Warning | `TenantGuard bypass: {Reason} ({Context})` | `context.TenantGuard().Bypass(reason)` opened a bypass scope |
-| 5 | `ViolationBlocked` | Error | `TenantGuard blocked SaveChanges on {Context}; cross-tenant writes: {Count}` | Just before `TenantIsolationViolationException` is thrown |
+| 5 | `ViolationBlocked` | Error | `TenantGuard blocked SaveChanges on {Context}; cross-tenant writes: {Count}` | Just before `TenantIsolationViolationException` is thrown; `{Count}` is 0 when the context's model was built for another tenant |
 
 The messages carry counts, names, rule IDs, rule messages and bypass reasons. The only
 values in them are tenant ids, such as the constant a TGM004 message quotes. The

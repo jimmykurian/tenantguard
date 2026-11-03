@@ -308,24 +308,24 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 82 | 90 | 14 | 186 |
-| Lines of code | 3,511 | 5,016 | 228 | 8,755 |
-| Methods | 267 | 537 | 21 | 825 |
+| Files | 83 | 94 | 14 | 191 |
+| Lines of code | 3,598 | 5,321 | 228 | 9,147 |
+| Methods | 272 | 574 | 21 | 867 |
 | Average complexity | 3.2 | 1.1 | 1.2 | 1.8 |
-| Max complexity | 25 | 5 | 4 | 25 |
+| Max complexity | 28 | 5 | 4 | 28 |
 
 <details>
 <summary>The 10 most complex methods</summary>
 
 | Method | Where | Complexity |
 | --- | --- | --- |
-| `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 25 |
+| `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 28 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:38` | 20 |
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:28` | 15 |
+| `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:46` | 13 |
 | `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
 | `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:58` | 13 |
-| `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:40` | 12 |
 | `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:33` | 12 |
 | `Validation.Run` | `src/TenantGuard.Tool.Payload/Validation.cs:27` | 12 |
 | `ValidateCommand.Run` | `src/TenantGuard.Tool/ValidateCommand.cs:25` | 12 |

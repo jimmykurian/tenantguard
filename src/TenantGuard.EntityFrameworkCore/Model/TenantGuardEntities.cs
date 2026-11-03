@@ -16,16 +16,21 @@ internal sealed class TenantGuardEntities
 
     private TenantGuardEntities(
         IReadOnlyDictionary<string, string> tenantProperties,
-        Dictionary<IReadOnlyEntityType, TenantPropertyMetadata> byEntityType)
+        Dictionary<IReadOnlyEntityType, TenantPropertyMetadata> byEntityType,
+        object? modelTenant)
     {
         TenantProperties = tenantProperties;
         _byEntityType = byEntityType;
+        ModelTenant = modelTenant;
     }
 
     // Tenant property name by entity type name, for tenant-scoped root entity types.
     public IReadOnlyDictionary<string, string> TenantProperties { get; }
 
     public bool IsEmpty => _byEntityType.Count == 0;
+
+    // The tenant a per-tenant model was built for, under AllowCapturedValues, or null.
+    public object? ModelTenant { get; }
 
     // The convention's metadata, or the same computed here for a model the convention never saw,
     // such as a compiled model.
@@ -36,7 +41,7 @@ internal sealed class TenantGuardEntities
             (Model: model, Options: options));
 
     // Every non-owned entity type whose root is tenant-scoped, derived types included.
-    public static TenantGuardEntities Create(IModel model, IReadOnlyDictionary<string, string> tenantProperties)
+    public static TenantGuardEntities Create(IModel model, IReadOnlyDictionary<string, string> tenantProperties, object? modelTenant = null)
     {
         var byEntityType = new Dictionary<IReadOnlyEntityType, TenantPropertyMetadata>();
         foreach (var entityType in model.GetEntityTypes())
@@ -50,10 +55,27 @@ internal sealed class TenantGuardEntities
             }
         }
 
-        return new TenantGuardEntities(tenantProperties, byEntityType);
+        return new TenantGuardEntities(tenantProperties, byEntityType, modelTenant);
     }
 
     // Owned types are absent, so the write guard skips them.
     public bool TryGet(IReadOnlyEntityType entityType, out TenantPropertyMetadata tenant)
         => _byEntityType.TryGetValue(entityType, out tenant);
+
+    // By entity type name, for an entry of another model of the same context type, as the probe meets
+    // with a model per tenant. The metadata is this model's.
+    public bool TryGet(string entityTypeName, out TenantPropertyMetadata tenant)
+    {
+        foreach (var (entityType, metadata) in _byEntityType)
+        {
+            if (entityType.Name == entityTypeName)
+            {
+                tenant = metadata;
+                return true;
+            }
+        }
+
+        tenant = default;
+        return false;
+    }
 }

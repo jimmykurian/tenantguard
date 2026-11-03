@@ -49,7 +49,7 @@ internal sealed class NavigationChecks<TContext>(
 
     private static string OneLine(string message) => message.ReplaceLineEndings(" ");
 
-    private static object? TenantOf(EntityEntry entry, IProperty property) => entry.Property(property).CurrentValue;
+    private static object? TenantOf(EntityEntry entry, IProperty property) => entry.Property(property.Name).CurrentValue;
 
     private static async Task<string?> TrySaveAsync(DbContext context, CancellationToken cancellationToken)
     {
@@ -85,7 +85,7 @@ internal sealed class NavigationChecks<TContext>(
         // A seeder may set the foreign key itself; the link has to point across tenants all the same.
         for (var index = 0; index < foreignKey.Properties.Count; index++)
         {
-            entry.Property(foreignKey.Properties[index]).CurrentValue = principal.Values[foreignKey.PrincipalKey.Properties[index]];
+            entry.Property(foreignKey.Properties[index].Name).CurrentValue = principal.Values[foreignKey.PrincipalKey.Properties[index].Name];
         }
 
         if (await TrySaveAsync(linkContext, cancellationToken) is { } error)
@@ -117,7 +117,7 @@ internal sealed class NavigationChecks<TContext>(
         var theirs = IsolationChecks<TContext>.AttachCopy(linkContext, rowsOf(navigation.Target)![owner]);
         skip.GetCollectionAccessor()!.Add(mine.Entity, theirs.Entity, forMaterialization: false);
         linkContext.ChangeTracker.DetectChanges();
-        var joins = linkContext.ChangeTracker.Entries().Where(entry => entry.Metadata == skip.JoinEntityType && entry.State == EntityState.Added).ToList();
+        var joins = linkContext.ChangeTracker.Entries().Where(entry => entry.Metadata.Name == skip.JoinEntityType.Name && entry.State == EntityState.Added).ToList();
 
         if (await TrySaveAsync(linkContext, cancellationToken) is { } error)
         {
@@ -156,7 +156,7 @@ internal sealed class NavigationChecks<TContext>(
         foreach (var item in loaded)
         {
             var itemEntry = context.Entry(item);
-            if (entities.TryGet(itemEntry.Metadata, out var tenant)
+            if (entities.TryGet(itemEntry.Metadata.Name, out var tenant)
                 && TenantOf(itemEntry, tenant.Property) is var itemTenant
                 && !tenant.Matches(itemTenant, TenantValues.Convert(viewer, tenant.Property)))
             {

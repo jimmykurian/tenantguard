@@ -1,1 +1,2 @@
 #nullable enable
+TenantGuard.TenantGuardOptionsBuilder.AllowCapturedValues() -> TenantGuard.TenantGuardOptionsBuilder!
