@@ -19,6 +19,8 @@ test kit:
   - changed-files:
       - any-glob-to-any-file:
           - "src/TenantGuard.Testing/**"
+          - "src/TenantGuard.Testing.XunitV3/**"
+          - "src/TenantGuard.Testing.TUnit/**"
 
 tool:
   - changed-files:

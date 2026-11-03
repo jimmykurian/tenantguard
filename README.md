@@ -46,6 +46,8 @@ It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query 
 | `TenantGuard.Analyzers` | netstandard2.0 | The analyzers on their own, for projects without EF Core |
 | `TenantGuard.Testing` | net10.0, net11.0 | `TenantIsolationProbe`, seeding, `ProbeReport` |
 | `TenantGuard.Tool` | net10.0, net11.0 | `dotnet tenantguard validate`: the model rules in CI, without a database |
+| `TenantGuard.Testing.XunitV3` | net10.0, net11.0 | Each probe row as an xUnit v3 test |
+| `TenantGuard.Testing.TUnit` | net10.0, net11.0 | Each probe row as a TUnit test |
 
 The net10.0 build runs on EF Core 10, the net11.0 build on EF Core 11. The only
 dependency is `Microsoft.EntityFrameworkCore`, so it works with any provider.
@@ -306,11 +308,11 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 78 | 79 | 14 | 171 |
-| Lines of code | 3,442 | 4,761 | 228 | 8,431 |
-| Methods | 260 | 509 | 21 | 790 |
+| Files | 82 | 90 | 14 | 186 |
+| Lines of code | 3,511 | 5,016 | 228 | 8,755 |
+| Methods | 267 | 537 | 21 | 825 |
 | Average complexity | 3.2 | 1.1 | 1.2 | 1.8 |
-| Max complexity | 25 | 4 | 4 | 25 |
+| Max complexity | 25 | 5 | 4 | 25 |
 
 <details>
 <summary>The 10 most complex methods</summary>

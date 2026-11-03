@@ -11,7 +11,8 @@ and hand-rolled query filters.
 - `src/TenantGuard.EntityFrameworkCore`: the runtime package, in rings from the inside out:
   `Options/`, `Model/`, `Diagnostics/`, `Interception/`, `Hosting/`
 - `src/TenantGuard.Analyzers`: TG001 to TG004, one file per rule
-- `src/TenantGuard.Testing`: the isolation probe (`Probe/`, `Seeding/`, `Report/`)
+- `src/TenantGuard.Testing`: the isolation probe (`Probe/`, `Seeding/`, `Report/`);
+  `src/TenantGuard.Testing.XunitV3` and `.TUnit`: each probe row as a test
 - `src/TenantGuard.Tool`: `dotnet tenantguard validate`; `src/TenantGuard.Tool.Payload` runs
   inside the app
 - `tests/unit/`, `tests/architecture/`, `tests/integration/`, `tests/e2e/`: one task each
