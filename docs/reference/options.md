@@ -65,9 +65,10 @@ When EF Core builds a model under `AllowCapturedValues()`, TenantGuard checks th
 that is building it, and leaves TGM003 out only when all of these hold:
 
 1. `CurrentTenant` is set, and returns a tenant for that context.
-2. The context's `IModelCacheKeyFactory` gives it a key that isn't EF Core's own,
-   `(context type, designTime)`.
-3. When the key is a tuple, one of its items equals the current tenant.
+2. The context's `IModelCacheKeyFactory` isn't EF Core's own `ModelCacheKeyFactory`, which
+   keys by context type alone.
+3. When the factory's key for the context is a tuple, one of its items equals the current
+   tenant.
 
 Otherwise TGM003 is reported as without the option. The option changes nothing else: a
 captured constant is still TGM004, and the other rules run as before.
@@ -80,8 +81,9 @@ create a second tenant's context, so it can't see two keys, but two more checks 
   tenant's model, whose filters read that tenant's rows
   ([write guard](write-guard.md#a-model-built-for-another-tenant)).
 - The [isolation probe](probe.md) creates a context per tenant, so with a key that doesn't
-  change with the tenant, the second tenant gets the first tenant's model, and its checks
-  fail.
+  change with the tenant, the second tenant gets the first tenant's model. The write guard
+  then blocks the probe's seeding as that tenant, and `RunAsync` throws, saying so
+  ([exceptions](exceptions.md)). With a model per tenant, the probe runs as usual.
 
 A bypass turns the write guard's check off with the rest of the guard.
 

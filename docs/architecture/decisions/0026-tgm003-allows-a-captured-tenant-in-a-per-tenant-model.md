@@ -15,8 +15,8 @@ Issue #24 asks for a way to say so that can't hide a real TGM003.
 
 - An option, `AllowCapturedValues()`, which shapes the model like the other rule settings.
 - Under it, the convention leaves TGM003 out only when the context building the model has a
-  current tenant, its model cache key isn't EF Core's `(context type, designTime)`, and a key
-  that is a tuple includes the current tenant. TGM004 and the other rules don't change.
+  current tenant, its `IModelCacheKeyFactory` isn't EF Core's own `ModelCacheKeyFactory`,
+  and a key that is a tuple includes the current tenant. TGM004 and the other rules don't change.
 - The check sees one context, so it can't prove two tenants get two keys. A model that
   passes it records the tenant it was built for, and the write guard blocks a save of
   tenant-scoped rows when the current tenant is another one, with
@@ -29,5 +29,6 @@ Issue #24 asks for a way to say so that can't hide a real TGM003.
 
 An app with a model per tenant can run under `Enforcement.Throw`. A key factory that
 returns a key of its own type that ignores the tenant passes the startup check, but its
-first save as a second tenant is blocked, and the probe's checks fail. EF Core builds and caches a model per tenant, and
+first save as a second tenant is blocked, and so is the probe's seeding as one. The probe
+looks entries up by name, since each tenant's context has a model of its own. EF Core builds and caches a model per tenant, and
 TenantGuard checks each one as it's built.

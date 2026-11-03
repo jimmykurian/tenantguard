@@ -24,6 +24,10 @@ has to use the same database, with the schema in place.
 The probe never runs the model rules itself: a model that breaks a rule fails before
 anything is seeded.
 
+With a model per tenant ([per-tenant models](options.md#per-tenant-models)), each tenant's
+context has a model of its own. The probe plans from the first context's model, and finds
+entity types and properties by name in each context.
+
 ## Seeding
 
 For every tenant-scoped entity type, the default seeder creates one row per tenant, with:

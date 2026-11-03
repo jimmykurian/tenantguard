@@ -86,7 +86,7 @@ each one then needs a tenant property, or `Shared<T>()` for a lookup table.
 |---|---|---|
 | TGM001 | An entity has a `TenantId`, but its configuration has no `HasQueryFilter` | Add the filter on the root type of the hierarchy |
 | TGM002 | Under `RequireAllEntitiesScoped`, an entity type has no tenant property | Add one, or declare the type with `Shared<T>()` |
-| TGM003 | The filter reads a local variable, captured when the model was built | Compare with a member of the context, such as its `TenantId` |
+| TGM003 | The filter reads a local variable, captured when the model was built | Compare with a member of the context, such as its `TenantId`; for a model per tenant, see [`AllowCapturedValues()`](../reference/options.md#per-tenant-models) |
 | TGM004 | The filter compares with a constant, often left over from a test or a seed | Compare with a member of the context |
 | TGM005 | The tenant property is nullable | Make it required, unless rows without a tenant are meant |
 | TGM006 | A derived type declares the tenant property | Move it to the root type |
