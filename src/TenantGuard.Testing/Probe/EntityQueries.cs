@@ -15,15 +15,18 @@ internal sealed class EntityQueries
     private readonly Func<DbContext, CancellationToken, Task<List<object>>> _list;
     private readonly Func<DbContext, object?[], CancellationToken, ValueTask<object?>> _find;
     private readonly Func<DbContext, object?[], CancellationToken, Task<int>> _executeDelete;
+    private readonly Func<DbContext, object?[], string, CancellationToken, Task<object?>> _include;
 
     private EntityQueries(
         Func<DbContext, CancellationToken, Task<List<object>>> list,
         Func<DbContext, object?[], CancellationToken, ValueTask<object?>> find,
-        Func<DbContext, object?[], CancellationToken, Task<int>> executeDelete)
+        Func<DbContext, object?[], CancellationToken, Task<int>> executeDelete,
+        Func<DbContext, object?[], string, CancellationToken, Task<object?>> include)
     {
         _list = list;
         _find = find;
         _executeDelete = executeDelete;
+        _include = include;
     }
 
     public static EntityQueries For(IEntityType type)
@@ -42,12 +45,18 @@ internal sealed class EntityQueries
     public Task<int> ExecuteDeleteAsync(DbContext context, object?[] keyValues, CancellationToken cancellationToken)
         => _executeDelete(context, keyValues, cancellationToken);
 
+    // The row with the key, with Include of the navigation, or null when the context cannot see it.
+    public Task<object?> IncludeAsync(DbContext context, object?[] keyValues, string navigation, CancellationToken cancellationToken)
+        => _include(context, keyValues, navigation, cancellationToken);
+
     private static EntityQueries Create<TEntity>(IKey key)
         where TEntity : class
         => new(
             async (context, cancellationToken) => [.. await context.Set<TEntity>().ToListAsync(cancellationToken)],
             async (context, keyValues, cancellationToken) => await context.Set<TEntity>().FindAsync(keyValues, cancellationToken),
-            (context, keyValues, cancellationToken) => context.Set<TEntity>().Where(HasKey<TEntity>(key, keyValues)).ExecuteDeleteAsync(cancellationToken));
+            (context, keyValues, cancellationToken) => context.Set<TEntity>().Where(HasKey<TEntity>(key, keyValues)).ExecuteDeleteAsync(cancellationToken),
+            async (context, keyValues, navigation, cancellationToken)
+                => await context.Set<TEntity>().Where(HasKey<TEntity>(key, keyValues)).Include(navigation).FirstOrDefaultAsync(cancellationToken));
 
     // row => EF.Property<TKey>(row, "Id") == keyValue, for each key property.
     private static Expression<Func<TEntity, bool>> HasKey<TEntity>(IKey key, object?[] keyValues)

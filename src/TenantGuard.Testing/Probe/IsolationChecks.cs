@@ -34,7 +34,7 @@ internal sealed class IsolationChecks<TContext>(
         };
 
     // A copy of the owner's row, attached to the viewer's context as if it had been read there.
-    private static EntityEntry AttachCopy(DbContext context, SeededRow row)
+    internal static EntityEntry AttachCopy(DbContext context, SeededRow row)
     {
         var entry = context.Attach(row.Values.ToObject());
         entry.CurrentValues.SetValues(row.Values);
