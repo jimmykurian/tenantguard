@@ -92,5 +92,7 @@ each one then needs a tenant property, or `Shared<T>()` for a lookup table.
 | TGM006 | A derived type declares the tenant property | Move it to the root type |
 | TGM007 | The filter reads a value TenantGuard can't trace, such as a field of an `IEntityTypeConfiguration` | Read the tenant from the context; if the value is read per query already, leave it |
 | TGM008 | An owned type has its own tenant property | Remove it, or keep it knowing TenantGuard ignores it: owned rows follow their owner |
+| TGM009 | No index or key starts with the tenant property | Add `HasIndex(e => e.TenantId)`, or put the tenant property first in an index you have |
+| TGM010 | A unique index, such as one on `InvoiceNumber`, leaves out the tenant property | Make it unique per tenant: `HasIndex(e => new { e.TenantId, e.InvoiceNumber }).IsUnique()` |
 
 The [reference](../reference/rules.md) has each rule's message and examples.

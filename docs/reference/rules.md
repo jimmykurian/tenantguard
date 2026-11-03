@@ -193,7 +193,8 @@ A unique index on `InvoiceNumber` alone is unique across all tenants: one tenant
 fails because another tenant already used the number, and the failure tells the first
 tenant that the number exists. `{Columns}` lists the index's properties, comma-separated,
 and `{Members}` the same properties as `e.{Name}`. The primary key isn't checked: a
-generated key is unique across tenants by design. A unique index with a filter, set with
+generated key is unique across tenants by design. Nor is the unique index EF Core makes for
+a one-to-one foreign key, whose values are keys of the principal's rows. A unique index with a filter, set with
 `HasFilter`, is checked like any other.
 
 ```csharp
@@ -209,9 +210,12 @@ modelBuilder.Entity<Invoice>().HasIndex(invoice => new { invoice.TenantId, invoi
 Both rules check the indexes and keys declared anywhere in the hierarchy, so an index on a
 derived type in a table-per-hierarchy mapping counts. They skip keyless entity types and
 the ones mapped to a view, a SQL query or a function, since the database holds no index of
-theirs, and every entity type when the model's provider isn't relational, such as Cosmos
-DB: TenantGuard tells by the `Relational:MaxIdentifierLength` annotation relational
-providers put on the model, so the runtime package needs no relational reference.
+theirs, and every entity type when the provider isn't relational, such as Cosmos DB. When EF Core
+builds the model, TenantGuard tells a relational provider by its options extension, which
+derives from `RelationalOptionsExtension`; `TenantGuardModel.Validate` tells by the
+`Relational:` annotations a relational provider puts on each entity type of the model
+`context.Model` returns. Both are matched by name, so the runtime package needs no
+relational reference.
 
 ## How the operand is classified
 

@@ -33,6 +33,9 @@ tenant. Finbuckle stores `TenantInfo.Id` in each row's `TenantId`, so that is wh
   reads from the current context for each query. TenantGuard knows that and doesn't report
   it.
 - An entity with a `TenantId` that `IsMultiTenant()` missed has no filter: TGM001.
+- `IsMultiTenant()` adds no index on `TenantId`: TGM009 warns until you add
+  `HasIndex("TenantId")`. A unique index without `TenantId` is TGM010; Finbuckle's
+  `AdjustUniqueIndexes()` adds `TenantId` to each unique index, which clears it.
 
 `RequireAllEntitiesScoped()` makes every entity type take a side. An entity marked
 `IsNotMultiTenant()`, or never marked, then needs `Shared<T>()` (TGM002):
