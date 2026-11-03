@@ -1,7 +1,8 @@
 # Isolation probe
 
 `TenantIsolationProbe<TContext>` in `TenantGuard.Testing` proves, entity by entity, that one
-tenant can't read, find, bulk-delete, update, insert over or delete another's rows.
+tenant can't read, find, bulk-delete, update, insert over or delete another's rows, or load
+them through a navigation.
 [Testing](../guides/testing.md) shows it in a test; this page says what it does.
 
 ```csharp
@@ -58,12 +59,59 @@ check, for every ordered pair of tenants:
 | InsertGuard | Adding a new row stamped with A and saving throws. |
 | DeleteGuard | Removing A's row (attached) and saving throws. |
 
-Each check gives one row per entity type, failed when any pair failed. The read checks run
+| NavigationLeak | `Include` of a navigation on B's row loads none of A's rows (see below). |
+
+Each check gives one row per entity type, failed when any pair failed; NavigationLeak gives
+one row per navigation. The read checks run
 for every entity type before any check writes. On a relational provider, each check that
 writes runs in a transaction that is rolled back, so a leak can't change what a later check
 sees. BulkIsolation deletes by A's key, which removes nothing when the filter holds.
 ReadIsolation is skipped when tenant B can't read its own row, because then it proves
 nothing.
+
+## NavigationLeak
+
+NavigationLeak checks every navigation declared on, or inherited by, a probed entity type
+whose target is a tenant-scoped entity type: references and collections, on either end of
+the relationship, and skip navigations of a many-to-many relationship. Navigations to an owned
+type, or to a type that isn't tenant-scoped, aren't checked: they have no tenant of their
+own to leak.
+
+For each navigation and each ordered pair of tenants, the probe links B's row to A's:
+
+| Navigation | The link it seeds |
+| --- | --- |
+| Toward the principal, such as `OrderLine.Order` | A new dependent stamped B, whose foreign key points at A's principal row |
+| Toward dependents, such as `Order.Lines` | A new dependent stamped A, whose foreign key points at B's principal row |
+| A skip navigation, such as `Order.Tags` | A join row between B's row and A's target row |
+
+The new dependent is made the way the seeder makes rows, with `Seed<T>` when it's set, and
+saved through its own tenant's context, so the write guard lets it through. The navigation's
+foreign key is set whether the relationship is required or optional; the dependent's other
+required foreign keys point at its own tenant's rows. The link is deleted after the check,
+through the context that saved it.
+
+Then, as B, the probe loads B's row with `Include` of the navigation and fails the row when
+the navigation holds a row whose tenant isn't B's:
+
+```text
+As globex, Include(Lines) on globex's Order (Id: 2) loaded acme's OrderLine (Id: 5).
+```
+
+When the relationship's foreign key includes the tenant property, the database can't hold
+a link across tenants, so the row passes without seeding one. A skip navigation whose join
+entity type is tenant-scoped isn't checked as a skip navigation: the join type's own
+navigations are. The row is skipped, naming the reason, when the type of the new dependent
+couldn't be seeded or can't be probed.
+
+The rows come after the entity's six checks, one per navigation, by name:
+
+| Entity | Check |
+| --- | --- |
+| `Order` | `NavigationLeak(Lines)` |
+| `Order` | `NavigationLeak(Tags)` |
+
+NavigationLeak runs after the read checks and before the checks that write.
 
 ## The report
 
