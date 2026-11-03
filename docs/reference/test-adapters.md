@@ -64,9 +64,11 @@ public sealed class IsolationTests
 }
 ```
 
-`ProbeRowsAttribute<TSource>` is an `AsyncDataSourceGeneratorAttribute<ProbeRow>`, with the
-same constraint on `TSource`. Each row is a test named `{Entity}.{Check}`, and a skipped row
-is a skipped test, whose reason is the row's detail. TUnit creates its tests before it runs
+`ProbeRowsAttribute<TSource>` is an `AsyncUntypedDataSourceGeneratorAttribute`, with the
+same constraint on `TSource`. It hands TUnit each row as a `TestDataRow<ProbeRow>`, which
+carries the test's name and skip reason; the test method still takes a `ProbeRow`. Each row
+is a test named `{Entity}.{Check}`, and a skipped row is a skipped test, whose reason is the
+row's detail. TUnit creates its tests before it runs
 them, also when a test explorer discovers them, so the probe runs then: each row can be
 seen and run on its own, and discovery needs the database.
 
