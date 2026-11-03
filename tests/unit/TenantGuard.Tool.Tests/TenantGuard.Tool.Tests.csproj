@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/TenantGuard.Tool/TenantGuard.Tool.csproj" />
+    <PackageReference Include="FsCheck" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+</Project>
