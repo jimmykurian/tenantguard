@@ -42,7 +42,12 @@ public sealed class ConventionTests
                     TenantGuardLogging.Category,
                     LogLevel.Information,
                     "ModelValidated",
-                    "TenantGuard checked the model: 1 tenant-scoped entity types, 1 errors, 0 warnings"),
+                    "TenantGuard checked the model: 1 tenant-scoped entity types, 1 errors, 1 warnings"),
+                new LogCapture.Entry(
+                    TenantGuardLogging.Category,
+                    LogLevel.Warning,
+                    "ModelFinding",
+                    "TGM009: Invoice has no index or key that starts with 'TenantId', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key."),
                 new LogCapture.Entry(
                     TenantGuardLogging.Category,
                     LogLevel.Error,
@@ -62,8 +67,8 @@ public sealed class ConventionTests
 
         context.Model.Should().NotBeNull();
 
-        var warning = capture.TenantGuardEntries.Should().ContainSingle(entry => entry.Level == LogLevel.Warning).Subject;
-        warning.Message.Should().Be("TGM005: Receipt.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.");
+        capture.TenantGuardEntries.Where(entry => entry.Level == LogLevel.Warning).Select(entry => entry.Message).Should().Contain(
+            "TGM005: Receipt.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.");
     }
 
     [Fact]

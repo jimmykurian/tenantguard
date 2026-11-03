@@ -98,7 +98,7 @@ public sealed class ModelRuleTests
 
         var exception = FluentActions.Invoking(() => context.Model).Should().ThrowExactly<TenantGuardModelException>().Which;
 
-        exception.Report.Findings.Should().ContainSingle().Subject.Should().Be(Captured("Invoice", "TenantId"));
+        exception.Report.Errors.Should().ContainSingle().Subject.Should().Be(Captured("Invoice", "TenantId"));
     }
 
     [Fact]

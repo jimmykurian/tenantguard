@@ -103,7 +103,7 @@ public sealed class ContextFieldFilterPin : FeatureFixture, IAsyncDisposable
         public DbSet<Invoice> Invoices => Set<Invoice>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-            => modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == _tenant);
+            => modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == _tenant).HasIndex(invoice => invoice.TenantId);
     }
 
     private sealed class InterfaceContext(DbContextOptions<InterfaceContext> options, string tenant) : DbContext(options), ITenantSource
@@ -115,7 +115,7 @@ public sealed class ContextFieldFilterPin : FeatureFixture, IAsyncDisposable
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ITenantSource? context = null;
-            modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == context!.TenantId);
+            modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId == context!.TenantId).HasIndex(invoice => invoice.TenantId);
         }
     }
 
