@@ -1,6 +1,6 @@
 # 0024. A .NET tool package for model validation in CI
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-03
 
 ## Context

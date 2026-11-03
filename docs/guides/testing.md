@@ -92,6 +92,21 @@ Assert.Empty(report.Findings);
 Build the model from a context without `UseTenantGuard`, or with `Enforcement.Log`:
 otherwise a model with errors throws as soon as `context.Model` builds it.
 
+## In CI, without a test project
+
+A pipeline that only builds the app can run the same rules with the validate tool, on the
+build output and with no database:
+
+```sh
+dotnet tool install --global TenantGuard.Tool --prerelease
+dotnet build src/App -c Release
+dotnet tenantguard validate --assembly src/App/bin/Release/net10.0/App.dll --warnings-as-errors
+```
+
+It creates the context the way `dotnet ef` does, so the app references
+`Microsoft.EntityFrameworkCore.Design`, and it exits 1 when the model breaks a rule. The
+[validate tool](../reference/validate-tool.md) page has its options and exit codes.
+
 ## xUnit, NUnit, MSTest and TUnit
 
 The probe code is the same under each. Put the setup in one place:

@@ -1,6 +1,6 @@
 # Packages
 
-TenantGuard ships three NuGet packages. The runtime package bundles the analyzers, so
+TenantGuard ships four NuGet packages. The runtime package bundles the analyzers, so
 installing it turns them on.
 
 | Package | Targets | Contents |
@@ -8,6 +8,7 @@ installing it turns them on.
 | `TenantGuard.EntityFrameworkCore` | net10.0, net11.0 | Options, the model rules, the SaveChanges interceptor, the bypass scope and `AllowCrossTenantAccessAttribute`; bundles the analyzers |
 | `TenantGuard.Analyzers` | netstandard2.0 | TG001 to TG004, also shipped on their own for projects without EF Core |
 | `TenantGuard.Testing` | net10.0, net11.0 | `TenantIsolationProbe`, seeding and `ProbeReport` |
+| `TenantGuard.Tool` | net10.0, net11.0 | `dotnet tenantguard validate`, a .NET tool, with a payload for each target ([0024](decisions/0024-a-dotnet-tool-for-model-validation.md)) |
 
 The net10.0 build references EF Core 10.x and the net11.0 build EF Core 11.x
 ([0010](decisions/0010-target-net10-and-net11.md)).
@@ -22,6 +23,12 @@ The net10.0 build references EF Core 10.x and the net11.0 build EF Core 11.x
   `EnforceExtendedAnalyzerRules`, and know nothing of EF Core or the runtime package
   ([0004](decisions/0004-analyzers-on-netstandard2-and-roslyn-4-8.md)). They recognize
   `[AllowCrossTenantAccess]` by its full name.
+
+- The tool depends on nothing beyond the .NET runtime. It starts its payload with
+  `dotnet exec` under the app's `.deps.json` and `.runtimeconfig.json`, so the payload's EF
+  Core, `Microsoft.EntityFrameworkCore.Design` and TenantGuard are the app's own. The
+  payload calls the runtime package's internal model check, so the tool's version has to
+  match the app's `TenantGuard.EntityFrameworkCore` ([0024](decisions/0024-a-dotnet-tool-for-model-validation.md)).
 
 The architecture tests in `tests/architecture/` check each of these on every build.
 
@@ -46,7 +53,8 @@ further in ([0019](decisions/0019-runtime-folders-are-rings.md)):
 
 ## Public API
 
-The public API is complete for v0.1; anything not listed is `internal`. The
+The public API is complete for v0.1; anything not listed is `internal`. The tool has no
+public API: its contract is the [validate tool](../reference/validate-tool.md) page. The
 `PublicAPI.Shipped.txt` file of each package is the source of truth, and `task lint:api`
 fails when it's out of date.
 
@@ -91,10 +99,11 @@ global.json                      .NET SDK 11, rollForward latestFeature
 src/TenantGuard.EntityFrameworkCore/
 src/TenantGuard.Analyzers/
 src/TenantGuard.Testing/
-tests/unit/                      TenantGuard.EntityFrameworkCore.Tests, TenantGuard.Analyzers.Tests
+src/TenantGuard.Tool/            the dotnet tool; src/TenantGuard.Tool.Payload/ runs inside the app
+tests/unit/                      TenantGuard.EntityFrameworkCore.Tests, TenantGuard.Analyzers.Tests, TenantGuard.Tool.Tests
 tests/architecture/              TenantGuard.Architecture.Tests
 tests/integration/               TenantGuard.BehaviorPins, TenantGuard.Testing.Tests, TenantGuard.Providers.Tests
-tests/e2e/                       HandRolled.Api.Tests, Finbuckle.Api.Tests
+tests/e2e/                       HandRolled.Api.Tests, Finbuckle.Api.Tests, ValidateTool.Tests and its fixture app
 samples/HandRolled.Api/          minimal API, its own ITenantContext and filters
 samples/Finbuckle.Api/           Finbuckle.MultiTenant, showing TenantGuard is library-agnostic
 tools/Metrics/                   the README's code metrics

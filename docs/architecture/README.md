@@ -2,9 +2,10 @@
 
 TenantGuard reads the model an app already builds and never changes it. Three packages work
 at three moments: the analyzers when the code compiles, the runtime package when EF Core
-builds the model and on every `SaveChanges`, and the test kit in the app's tests.
+builds the model and on every `SaveChanges`, and the test kit in the app's tests. A fourth,
+the validate tool, runs the model rules in CI without a database.
 
-- [Packages](packages.md): the three packages, what each depends on, their namespaces, the
+- [Packages](packages.md): the four packages, what each depends on, their namespaces, the
   rings inside the runtime package, the public API, and the repository's layout.
 - [Flows](flows.md): what happens at build, when the model is built, on `SaveChanges`, and
   when the isolation probe runs.

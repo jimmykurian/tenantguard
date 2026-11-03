@@ -22,6 +22,7 @@ hand-rolled query filters, and:
 | `TenantGuard.EntityFrameworkCore` | Model validation, the SaveChanges guard and the bypass scope; bundles the analyzers |
 | `TenantGuard.Analyzers` | The analyzers on their own, for projects without EF Core |
 | `TenantGuard.Testing` | `TenantIsolationProbe`, seeding and `ProbeReport` |
+| `TenantGuard.Tool` | `dotnet tenantguard validate`: the model rules in CI, without a database |
 
 ## Install
 

@@ -5,7 +5,7 @@ name: release
 # On every push to main, Release Please opens or updates one release PR that bumps the
 # Version in Directory.Build.props and CHANGELOG.md from the Conventional Commits since the
 # last release. Merging that PR creates the vX.Y.Z tag and the GitHub Release; the publish
-# job then packs the three packages, pushes them to nuget.org with NuGet Trusted Publishing
+# job then packs the four packages, pushes them to nuget.org with NuGet Trusted Publishing
 # (a short-lived key from GitHub's OIDC token, no stored API key), and attaches them to the
 # release.
 #

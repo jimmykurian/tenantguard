@@ -8,11 +8,12 @@ about testing your app with the probe.
 
 | Folder | Projects | Runs against | Task |
 | --- | --- | --- | --- |
-| `tests/unit/` | `TenantGuard.EntityFrameworkCore.Tests`, `TenantGuard.Analyzers.Tests` | In process: SQLite in memory at most | `task test:unit` |
+| `tests/unit/` | `TenantGuard.EntityFrameworkCore.Tests`, `TenantGuard.Analyzers.Tests`, `TenantGuard.Tool.Tests` | In process: SQLite in memory at most | `task test:unit` |
 | `tests/architecture/` | `TenantGuard.Architecture.Tests` | The shipped assemblies, read with NetArchTest | `task test:architecture` |
 | `tests/integration/` | `TenantGuard.BehaviorPins`, `TenantGuard.Testing.Tests` | EF Core on SQLite | `task test:integration` |
 | `tests/integration/` | `TenantGuard.Providers.Tests` | SQL Server and PostgreSQL in Testcontainers; needs Docker | `task test:providers` |
 | `tests/e2e/` | `HandRolled.Api.Tests`, `Finbuckle.Api.Tests` | Each sample app through its host | `task test:e2e` |
+| `tests/e2e/` | `ValidateTool.Tests` | The built `dotnet tenantguard validate`, on `ValidateTool.Fixture` (net10.0 and net11.0) and both sample apps | `task test:e2e` |
 
 `task test` runs every group but the provider tests, which `providers.yml` runs on demand,
 nightly, and on pull requests that change the runtime or test kit packages, the shared probe

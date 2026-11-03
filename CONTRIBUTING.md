@@ -91,11 +91,13 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
   `RingRules` in `tests/architecture/` fails on a dependency that points outward.
 - `src/TenantGuard.Analyzers`: TG001 to TG004, one file per rule, on
   `Microsoft.CodeAnalysis.CSharp` 4.8.0. The runtime package carries them too.
+- `src/TenantGuard.Tool`: `dotnet tenantguard validate`, which starts
+  `src/TenantGuard.Tool.Payload` inside the app's own runtime and dependencies (ADR 0024).
 - `src/TenantGuard.Testing`: the isolation probe. `Probe/` runs the checks, `Seeding/`
   creates the rows, and `Report/` holds the report and its table.
-- `tests/unit/`: the runtime and analyzer tests, in process.
+- `tests/unit/`: the runtime, analyzer and tool tests, in process.
 - `tests/architecture/`: [NetArchTest](https://github.com/NeVeSpl/NetArchTest.eNhancedEdition)
-  rules over the three shipped assemblies: what each may depend on, where public types
+  rules over the shipped assemblies: what each may depend on, where public types
   live, sealed exceptions, and that every interceptor has both its sync and async path.
 - `tests/integration/`: the EF Core behavior pins, the test kit's own tests, and the
   provider tests.

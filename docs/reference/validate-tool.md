@@ -77,7 +77,8 @@ A model with no findings prints only the summary:
 entity property values.
 
 Findings and the summary go to standard output; a reason the tool couldn't run goes to
-standard error.
+standard error. The app's own logging runs too, as it does under `dotnet ef`, so a host
+with a console logger prints its lines among them.
 
 ## Exit codes
 

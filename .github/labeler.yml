@@ -20,6 +20,12 @@ test kit:
       - any-glob-to-any-file:
           - "src/TenantGuard.Testing/**"
 
+tool:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/TenantGuard.Tool/**"
+          - "src/TenantGuard.Tool.Payload/**"
+
 tests:
   - changed-files:
       - any-glob-to-any-file:
