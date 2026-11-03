@@ -1,7 +1,7 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 
-// The docs site, served from GitHub Pages at https://tenantguard.is-a.dev/, an is-a.dev
-// subdomain whose CNAME points at jimmykurian.github.io.
+// The docs site, served from GitHub Pages at https://tenantguard.is-cool.dev/, an Open Domains
+// subdomain whose A records point at GitHub Pages.
 // Its pages come from docs/ through scripts/sync-docs.mjs; only the home page lives here.
 
 import starlight from '@astrojs/starlight';
@@ -11,7 +11,7 @@ import starlightLinksValidator from 'starlight-links-validator';
 import starlightThemeRapide from 'starlight-theme-rapide';
 
 export default defineConfig({
-  site: 'https://tenantguard.is-a.dev',
+  site: 'https://tenantguard.is-cool.dev',
   integrations: [
     // Renders the ```mermaid diagrams in the browser, following the light or dark theme.
     // It must come before Starlight.

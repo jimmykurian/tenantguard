@@ -16,12 +16,12 @@ and a local `task ci` run the same commands.
 
 ## Docs site
 
-`site.yml` publishes the docs site at <https://tenantguard.is-a.dev/>, from the root of the
-domain. The domain is a subdomain of [is-a.dev](https://is-a.dev): `domains/tenantguard.json`
-in [is-a-dev/register](https://github.com/is-a-dev/register) points it at
-`jimmykurian.github.io` with a CNAME record, and the repository's Pages settings name it as
-the custom domain with HTTPS enforced. GitHub redirects the old
-`jimmykurian.github.io/tenantguard/` URLs to it.
+`site.yml` publishes the docs site at <https://tenantguard.is-cool.dev/>, from the root of the
+domain. The domain is a subdomain of `is-cool.dev`, registered through
+[Open Domains](https://open-domains.com/): four A records point it at GitHub Pages
+(`185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`), unproxied, and
+the repository's Pages settings name it as the custom domain with HTTPS enforced. GitHub
+redirects the old `jimmykurian.github.io/tenantguard/` URLs to it.
 
 ## Releases
 

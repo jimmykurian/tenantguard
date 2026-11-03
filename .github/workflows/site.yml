@@ -3,7 +3,7 @@
 name: Docs site
 
 # Builds the docs site from docs/ (site/, Astro Starlight) and publishes it to GitHub Pages
-# at https://tenantguard.is-a.dev/. Pull requests build it in ci.yml; this
+# at https://tenantguard.is-cool.dev/. Pull requests build it in ci.yml; this
 # deploys from main.
 on:
   push:

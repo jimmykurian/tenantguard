@@ -6,5 +6,5 @@ contact_links:
     url: https://github.com/jimmykurian/tenantguard/blob/main/SECURITY.md
     about: Please don't open an issue for a vulnerability; follow the security policy.
   - name: What TenantGuard does
-    url: https://tenantguard.is-a.dev/reference/
+    url: https://tenantguard.is-cool.dev/reference/
     about: The reference covers the model rules, the write guard, the analyzers and the isolation probe.

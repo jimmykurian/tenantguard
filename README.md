@@ -34,7 +34,7 @@ It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query 
 
 [![NuGet](https://img.shields.io/nuget/vpre/TenantGuard.EntityFrameworkCore?style=flat-square&label=nuget)](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore) [![Latest release](https://img.shields.io/github/v/release/jimmykurian/tenantguard?include_prereleases&style=flat-square&label=release)](https://github.com/jimmykurian/tenantguard/releases) [![License: Apache-2.0](https://img.shields.io/github/license/jimmykurian/tenantguard?style=flat-square)](LICENSE)
 
-[Documentation](https://tenantguard.is-a.dev/) · [Rules](https://tenantguard.is-a.dev/reference/rules/) · [Analyzers](https://tenantguard.is-a.dev/reference/analyzers/) · [Guides](https://tenantguard.is-a.dev/guides/) · [Changelog](CHANGELOG.md) · [NuGet](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore)
+[Documentation](https://tenantguard.is-cool.dev/) · [Rules](https://tenantguard.is-cool.dev/reference/rules/) · [Analyzers](https://tenantguard.is-cool.dev/reference/analyzers/) · [Guides](https://tenantguard.is-cool.dev/guides/) · [Changelog](CHANGELOG.md) · [NuGet](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore)
 
 ![A terminal session: dotnet build warns TG001 on IgnoreQueryFilters; dotnet run fails at startup with TGM001, an entity with a tenant property and no query filter; after the filter is added, dotnet run starts and TenantGuard logs 0 errors.](docs/assets/tenantguard-demo.svg)
 
@@ -199,7 +199,7 @@ check looks for the column's name in the SQL text; it doesn't parse SQL.
 
 ## Documentation
 
-The full documentation is at **<https://tenantguard.is-a.dev/>**, with search. It's built from
+The full documentation is at **<https://tenantguard.is-cool.dev/>**, with search. It's built from
 [`docs/`](docs/README.md) by [`site/`](site/), so every page also reads here on GitHub.
 
 | | |

@@ -50,7 +50,7 @@ report.AssertAllPassed();
 
 ## Learn more
 
-- [Documentation](https://tenantguard.is-a.dev/), with search
+- [Documentation](https://tenantguard.is-cool.dev/), with search
 - [README, with a demo and the architecture](https://github.com/jimmykurian/tenantguard#readme)
 - [Rules](https://github.com/jimmykurian/tenantguard/blob/main/docs/reference/rules.md) and [analyzers](https://github.com/jimmykurian/tenantguard/blob/main/docs/reference/analyzers.md), with every message
 - [Guides](https://github.com/jimmykurian/tenantguard/blob/main/docs/guides/README.md): hand-rolled filters, Finbuckle, testing, migrating an existing app
