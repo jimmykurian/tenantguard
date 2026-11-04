@@ -33,6 +33,7 @@ accepted record isn't edited later except to mark it superseded
 | [0024](0024-a-dotnet-tool-for-model-validation.md) | A .NET tool package for model validation in CI | Accepted | 2026-11-03 |
 | [0025](0025-a-package-per-test-framework-for-probe-rows.md) | A package per test framework for probe rows | Accepted | 2026-11-03 |
 | [0026](0026-tgm003-allows-a-captured-tenant-in-a-per-tenant-model.md) | TGM003 allows a captured tenant in a per-tenant model | Accepted | 2026-11-03 |
+| [0027](0027-no-source-generator-while-compiled-models-refuse-query-filters.md) | No source generator while compiled models refuse query filters | Accepted | 2026-11-04 |
 
 ## Proposing a change
 
