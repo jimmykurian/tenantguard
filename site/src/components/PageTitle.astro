@@ -1,0 +1,10 @@
+---
+// Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+// Starlight's page title, except on the home page, whose hero carries its own heading.
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+
+const isHome = Astro.url.pathname === '/';
+---
+
+{!isHome && <Default />}

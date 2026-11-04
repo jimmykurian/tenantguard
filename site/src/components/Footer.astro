@@ -1,0 +1,89 @@
+---
+// Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+// Replaces Starlight's footer (ADR 0028): the edit link and previous and next pages, then
+// the project's links and license in place of Starlight's credit.
+import EditLink from '@astrojs/starlight/components/EditLink.astro';
+import Pagination from '@astrojs/starlight/components/Pagination.astro';
+
+const repo = 'https://github.com/jimmykurian/tenantguard';
+const links = [
+  { label: 'GitHub', href: repo },
+  { label: 'NuGet', href: 'https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore' },
+  { label: 'Issues', href: `${repo}/issues` },
+  { label: 'Changelog', href: '/changelog/' },
+];
+---
+
+<footer class="tg-footer">
+  <div class="tg-meta">
+    <EditLink />
+  </div>
+  <Pagination />
+  <div class="tg-colophon">
+    <p class="tg-name">
+      <strong>TenantGuard</strong> proves an EF Core multi-tenant model leaks nothing.
+    </p>
+    <ul class="tg-links">
+      {
+        links.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="tg-license">
+      Apache-2.0. Copyright Jimmy Kurian 2026. Built with Astro and Starlight.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .tg-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .tg-meta {
+    margin-top: 3rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .tg-colophon {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--sl-color-hairline-light);
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .tg-colophon p {
+    margin: 0;
+  }
+
+  .tg-name strong {
+    font-family: var(--tg-font-display);
+    color: var(--sl-color-white);
+  }
+
+  .tg-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 0.75rem 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tg-links a {
+    color: var(--sl-color-text-accent);
+    font-weight: 600;
+  }
+
+  .tg-license {
+    font-size: var(--sl-text-xs);
+  }
+</style>

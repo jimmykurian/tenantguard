@@ -1,0 +1,463 @@
+---
+// Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+// The home page (ADR 0028): a page of its own inside Starlight's frame, so it keeps the
+// header, search and theme switch. Every other page comes from docs/.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+
+const repo = 'https://github.com/jimmykurian/tenantguard';
+const install = 'dotnet add package TenantGuard.EntityFrameworkCore --prerelease';
+
+const checkpoints = [
+  {
+    when: 'At build',
+    what: 'Roslyn analyzers',
+    ids: 'TG001 to TG004',
+    text: 'Flag IgnoreQueryFilters() and raw SQL without a tenant predicate, unless the code says why.',
+    href: '/reference/analyzers/',
+  },
+  {
+    when: 'At startup',
+    what: 'Model rules',
+    ids: 'TGM001 to TGM010',
+    text: 'Fail the host when a tenant-scoped entity has no query filter, or its filter is frozen to one tenant.',
+    href: '/reference/rules/',
+  },
+  {
+    when: 'On SaveChanges',
+    what: 'Write guard',
+    ids: 'TenantIsolationViolationException',
+    text: "Throws before the database sees a write, move or delete of another tenant's row.",
+    href: '/reference/write-guard/',
+  },
+  {
+    when: 'In tests',
+    what: 'Isolation probe',
+    ids: '7 checks per entity',
+    text: "Seeds a row per tenant and proves, entity by entity, that one tenant can't reach another's.",
+    href: '/reference/probe/',
+  },
+];
+
+const stats = [
+  { number: '4', label: 'analyzers', detail: 'TG001 to TG004, at build' },
+  { number: '10', label: 'model rules', detail: 'TGM001 to TGM010, at startup' },
+  { number: '3', label: 'write states guarded', detail: 'Added, Modified and Deleted, on SaveChanges' },
+  { number: '7', label: 'probe checks', detail: 'per entity, for every pair of tenants, in tests' },
+];
+
+const leaks = [
+  ['An entity with a tenant property and no filter', '', 'Yes: TGM001', '', 'Yes: the probe stops on the rule error'],
+  ['A filter that captured a local or a constant', '', 'Yes: TGM003, TGM004', '', 'Yes, on the rule error'],
+  ['IgnoreQueryFilters() without a reason', 'Yes: TG001', '', '', ''],
+  ["Raw SQL that doesn't mention the tenant column", "Yes: TG002, or TG004 when it's built at runtime", '', '', ''],
+  ["A write, move or delete of another tenant's row", '', '', 'Yes: TenantIsolationViolationException, before the database', 'Yes: UpdateGuard, InsertGuard, DeleteGuard'],
+  ['A bulk ExecuteDelete or ExecuteUpdate across tenants', '', '', 'Not seen: it skips SaveChanges', 'Yes: BulkIsolation'],
+  ['A new entity added months later', '', 'Yes: every rule runs on every entity', "Yes, once it's tenant-scoped", 'Yes: every tenant-scoped entity is probed'],
+];
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'Prove an EF Core multi-tenant model leaks nothing',
+    description: 'Prove an EF Core multi-tenant model leaks nothing.',
+    template: 'splash',
+    tableOfContents: false,
+    editUrl: false,
+  }}
+>
+  <section class="tg-hero not-content" aria-labelledby="tg-hero-title">
+    <p class="tg-eyebrow">For EF Core 10 and 11 · Apache-2.0</p>
+    <h1 id="tg-hero-title">Prove one tenant can't see another's data.</h1>
+    <p class="tg-lede">
+      Query filters isolate tenants until someone forgets one, switches it off or writes
+      around it. TenantGuard catches each of those at build, at startup, on
+      <code>SaveChanges</code> and in your tests, on Finbuckle, any tenancy package or
+      hand-rolled filters.
+    </p>
+    <div class="tg-actions">
+      <a class="tg-button tg-primary" href="/guides/">Get started</a>
+      <a class="tg-button" href="/guides/use-case/">Why use it</a>
+      <a class="tg-button" href={repo}>GitHub</a>
+    </div>
+    <div class="tg-install">
+      <span class="tg-install-label">Install</span>
+      <code>{install}</code>
+    </div>
+  </section>
+
+  <section class="tg-section not-content" aria-labelledby="tg-checkpoints">
+    <h2 id="tg-checkpoints">Four checkpoints</h2>
+    <p>Each kind of leak fails at the first moment it can: in the pull request, at startup, or on the first bad save.</p>
+    <ol class="tg-steps">
+      {
+        checkpoints.map((step, index) => (
+          <li class="tg-step">
+            <span class="tg-step-index" aria-hidden="true">{index + 1}</span>
+            <span class="tg-step-when">{step.when}</span>
+            <a class="tg-step-what" href={step.href}>{step.what}</a>
+            <span class="tg-step-ids">{step.ids}</span>
+            <span class="tg-step-text">{step.text}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="tg-section not-content" aria-labelledby="tg-in-action">
+    <h2 id="tg-in-action">See it in action</h2>
+    <p>One app, four mistakes, and the checkpoint that catches each.</p>
+    <img
+      class="tg-walkthrough"
+      src="/tenantguard-walkthrough.svg"
+      width="1110"
+      height="610"
+      alt="A terminal walkthrough in four steps. At build, dotnet build warns TG001 on an IgnoreQueryFilters call. At startup, dotnet run fails with TGM001: Invoice has a tenant property but no query filter references it. On SaveChanges, TenantGuard blocks an Invoice for tenant acme added while the current tenant is globex, and throws TenantIsolationViolationException. In tests, the isolation probe reports that Customer's read, find and bulk delete checks failed."
+    />
+  </section>
+
+  <section class="tg-section not-content" aria-label="TenantGuard in numbers">
+    <ul class="tg-stats">
+      {
+        stats.map((stat) => (
+          <li class="tg-stat">
+            <span class="tg-stat-number">{stat.number}</span>
+            <span class="tg-stat-label">{stat.label}</span>
+            <span class="tg-stat-detail">{stat.detail}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="tg-section not-content" aria-labelledby="tg-matrix">
+    <h2 id="tg-matrix">What each checkpoint catches</h2>
+    <div class="tg-table">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Leak</th>
+            <th scope="col">At build</th>
+            <th scope="col">At startup</th>
+            <th scope="col">On SaveChanges</th>
+            <th scope="col">In tests</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            leaks.map(([leak, ...cells]) => (
+              <tr>
+                <th scope="row">{leak}</th>
+                {cells.map((cell) => <td>{cell || 'No'}</td>)}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="tg-section tg-next not-content" aria-labelledby="tg-why">
+    <h2 id="tg-why">Why you'd use it</h2>
+    <p>
+      An invoicing app with every tenant in one database starts with a filter on every
+      entity. A year of ordinary changes later, a new entity ships without one, a support
+      report adds <code>IgnoreQueryFilters()</code>, an import job saves acme's rows as
+      globex's, and a refactor freezes a filter to the first tenant. None of them fails the
+      build or the tests. With TenantGuard, each one does.
+    </p>
+    <div class="tg-cards">
+      <a class="tg-card" href="/guides/use-case/">
+        <strong>Read the use case</strong>
+        <span>The four leaks, month by month, and where TenantGuard catches each.</span>
+      </a>
+      <a class="tg-card" href="/guides/">
+        <strong>Get started</strong>
+        <span>Five lines of registration, with hand-rolled filters or Finbuckle.</span>
+      </a>
+      <a class="tg-card" href="/overview/">
+        <strong>Read the overview</strong>
+        <span>The packages, what each checks, and where to go next.</span>
+      </a>
+    </div>
+  </section>
+</StarlightPage>
+
+<style>
+  .tg-hero {
+    position: relative;
+    padding: 3rem 0 2.5rem;
+  }
+
+  .tg-hero h1 {
+    max-width: 18ch;
+    margin: 0.5rem 0 1rem;
+    font-family: var(--tg-font-display);
+    font-size: clamp(2.25rem, 5vw + 1rem, 4rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--sl-color-white);
+  }
+
+  .tg-eyebrow {
+    margin: 0;
+    font-family: var(--__sl-font-mono);
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+  }
+
+  .tg-lede {
+    max-width: 62ch;
+    font-size: var(--sl-text-lg);
+    color: var(--sl-color-gray-2);
+  }
+
+  .tg-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .tg-button {
+    padding: 0.65rem 1.2rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    font-family: var(--tg-font-display);
+    font-weight: 600;
+    color: var(--sl-color-white);
+    text-decoration: none;
+  }
+
+  .tg-button:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .tg-primary {
+    border-color: var(--sl-color-accent);
+    background: var(--sl-color-accent);
+    color: var(--tg-on-accent);
+  }
+
+  .tg-primary:hover {
+    background: var(--sl-color-accent-high);
+    border-color: var(--sl-color-accent-high);
+  }
+
+  .tg-install {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    max-width: 100%;
+    margin-top: 1.75rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: 0.6rem;
+    background: var(--sl-color-bg-nav);
+  }
+
+  .tg-install-label {
+    font-size: var(--sl-text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--sl-color-gray-3);
+  }
+
+  .tg-install code {
+    overflow-wrap: anywhere;
+    background: none;
+    padding: 0;
+    color: var(--sl-color-white);
+  }
+
+  .tg-section {
+    margin-top: 3.5rem;
+  }
+
+  .tg-section > h2 {
+    margin: 0 0 0.5rem;
+    font-family: var(--tg-font-display);
+    font-size: var(--sl-text-h2);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--sl-color-white);
+  }
+
+  .tg-section > p {
+    margin: 0;
+    color: var(--sl-color-gray-2);
+  }
+
+  .tg-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+  }
+
+  .tg-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--sl-color-hairline-light);
+    border-top: 3px solid var(--sl-color-accent);
+    border-radius: 0.75rem;
+    background: var(--sl-color-bg-nav);
+  }
+
+  .tg-step-index {
+    font-family: var(--__sl-font-mono);
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+
+  .tg-step-when {
+    font-size: var(--sl-text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--sl-color-text-accent);
+  }
+
+  .tg-step-what {
+    font-family: var(--tg-font-display);
+    font-size: var(--sl-text-xl);
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+
+  .tg-step-ids {
+    font-family: var(--__sl-font-mono);
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-2);
+    overflow-wrap: anywhere;
+  }
+
+  .tg-step-text {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+
+  .tg-walkthrough {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: var(--sl-shadow-lg);
+  }
+
+  .tg-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tg-stat {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding-inline-start: 1rem;
+    border-inline-start: 3px solid var(--tg-blue);
+  }
+
+  .tg-stat-number {
+    font-family: var(--tg-font-display);
+    font-size: 2.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--sl-color-white);
+  }
+
+  .tg-stat-label {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .tg-stat-detail {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .tg-table {
+    overflow-x: auto;
+    margin-top: 1rem;
+  }
+
+  .tg-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--sl-text-sm);
+  }
+
+  .tg-table th,
+  .tg-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--sl-color-hairline-light);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .tg-table thead th {
+    font-family: var(--tg-font-display);
+    color: var(--sl-color-white);
+    white-space: nowrap;
+  }
+
+  .tg-table tbody th {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .tg-table td {
+    color: var(--sl-color-gray-2);
+  }
+
+  .tg-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .tg-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: 0.75rem;
+    text-decoration: none;
+    color: var(--sl-color-gray-2);
+  }
+
+  .tg-card strong {
+    font-family: var(--tg-font-display);
+    color: var(--sl-color-white);
+  }
+
+  .tg-card:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  /* Starlight spaces each element after another in page content; these lay out their own. */
+  :global(.sl-markdown-content) .tg-steps > li,
+  :global(.sl-markdown-content) .tg-stats > li,
+  :global(.sl-markdown-content) .tg-cards > a {
+    margin: 0;
+  }
+</style>

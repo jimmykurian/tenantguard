@@ -2,13 +2,13 @@
 
 // The docs site, served from GitHub Pages at https://tenantguard.is-cool.dev/, an Open Domains
 // subdomain whose A records point at GitHub Pages.
-// Its pages come from docs/ through scripts/sync-docs.mjs; only the home page lives here.
+// Its pages come from docs/ through scripts/sync-docs.mjs; only the home page,
+// src/pages/index.astro, lives here.
 
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import mermaid from 'astro-mermaid';
 import starlightLinksValidator from 'starlight-links-validator';
-import starlightThemeRapide from 'starlight-theme-rapide';
 
 export default defineConfig({
   site: 'https://tenantguard.is-cool.dev',
@@ -22,7 +22,23 @@ export default defineConfig({
       // The README's wordmark, the shield and the name in one image, in place of the title.
       logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo-dark.svg', replacesTitle: true },
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/jimmykurian/tenantguard' }],
-      customCss: ['./src/styles/custom.css'],
+      // The site's own look (ADR 0028): the shield's palette and self-hosted fonts in
+      // custom.css, and a header, footer and home page of its own in src/.
+      customCss: [
+        '@fontsource-variable/ibm-plex-sans',
+        '@fontsource-variable/space-grotesk',
+        '@fontsource-variable/jetbrains-mono',
+        './src/styles/custom.css',
+      ],
+      components: {
+        Header: './src/components/Header.astro',
+        Footer: './src/components/Footer.astro',
+        PageTitle: './src/components/PageTitle.astro',
+      },
+      expressiveCode: {
+        themes: ['github-dark-dimmed', 'github-light'],
+        styleOverrides: { borderRadius: '0.6rem', codeFontFamily: 'var(--__sl-font-mono)' },
+      },
       // favicon.svg is Starlight's default favicon; the PNG covers the rest.
       favicon: '/favicon.svg',
       head: [
@@ -48,8 +64,7 @@ export default defineConfig({
         { label: 'Changelog', link: '/changelog/' },
       ],
       // Fails the build on a broken link or anchor between pages.
-      // Rapide restyles Starlight, so this site doesn't look like ci-parity's.
-      plugins: [starlightLinksValidator(), starlightThemeRapide()],
+      plugins: [starlightLinksValidator()],
     }),
   ],
 });

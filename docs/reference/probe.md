@@ -62,7 +62,6 @@ check, for every ordered pair of tenants:
 | UpdateGuard | Attaching a copy of A's row, changing a scalar and saving throws `TenantIsolationViolationException`. |
 | InsertGuard | Adding a new row stamped with A and saving throws. |
 | DeleteGuard | Removing A's row (attached) and saving throws. |
-
 | NavigationLeak | `Include` of a navigation on B's row loads none of A's rows (see below). |
 
 Each check gives one row per entity type, failed when any pair failed; NavigationLeak gives

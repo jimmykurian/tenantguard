@@ -19,5 +19,4 @@ site/dist/
 site/.astro/
 site/public/
 site/src/assets/
-site/src/content/docs/*
-!site/src/content/docs/index.mdx
+site/src/content/docs/

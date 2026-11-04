@@ -1,0 +1,117 @@
+---
+// Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+// Replaces Starlight's header (ADR 0028): the wordmark, a bar with the site's sections, then
+// search, GitHub and the theme switch. Below 72rem the bar is left to the sidebar menu.
+import Search from '@astrojs/starlight/components/Search.astro';
+import SiteTitle from '@astrojs/starlight/components/SiteTitle.astro';
+import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
+import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
+
+const sections = [
+  { label: 'Overview', href: '/overview/', match: '/overview/' },
+  { label: 'Guides', href: '/guides/', match: '/guides/' },
+  { label: 'Reference', href: '/reference/', match: '/reference/' },
+  { label: 'Architecture', href: '/architecture/', match: '/architecture/' },
+  { label: 'Testing', href: '/testing/strategy/', match: '/testing/' },
+  { label: 'Releases', href: '/deployment/releases-and-ci/', match: '/deployment/' },
+  { label: 'Changelog', href: '/changelog/', match: '/changelog/' },
+];
+const path = Astro.url.pathname;
+---
+
+<div class="tg-header">
+  <div class="tg-title">
+    <SiteTitle />
+  </div>
+  <nav class="tg-sections" aria-label="Sections">
+    {
+      sections.map((section) => (
+        <a href={section.href} aria-current={path.startsWith(section.match) ? 'page' : undefined}>
+          {section.label}
+        </a>
+      ))
+    }
+  </nav>
+  <div class="tg-search print:hidden">
+    <Search />
+  </div>
+  <div class="tg-end sl-hidden md:sl-flex print:hidden">
+    <SocialIcons />
+    <ThemeSelect />
+  </div>
+</div>
+
+<style>
+  .tg-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    height: 100%;
+  }
+
+  .tg-title {
+    display: flex;
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: clip;
+    padding: 0.25rem;
+    margin: -0.25rem;
+  }
+
+  .tg-sections {
+    display: none;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  .tg-sections a {
+    position: relative;
+    padding: 0.4rem 0.65rem;
+    border-radius: 0.4rem;
+    font-family: var(--tg-font-display);
+    font-size: var(--sl-text-sm);
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .tg-sections a:hover {
+    color: var(--sl-color-white);
+    background: var(--sl-color-gray-6);
+  }
+
+  /* The current section is bold and underlined, not only colored. */
+  .tg-sections a[aria-current='page'] {
+    font-weight: 700;
+    color: var(--sl-color-white);
+  }
+
+  .tg-sections a[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0.65rem;
+    bottom: -0.2rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--sl-color-accent);
+  }
+
+  .tg-search {
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .tg-end {
+    gap: 1rem;
+    align-items: center;
+  }
+
+  @media (min-width: 72rem) {
+    .tg-sections {
+      display: flex;
+    }
+  }
+</style>
