@@ -195,6 +195,27 @@ public sealed class ModelRuleTests
                 "BillingAddress is owned by Customer; its 'TenantId' is ignored, isolation follows the owner."));
 
     [Fact]
+    public void Shadow_ownership_key_named_like_the_tenant_property_passes()
+        => TestModels.Validate<Tgm008Models.OwnedByTenantRegistry>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Declared_tenant_property_used_as_the_ownership_key_passes()
+        => TestModels.Validate<Tgm008Models.OwnedWithClrOwnershipKey>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Shadow_ownership_key_named_like_a_configured_tenant_property_passes()
+        => TestModels.Validate<Tgm008Models.OwnedByRenamedTenantRegistry>(options => options.TenantPropertyNames("ClubId")).Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Owned_tenant_property_beside_the_ownership_key_is_TGM008()
+        => TestModels.Validate<Tgm008Models.OwnedByTenantRegistryWithTenant>().Findings.Should().ContainSingle().Subject.Should().Be(new ModelFinding(
+                "TGM008",
+                Severity.Warning,
+                "BillingAddress",
+                "TenantId",
+                "BillingAddress is owned by Workspace; its 'TenantId' is ignored, isolation follows the owner."));
+
+    [Fact]
     public void TenantKey_attribute_marks_the_tenant_property()
         => TestModels.Validate<DiscoveryModels.Attributed>().Findings.Should().ContainSingle().Subject.Should().Be(Unguarded("Ledger", "OrgId"));
 

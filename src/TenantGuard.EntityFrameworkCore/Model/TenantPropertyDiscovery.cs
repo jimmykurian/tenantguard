@@ -20,9 +20,18 @@ internal static class TenantPropertyDiscovery
     public static IReadOnlyProperty? Find(IReadOnlyEntityType entityType, TenantGuardOptions options)
         => Find(entityType, options, [.. entityType.GetProperties()]);
 
-    // Only the properties the type declares itself, for derived types (TGM006) and owned types (TGM008).
+    // Only the properties the type declares itself, for derived types (TGM006).
     public static IReadOnlyProperty? FindDeclared(IReadOnlyEntityType entityType, TenantGuardOptions options)
         => Find(entityType, options, [.. entityType.GetDeclaredProperties()]);
+
+    // An owned type's declared properties other than its ownership key (TGM008). EF Core names a
+    // shadow ownership key {Owner}{OwnerKey}, so a type owned by Tenant gets a TenantId that is
+    // the key to its owner, not a tenant property.
+    public static IReadOnlyProperty? FindOwned(IReadOnlyEntityType entityType, TenantGuardOptions options)
+    {
+        var ownershipKey = entityType.FindOwnership()?.Properties ?? [];
+        return Find(entityType, options, [.. entityType.GetDeclaredProperties().Where(property => !ownershipKey.Contains(property))]);
+    }
 
     private static IReadOnlyProperty? Find(
         IReadOnlyEntityType entityType,
