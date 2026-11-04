@@ -228,8 +228,10 @@ relational reference.
 
 TGM003, TGM004 and TGM007 look at what the tenant property is compared with: in `==`,
 `!=`, `Equals` and `Contains`, against a member of the filter's parameter, or
-`EF.Property<T>(e, "{Property}")`, that resolves to the tenant property. Then TenantGuard
-follows the other operand's member and call chain to its root:
+`EF.Property<T>(e, "{Property}")`, that resolves to the tenant property. The name in
+`EF.Property` can be a constant or a captured `string`, such as a local or a helper method's
+parameter, read when the model is built. Then TenantGuard follows the other operand's member
+and call chain to its root:
 
 - An expression whose type the context type derives from or implements, other than
   `object`: the context, which passes. EF Core puts the current context in its place.
