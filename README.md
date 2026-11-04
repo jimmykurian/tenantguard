@@ -309,8 +309,8 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 83 | 95 | 14 | 192 |
-| Lines of code | 3,649 | 5,688 | 228 | 9,565 |
-| Methods | 279 | 614 | 21 | 914 |
+| Lines of code | 3,675 | 5,760 | 228 | 9,663 |
+| Methods | 282 | 626 | 21 | 929 |
 | Average complexity | 3.2 | 1.1 | 1.2 | 1.7 |
 | Max complexity | 28 | 5 | 4 | 28 |
 
@@ -324,11 +324,11 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:38` | 20 |
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:28` | 15 |
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:46` | 13 |
+| `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:168` | 13 |
 | `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
-| `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:58` | 13 |
+| `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:62` | 13 |
 | `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:15` | 12 |
 | `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:33` | 12 |
-| `Validation.Run` | `src/TenantGuard.Tool.Payload/Validation.cs:27` | 12 |
 
 </details>
 
