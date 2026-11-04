@@ -39,13 +39,14 @@ and described in text (3.3.1). The docs site aims at [WCAG 2.2][wcag22] level AA
    needs. Changing the message is a contract change
    ([Compatibility](docs/reference/compatibility.md)).
 2. **Diagrams have no text alternative of their own.** The Mermaid diagrams in `docs/`
-   render as images, and the prose around each summarizes it but not every step. The home
-   page's leak diagram is repeated as the table below it.
+   render as images, and the prose around each summarizes it but not every step.
 3. **The README's status badges show a result only in the image.** Their alt text names the
    check, not whether it passed. Workaround: the workflow runs they link to, or a pull
    request's check table.
 4. **No record of manual checks.** The checklist below hasn't been run and recorded for a
-   release yet, and the docs site's theme hasn't been checked for contrast.
+   release yet. The docs site's text colors meet 4.5:1 in both themes
+   ([0028](docs/architecture/decisions/0028-docs-site-has-a-design-of-its-own.md)), but no
+   one has checked the site with a screen reader.
 
 ## Rules for changes
 

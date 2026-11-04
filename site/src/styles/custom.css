@@ -1,58 +1,125 @@
-/* The home page's stat tiles and walkthrough. Colors come from Starlight's own tokens, so
-   they follow its light and dark themes. */
+/* The site's own look (ADR 0028), through Starlight's tokens so every built-in component
+   follows it. The palette comes from the shield: navy, green and blue. Every text color
+   meets 4.5:1 on the background it sits on, in both themes. */
 
-.tg-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 1rem;
-  margin-block: 1.5rem;
+:root {
+  --tg-font-display: 'Space Grotesk Variable', var(--sl-font-system);
+  --sl-font: 'IBM Plex Sans Variable';
+  --sl-font-mono: 'JetBrains Mono Variable';
+
+  /* Dark theme: a navy ground with a green accent. */
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #e6edf3;
+  --sl-color-gray-2: #c3cedb;
+  --sl-color-gray-3: #8a9bb0;
+  --sl-color-gray-4: #55667d;
+  --sl-color-gray-5: #2a3a52;
+  --sl-color-gray-6: #142238;
+  --sl-color-black: #0b1424;
+
+  --sl-color-accent-low: #0e3b2c;
+  --sl-color-accent: #2fc98e;
+  --sl-color-accent-high: #5fe0ae;
+  --tg-on-accent: #06281b;
+  --tg-blue: #7db8ee;
+
+  --sl-color-bg-nav: #101c30;
+  --sl-color-bg-sidebar: var(--sl-color-black);
+  --sl-color-hairline-light: #22324a;
+  --sl-color-hairline: #1a283d;
+
+  --sl-nav-height: 4rem;
+  --sl-content-width: 48rem;
 }
 
-.tg-tile {
-  border: 1px solid var(--sl-color-gray-5);
-  border-radius: 0.5rem;
-  padding: 1rem 1.25rem;
+:root[data-theme='light'] {
+  /* Light theme: white with navy text and a darker green, for contrast. */
+  --sl-color-white: #0e1b2e;
+  --sl-color-gray-1: #1b2f4e;
+  --sl-color-gray-2: #2e4466;
+  --sl-color-gray-3: #4e6382;
+  --sl-color-gray-4: #8090a8;
+  --sl-color-gray-5: #c5cfdd;
+  --sl-color-gray-6: #e8edf4;
+  --sl-color-gray-7: #f3f6fa;
+  --sl-color-black: #ffffff;
+
+  --sl-color-accent-low: #ddf6ea;
+  --sl-color-accent: #0b7a53;
+  --sl-color-accent-high: #075c3e;
+  --tg-on-accent: #ffffff;
+  --tg-blue: #2f7cc4;
+
+  --sl-color-bg-nav: #f3f6fa;
+  --sl-color-bg-sidebar: #ffffff;
+  --sl-color-hairline-light: #dde4ee;
+  --sl-color-hairline: #e8edf4;
+}
+
+/* Headings in the display face. */
+.sl-markdown-content :is(h1, h2, h3, h4),
+h1#_top {
+  font-family: var(--tg-font-display);
+  letter-spacing: -0.01em;
+}
+
+.sl-markdown-content h2 {
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--sl-color-hairline-light);
+}
+
+/* The header: a thin green-to-blue band along its top edge. */
+header.header {
+  border-bottom: 1px solid var(--sl-color-hairline-light);
+  background:
+    linear-gradient(90deg, var(--sl-color-accent), var(--tg-blue)) top / 100% 3px no-repeat,
+    var(--sl-color-bg-nav);
+}
+
+/* The sidebar: the current page is marked by a bar and weight, not a filled pill. */
+.sidebar-pane {
+  border-inline-end: 1px solid var(--sl-color-hairline-light);
+}
+
+.sidebar-content a[aria-current='page'],
+.sidebar-content a[aria-current='page']:hover,
+.sidebar-content a[aria-current='page']:focus {
+  background: transparent;
+  color: var(--sl-color-text-accent);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--sl-color-accent);
+}
+
+.sidebar-content summary .group-label .large {
+  font-family: var(--tg-font-display);
+}
+
+/* Links in page content, underlined in the accent. */
+.sl-markdown-content a:not(:where(.not-content *)) {
+  color: var(--sl-color-text-accent);
+  text-decoration-color: color-mix(in srgb, var(--sl-color-accent) 55%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+/* Inline code, tinted with the accent. */
+.sl-markdown-content :not(pre) > code {
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: 0.3rem;
   background: var(--sl-color-bg-nav);
 }
 
-.tg-tile-number {
-  display: block;
-  font-size: 2.5rem;
+/* Tables, with a header band. */
+.sl-markdown-content table th {
+  background: var(--sl-color-bg-nav);
+  font-family: var(--tg-font-display);
+}
+
+/* The "On this page" column. */
+.right-sidebar {
+  border-inline-start: 1px solid var(--sl-color-hairline-light);
+}
+
+.right-sidebar a[aria-current='true'] {
+  color: var(--sl-color-text-accent);
   font-weight: 700;
-  line-height: 1.1;
-  color: var(--sl-color-white);
-  font-variant-numeric: tabular-nums;
-}
-
-.tg-tile-label {
-  display: block;
-  margin-top: 0.25rem;
-  font-weight: 600;
-  color: var(--sl-color-white);
-}
-
-.tg-tile-detail {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: var(--sl-text-sm);
-  color: var(--sl-color-gray-3);
-}
-
-.tg-walkthrough {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 0.6rem;
-  box-shadow: var(--sl-shadow-md);
-}
-
-.tg-matrix td,
-.tg-matrix th {
-  text-align: left;
-  vertical-align: top;
-}
-
-/* Starlight spaces each element after another in page content; tiles sit in a grid instead. */
-.sl-markdown-content .tg-tiles > .tg-tile {
-  margin: 0;
 }

@@ -132,9 +132,9 @@ function main() {
   const content = join(site, 'src', 'content', 'docs');
   const isDir = (repoPath) => existsSync(join(repo, repoPath)) && statSync(join(repo, repoPath)).isDirectory();
 
-  for (const entry of readdirSync(content)) {
-    if (entry !== 'index.mdx') rmSync(join(content, entry), { recursive: true, force: true });
-  }
+  // Every page comes from docs/; the home page is src/pages/index.astro, outside the collection.
+  rmSync(content, { recursive: true, force: true });
+  mkdirSync(content, { recursive: true });
   const files = markdownFiles(docs);
   for (const rel of files) {
     const target = join(content, outputPath(rel));
