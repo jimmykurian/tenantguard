@@ -12,7 +12,9 @@ returns the findings without throwing, for tests and tooling. See [options](opti
 
 A compiled model, passed to `UseModel`, isn't built at runtime, so the rules don't run on
 it and report nothing. The write guard still works: it finds the tenant-scoped entity
-types itself.
+types itself. On EF Core 10 and 11, EF Core refuses to generate a compiled model for a model
+with a query filter (behavior pin 9), so a tenant-isolated app can't use one yet; see
+[compatibility](compatibility.md#compiled-models-and-native-aot).
 
 ## Which entity types are tenant-scoped
 

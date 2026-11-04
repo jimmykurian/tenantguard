@@ -29,3 +29,12 @@ change between releases.
 The net10.0 build runs on EF Core 10, the net11.0 build on EF Core 11, with any provider
 ([0010](../architecture/decisions/0010-target-net10-and-net11.md)). The analyzers load in any
 compiler on Roslyn 4.8.0 or later, Visual Studio 2022 included.
+
+## Compiled models and Native AOT
+
+EF Core 10 and 11 can't generate a compiled model for a model with a query filter:
+`dotnet ef dbcontext optimize` stops with "query filters are not supported". Native AOT
+needs a compiled model, so an app that isolates tenants with query filters can't run under
+Native AOT yet, with or without TenantGuard. Behavior pin 9 checks it on each EF Core
+version, and TenantGuard will add what a compiled model needs once EF Core supports it
+([0027](../architecture/decisions/0027-no-source-generator-while-compiled-models-refuse-query-filters.md)).

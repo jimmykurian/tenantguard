@@ -68,3 +68,7 @@ Core version, stop and open an issue: the design rests on it.
 8. An `IModelCacheKeyFactory` whose key includes the tenant gives each tenant's context a
    model of its own, so a filter that captures the tenant returns only that tenant's rows
    ([0026](../architecture/decisions/0026-tgm003-allows-a-captured-tenant-in-a-per-tenant-model.md)).
+9. EF Core can't generate a compiled model for a model with a query filter, so an app that
+   isolates tenants with query filters can't use a compiled model or Native AOT. When this
+   fails, revisit the `[TenantKey]` source generator
+   ([0027](../architecture/decisions/0027-no-source-generator-while-compiled-models-refuse-query-filters.md)).
