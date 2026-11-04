@@ -81,6 +81,18 @@ public sealed class IndexRuleTests
         => TestModels.ValidateAll<Tgm010Models.OneToOne>().Findings.Should().BeEmpty();
 
     [Fact]
+    public void Unique_index_and_alternate_key_over_a_foreign_key_to_a_tenant_scoped_row_pass()
+        => TestModels.ValidateAll<Tgm010Models.UniqueWithinTenantScopedPrincipal>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Join_table_of_tenant_scoped_rows_passes()
+        => TestModels.ValidateAll<Tgm010Models.JoinOfTenantScopedPrincipals>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Unique_index_over_a_foreign_key_to_a_shared_row_is_TGM010()
+        => TestModels.ValidateAll<Tgm010Models.UniqueWithinSharedPrincipal>().Findings.Should().ContainSingle().Subject.Message.Should().StartWith("Office: the unique index on (CountryId, Code) doesn't include 'TenantId'");
+
+    [Fact]
     public void Unique_per_tenant_passes()
         => TestModels.ValidateAll<Tgm010Models.UniquePerTenant>().Findings.Should().BeEmpty();
 
