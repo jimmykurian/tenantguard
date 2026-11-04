@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 /** The repository on GitHub, for links that leave docs/ and for "Edit page". */
 export const REPO = 'https://github.com/jimmykurian/tenantguard';
 
-/** The path the site is served under on GitHub Pages: astro.config.mjs's base. */
-export const BASE = '/tenantguard';
+/** The path the site is served under: the root of its own domain. */
+export const BASE = '';
 
 /**
  * Returns where a docs/ page lands in the content collection: a README becomes its

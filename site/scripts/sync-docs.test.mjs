@@ -14,16 +14,16 @@ test('a README becomes its folder index, and the top one the overview', () => {
   assert.equal(outputPath('guides/testing.md'), 'guides/testing.md');
 });
 
-test('routes sit under the GitHub Pages base, lowercased, ending in a slash', () => {
-  assert.equal(route('architecture/decisions/README.md'), '/tenantguard/architecture/decisions/');
-  assert.equal(route('guides/WHY.md'), '/tenantguard/guides/why/');
-  assert.equal(route('guides/README.md'), '/tenantguard/guides/');
-  assert.equal(route('reference/rules.md'), '/tenantguard/reference/rules/');
+test('routes sit at the site root, lowercased, ending in a slash', () => {
+  assert.equal(route('architecture/decisions/README.md'), '/architecture/decisions/');
+  assert.equal(route('guides/WHY.md'), '/guides/why/');
+  assert.equal(route('guides/README.md'), '/guides/');
+  assert.equal(route('reference/rules.md'), '/reference/rules/');
 });
 
 test('links between docs pages become routes and keep their anchor', () => {
-  assert.equal(rewriteLink('rules.md#tgm001', 'reference/analyzers.md', noDirs), '/tenantguard/reference/rules/#tgm001');
-  assert.equal(rewriteLink('../architecture/README.md', 'reference/README.md', noDirs), '/tenantguard/architecture/');
+  assert.equal(rewriteLink('rules.md#tgm001', 'reference/analyzers.md', noDirs), '/reference/rules/#tgm001');
+  assert.equal(rewriteLink('../architecture/README.md', 'reference/README.md', noDirs), '/architecture/');
 });
 
 test('links out of docs/ point at the file on GitHub', () => {
@@ -39,7 +39,7 @@ test('absolute links and anchors are left alone', () => {
 test('a page gets its title and description from its H1 and first paragraph, and fenced code is untouched', () => {
   const page = convert('# Testing\n\nThe [probe](a.md) proves isolation.\n\n```md\n[x](a.md)\n```\n', 'guides/testing.md', noDirs);
   assert.match(page, /^---\ntitle: "Testing"\ndescription: "The probe proves isolation."\n/);
-  assert.match(page, /\]\(\/tenantguard\/guides\/a\/\)/);
+  assert.match(page, /\]\(\/guides\/a\/\)/);
   assert.match(page, /```md\n\[x\]\(a\.md\)\n```/);
 });
 
