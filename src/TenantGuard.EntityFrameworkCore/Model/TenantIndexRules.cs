@@ -12,7 +12,7 @@ internal static class TenantIndexRules
 {
     private static readonly string[] _nonTableMappings = ["Relational:ViewName", "Relational:SqlQuery", "Relational:FunctionName"];
 
-    public static void Check(IReadOnlyEntityType root, IReadOnlyProperty tenantProperty, List<ModelFinding> findings)
+    public static void Check(IReadOnlyEntityType root, IReadOnlyProperty tenantProperty, TenantGuardOptions options, List<ModelFinding> findings)
     {
         if (root.FindPrimaryKey() is null || IsMappedToNonTable(root))
         {
@@ -29,12 +29,17 @@ internal static class TenantIndexRules
             findings.Add(RuleMessages.UnindexedTenant(root.DisplayName(), property));
         }
 
-        foreach (var key in keys.Where(key => !key.IsPrimaryKey() && !Includes(key.Properties, property)))
+        foreach (var key in keys.Where(key => !key.IsPrimaryKey()
+            && !Includes(key.Properties, property)
+            && !CoversTenantScopedForeignKey(key.DeclaringEntityType, key.Properties, options)))
         {
             findings.Add(RuleMessages.TenantFreeAlternateKey(key.DeclaringEntityType.DisplayName(), property, Names(key.Properties)));
         }
 
-        foreach (var index in indexes.Where(index => index.IsUnique && !Includes(index.Properties, property) && !BacksForeignKey(index)))
+        foreach (var index in indexes.Where(index => index.IsUnique
+            && !Includes(index.Properties, property)
+            && !BacksForeignKey(index)
+            && !CoversTenantScopedForeignKey(index.DeclaringEntityType, index.Properties, options)))
         {
             findings.Add(RuleMessages.TenantFreeUniqueIndex(index.DeclaringEntityType.DisplayName(), property, Names(index.Properties)));
         }
@@ -47,6 +52,17 @@ internal static class TenantIndexRules
     // across tenants like the primary key.
     private static bool BacksForeignKey(IReadOnlyIndex index)
         => index.DeclaringEntityType.GetForeignKeys().Any(foreignKey => foreignKey.Properties.SequenceEqual(index.Properties));
+
+    // A unique index or alternate key that holds every column of a foreign key to a tenant-scoped
+    // principal is unique within that principal's rows, each of which belongs to one tenant, so
+    // another tenant can't collide with a value it can't reference.
+    private static bool CoversTenantScopedForeignKey(
+        IReadOnlyEntityType entityType,
+        IReadOnlyList<IReadOnlyPropertyBase> properties,
+        TenantGuardOptions options)
+        => entityType.GetForeignKeys().Any(foreignKey => foreignKey.Properties.All(column => properties.Contains(column))
+            && !foreignKey.PrincipalEntityType.IsOwned()
+            && TenantPropertyDiscovery.Find(foreignKey.PrincipalEntityType.GetRootType(), options) is not null);
 
     private static bool StartsWith(IReadOnlyList<IReadOnlyPropertyBase> properties, string property)
         => properties.Count > 0 && properties[0].Name == property;

@@ -127,4 +127,124 @@ internal static class Tgm010Models
                 invoice.HasIndex(row => new { row.Number, row.TenantId }).IsUnique();
             });
     }
+
+    // Positive: every ProjectId belongs to one tenant's Project, so (ProjectId, Name) is unique
+    // within a tenant.
+    internal sealed class UniqueWithinTenantScopedPrincipal(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Project>(project =>
+            {
+                project.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                project.HasIndex(row => row.TenantId);
+            });
+            modelBuilder.Entity<ProjectTag>(tag =>
+            {
+                tag.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                tag.HasIndex(row => row.TenantId);
+                tag.HasOne<Project>().WithMany().HasForeignKey(row => row.ProjectId);
+                tag.HasIndex(row => new { row.ProjectId, row.Name }).IsUnique();
+                tag.HasAlternateKey(row => new { row.Name, row.ProjectId });
+            });
+        }
+    }
+
+    // Positive: a join table whose unique index is two foreign keys to tenant-scoped principals.
+    internal sealed class JoinOfTenantScopedPrincipals(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Project>(project =>
+            {
+                project.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                project.HasIndex(row => row.TenantId);
+            });
+            modelBuilder.Entity<Label>(label =>
+            {
+                label.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                label.HasIndex(row => row.TenantId);
+            });
+            modelBuilder.Entity<ProjectLabel>(link =>
+            {
+                link.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                link.HasIndex(row => row.TenantId);
+                link.HasOne<Project>().WithMany().HasForeignKey(row => row.ProjectId);
+                link.HasOne<Label>().WithMany().HasForeignKey(row => row.LabelId);
+                link.HasIndex(row => new { row.ProjectId, row.LabelId }).IsUnique();
+            });
+        }
+    }
+
+    // Negative: Country is shared by every tenant, so a (CountryId, Code) pair one tenant used is
+    // refused to the others.
+    internal sealed class UniqueWithinSharedPrincipal(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Office>(office =>
+            {
+                office.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                office.HasIndex(row => row.TenantId);
+                office.HasOne<Country>().WithMany().HasForeignKey(row => row.CountryId);
+                office.HasIndex(row => new { row.CountryId, row.Code }).IsUnique();
+            });
+    }
+
+    internal sealed class Project
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+    }
+
+    internal sealed class ProjectTag
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public int ProjectId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+    }
+
+    internal sealed class Label
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+    }
+
+    internal sealed class ProjectLabel
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public int ProjectId { get; set; }
+
+        public int LabelId { get; set; }
+    }
+
+    internal sealed class Country
+    {
+        public int Id { get; set; }
+    }
+
+    internal sealed class Office
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public int CountryId { get; set; }
+
+        public string Code { get; set; } = string.Empty;
+    }
 }

@@ -97,7 +97,7 @@ internal static class TenantModelRules
 
         if (checksIndexes)
         {
-            TenantIndexRules.Check(entityType, tenantProperty, findings);
+            TenantIndexRules.Check(entityType, tenantProperty, options, findings);
         }
     }
 

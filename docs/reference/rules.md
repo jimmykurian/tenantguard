@@ -203,8 +203,12 @@ fails because another tenant already used the number, and the failure tells the 
 tenant that the number exists. `{Columns}` lists the index's properties, comma-separated,
 and `{Members}` the same properties as `e.{Name}`. The primary key isn't checked: a
 generated key is unique across tenants by design. Nor is the unique index EF Core makes for
-a one-to-one foreign key, whose values are keys of the principal's rows. A unique index with a filter, set with
-`HasFilter`, is checked like any other.
+a one-to-one foreign key, whose values are keys of the principal's rows, or a unique index
+or alternate key that includes every column of a foreign key to a tenant-scoped entity
+type, such as `(ProjectId, Name)` or a join table's `(ProjectId, LabelId)`: each principal
+row belongs to one tenant, so another tenant can't use the same values. A foreign key to an
+entity type with no tenant property, such as a shared `Country`, doesn't count. A unique
+index with a filter, set with `HasFilter`, is checked like any other.
 
 ```csharp
 // TGM010

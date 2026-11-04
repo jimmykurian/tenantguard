@@ -309,8 +309,8 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 83 | 95 | 14 | 192 |
-| Lines of code | 3,620 | 5,517 | 228 | 9,365 |
-| Methods | 276 | 597 | 21 | 894 |
+| Lines of code | 3,632 | 5,618 | 228 | 9,478 |
+| Methods | 277 | 603 | 21 | 901 |
 | Average complexity | 3.2 | 1.1 | 1.2 | 1.7 |
 | Max complexity | 28 | 5 | 4 | 28 |
 
@@ -326,9 +326,9 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:46` | 13 |
 | `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
 | `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:58` | 13 |
+| `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:15` | 12 |
 | `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:33` | 12 |
 | `Validation.Run` | `src/TenantGuard.Tool.Payload/Validation.cs:27` | 12 |
-| `ValidateCommand.Run` | `src/TenantGuard.Tool/ValidateCommand.cs:25` | 12 |
 
 </details>
 
