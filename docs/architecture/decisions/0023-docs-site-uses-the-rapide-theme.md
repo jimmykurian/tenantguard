@@ -1,6 +1,6 @@
 # 0023. The docs site uses the Rapide theme
 
-- Status: Accepted
+- Status: Superseded by [0028](0028-docs-site-has-a-design-of-its-own.md)
 - Date: 2026-11-02
 
 ## Context

@@ -29,11 +29,12 @@ accepted record isn't edited later except to mark it superseded
 | [0020](0020-readme-follows-ci-parity.md) | The README follows ci-parity's, with a package README of its own | Accepted | 2026-11-02 |
 | [0021](0021-docs-site-in-astro.md) | A docs site in Astro, built from docs/ | Accepted | 2026-11-02 |
 | [0022](0022-fan-out-the-spec-plan-and-decisions-log.md) | The docs replace the specification, the plan and the decisions log | Accepted | 2026-11-02 |
-| [0023](0023-docs-site-uses-the-rapide-theme.md) | The docs site uses the Rapide theme | Accepted | 2026-11-02 |
+| [0023](0023-docs-site-uses-the-rapide-theme.md) | The docs site uses the Rapide theme | Superseded by [0028](0028-docs-site-has-a-design-of-its-own.md) | 2026-11-02 |
 | [0024](0024-a-dotnet-tool-for-model-validation.md) | A .NET tool package for model validation in CI | Accepted | 2026-11-03 |
 | [0025](0025-a-package-per-test-framework-for-probe-rows.md) | A package per test framework for probe rows | Accepted | 2026-11-03 |
 | [0026](0026-tgm003-allows-a-captured-tenant-in-a-per-tenant-model.md) | TGM003 allows a captured tenant in a per-tenant model | Accepted | 2026-11-03 |
 | [0027](0027-no-source-generator-while-compiled-models-refuse-query-filters.md) | No source generator while compiled models refuse query filters | Accepted | 2026-11-04 |
+| [0028](0028-docs-site-has-a-design-of-its-own.md) | The docs site has a design of its own | Accepted | 2026-11-04 |
 
 ## Proposing a change
 
