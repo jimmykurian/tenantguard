@@ -79,6 +79,56 @@ internal static class Tgm001Models
             });
     }
 
+    // Positive: EF.Property with the tenant property's name in a captured local.
+    internal sealed class CapturedPropertyName(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            var name = nameof(Invoice.TenantId);
+            modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => EF.Property<string>(invoice, name) == CurrentTenant);
+        }
+    }
+
+    // Positive: EF.Property<Guid> with a captured name, compared lifted to a Guid? context member.
+    internal sealed class CapturedPropertyNameLifted(DbContextOptions options) : DbContext(options)
+    {
+        public Guid? CurrentTenantId { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            var name = nameof(Ledger.TenantId);
+            modelBuilder.Entity<Ledger>().HasQueryFilter(ledger => EF.Property<Guid>(ledger, name) == CurrentTenantId);
+        }
+    }
+
+    // Positive: a generic helper on a base context builds the filter from a name parameter.
+    internal sealed class CapturedPropertyNameFromHelper(DbContextOptions options) : FilteringContext(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => FilterByTenant<Invoice>(modelBuilder, nameof(Invoice.TenantId));
+    }
+
+    // Negative: EF.Property with a captured name that isn't the tenant property.
+    internal sealed class CapturedOtherPropertyName(DbContextOptions options) : DbContext(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            var name = nameof(Invoice.IsDeleted);
+            modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => !EF.Property<bool>(invoice, name));
+        }
+    }
+
+    internal abstract class FilteringContext(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected void FilterByTenant<TEntity>(ModelBuilder modelBuilder, string property)
+            where TEntity : class
+            => modelBuilder.Entity<TEntity>().HasQueryFilter(row => EF.Property<string>(row, property) == CurrentTenant);
+    }
+
     // Positive: Post is scoped through its principal, p => p.Blog.TenantId == ...
     internal sealed class ThroughNavigation(DbContextOptions options) : DbContext(options)
     {
@@ -98,6 +148,13 @@ internal static class Tgm001Models
         public string TenantId { get; set; } = string.Empty;
 
         public bool IsDeleted { get; set; }
+    }
+
+    internal sealed class Ledger
+    {
+        public int Id { get; set; }
+
+        public Guid TenantId { get; set; }
     }
 
     internal sealed class InvoiceTotal

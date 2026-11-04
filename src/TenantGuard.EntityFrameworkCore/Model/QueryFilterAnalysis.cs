@@ -116,7 +116,7 @@ internal sealed class QueryFilterAnalysis
                 && call.Arguments.Count == 2)
             {
                 instance = call.Arguments[0];
-                name = (OperandClassifier.StripConversions(call.Arguments[1]) as ConstantExpression)?.Value as string;
+                name = OperandClassifier.EvaluateFixedValue(call.Arguments[1]) as string;
                 return name is not null;
             }
 
@@ -137,7 +137,8 @@ internal sealed class QueryFilterAnalysis
             }
         }
 
-        // e.TenantId, e.Blog.TenantId through a navigation, or EF.Property<T>(e, "TenantId").
+        // e.TenantId, e.Blog.TenantId through a navigation, or EF.Property<T>(e, "TenantId"), with
+        // the name a constant or a captured string.
         private bool IsTenantAccess(Expression expression)
             => OperandClassifier.StripConversions(expression) switch
             {
