@@ -117,7 +117,7 @@ internal static class TenantModelRules
 
     private static void CheckOwned(IReadOnlyEntityType entityType, TenantGuardOptions options, List<ModelFinding> findings)
     {
-        if (TenantPropertyDiscovery.FindDeclared(entityType, options) is not { } tenantProperty)
+        if (TenantPropertyDiscovery.FindOwned(entityType, options) is not { } tenantProperty)
         {
             return;
         }
