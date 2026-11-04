@@ -8,10 +8,10 @@ hero:
     file: ../../assets/logo.svg
   actions:
     - text: Get started
-      link: /tenantguard/guides/
+      link: /guides/
       icon: right-arrow
     - text: Why use it
-      link: /tenantguard/guides/use-case/
+      link: /guides/use-case/
       variant: minimal
     - text: GitHub
       link: https://github.com/jimmykurian/tenantguard
@@ -28,7 +28,7 @@ rules at startup, the write guard on `SaveChanges`, and the isolation probe in t
 
 <img
   class="tg-walkthrough"
-  src="/tenantguard/tenantguard-walkthrough.svg"
+  src="/tenantguard-walkthrough.svg"
   width="1110"
   height="610"
   alt="A terminal walkthrough in four steps. At build, dotnet build warns TG001 on an IgnoreQueryFilters call. At startup, dotnet run fails with TGM001: Invoice has a tenant property but no query filter references it. On SaveChanges, TenantGuard blocks an Invoice for tenant acme added while the current tenant is globex, and throws TenantIsolationViolationException. In tests, the isolation probe reports that Customer's read, find and bulk delete checks failed."
@@ -112,8 +112,8 @@ each fails at the first moment it can: in the pull request, at startup, or on th
 save.
 
 <CardGrid>
-  <LinkCard title="Read the use case" description="The four leaks, month by month, and where TenantGuard catches each." href="/tenantguard/guides/use-case/" />
-  <LinkCard title="Get started" description="Five lines of registration, with hand-rolled filters or Finbuckle." href="/tenantguard/guides/" />
+  <LinkCard title="Read the use case" description="The four leaks, month by month, and where TenantGuard catches each." href="/guides/use-case/" />
+  <LinkCard title="Get started" description="Five lines of registration, with hand-rolled filters or Finbuckle." href="/guides/" />
 </CardGrid>
 
 ## Four layers

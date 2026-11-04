@@ -1,6 +1,7 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 
-// The docs site, served from GitHub Pages at https://jimmykurian.github.io/tenantguard/.
+// The docs site, served from GitHub Pages at https://tenantguard.is-cool.dev/, an Open Domains
+// subdomain whose A records point at GitHub Pages.
 // Its pages come from docs/ through scripts/sync-docs.mjs; only the home page lives here.
 
 import starlight from '@astrojs/starlight';
@@ -10,8 +11,7 @@ import starlightLinksValidator from 'starlight-links-validator';
 import starlightThemeRapide from 'starlight-theme-rapide';
 
 export default defineConfig({
-  site: 'https://jimmykurian.github.io',
-  base: '/tenantguard',
+  site: 'https://tenantguard.is-cool.dev',
   integrations: [
     // Renders the ```mermaid diagrams in the browser, following the light or dark theme.
     // It must come before Starlight.
@@ -26,8 +26,8 @@ export default defineConfig({
       // favicon.svg is Starlight's default favicon; the PNG covers the rest.
       favicon: '/favicon.svg',
       head: [
-        { tag: 'link', attrs: { rel: 'icon', type: 'image/png', sizes: '128x128', href: '/tenantguard/favicon.png' } },
-        { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/tenantguard/favicon.png' } },
+        { tag: 'link', attrs: { rel: 'icon', type: 'image/png', sizes: '128x128', href: '/favicon.png' } },
+        { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/favicon.png' } },
       ],
       lastUpdated: false,
       sidebar: [
