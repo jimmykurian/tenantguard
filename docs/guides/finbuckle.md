@@ -60,6 +60,11 @@ the current tenant with the tenant each changed or deleted row had when it was r
 moving a row to another tenant is rejected too. Without `EnforceMultiTenant()`, an added
 row has no tenant and is rejected; `StampOnAdd()` gives it the current tenant instead.
 
+In the isolation probe, Finbuckle's default `TenantMismatchMode.Throw` blocks the guard
+checks' writes before TenantGuard sees them. The rows pass and name Finbuckle's exception
+([The isolation probe](../reference/probe.md)). To prove TenantGuard's own guard instead, set
+`TenantMismatchMode.Ignore` on the contexts the probe's factory creates.
+
 ## IgnoreQueryFilters
 
 Finbuckle 10 names its filter `__tenant__` (`Finbuckle.MultiTenant.Abstractions.Constants.TenantToken`),

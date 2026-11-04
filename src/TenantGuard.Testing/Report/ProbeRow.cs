@@ -12,7 +12,8 @@ namespace TenantGuard.Testing;
 /// ReadIsolation, FindIsolation, BulkIsolation, UpdateGuard, InsertGuard or DeleteGuard.
 /// </param>
 /// <param name="Outcome">Passed, Failed or Skipped.</param>
-/// <param name="Detail">What leaked, or why the check was skipped. Empty when it passed.</param>
+/// <param name="Detail">What leaked, or why the check was skipped. Empty when it passed, unless the app's own
+/// <c>SaveChanges</c> blocked a guard check's write, which it names.</param>
 public sealed record ProbeRow(string Entity, string Check, ProbeOutcome Outcome, string Detail)
 {
     /// <summary>

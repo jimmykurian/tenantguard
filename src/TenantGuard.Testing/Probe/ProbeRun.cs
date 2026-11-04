@@ -129,9 +129,13 @@ internal sealed class ProbeRun<TContext>(
             return new ProbeRow(entity, check, ProbeOutcome.Failed, string.Join(" ", failures));
         }
 
-        return pairs.FirstOrDefault(pair => pair.Outcome == ProbeOutcome.Skipped) is { Outcome: ProbeOutcome.Skipped } skipped
-            ? new ProbeRow(entity, check, ProbeOutcome.Skipped, skipped.Detail)
-            : new ProbeRow(entity, check, ProbeOutcome.Passed, string.Empty);
+        if (pairs.FirstOrDefault(pair => pair.Outcome == ProbeOutcome.Skipped) is { Outcome: ProbeOutcome.Skipped } skipped)
+        {
+            return new ProbeRow(entity, check, ProbeOutcome.Skipped, skipped.Detail);
+        }
+
+        var notes = pairs.Select(pair => pair.Detail).Where(detail => detail.Length > 0).Distinct();
+        return new ProbeRow(entity, check, ProbeOutcome.Passed, string.Join(" ", notes));
     }
 
     // Relational providers have transactions and ExecuteDelete. The probe has no reference to EF Core's

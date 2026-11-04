@@ -54,6 +54,21 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
             Then_only_the_guard_rows_fail);
 
     [Fact]
+    public Task Write_the_apps_own_SaveChanges_blocks_passes_naming_its_exception()
+        => Runner.RunScenarioAsync(
+            Given_a_shop_whose_SaveChanges_blocks_other_tenants_without_the_write_guard,
+            When_the_probe_runs,
+            Then_every_row_passes,
+            Then_the_guard_rows_name_the_apps_exception);
+
+    [Fact]
+    public Task Write_the_app_saves_before_it_throws_fails()
+        => Runner.RunScenarioAsync(
+            Given_a_shop_whose_SaveChanges_throws_after_saving_without_the_write_guard,
+            When_the_probe_runs,
+            Then_only_the_guard_rows_fail_naming_the_apps_exception);
+
+    [Fact]
     public Task Cycle_of_required_relationships_is_skipped_as_needing_a_seeder()
         => Runner.RunScenarioAsync(
             Given_a_model_whose_required_relationships_form_a_cycle,
@@ -199,6 +214,12 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
     private Task Given_a_shop_without_the_write_guard()
         => UseDatabase((options, tenant) => new Shop(options, tenant), tenantGuard: null);
 
+    private Task Given_a_shop_whose_SaveChanges_blocks_other_tenants_without_the_write_guard()
+        => UseDatabase((options, tenant) => new SelfCheckingShop(options, tenant), tenantGuard: null);
+
+    private Task Given_a_shop_whose_SaveChanges_throws_after_saving_without_the_write_guard()
+        => UseDatabase((options, tenant) => new LateCheckingShop(options, tenant), tenantGuard: null);
+
     private Task Given_a_model_whose_required_relationships_form_a_cycle()
         => UseDatabase((options, tenant) => new CycleShop(options, tenant), Guard<CycleShop>(shop => shop.CurrentTenant));
 
@@ -285,6 +306,23 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
         var notPassed = _report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).ToList();
         notPassed.Select(row => (row.Entity, row.Check, row.Outcome)).Should().Equal(from entity in _shopEntities from check in _guardChecks select (entity, check, ProbeOutcome.Failed));
         notPassed.Should().ContainSingle(row => row.Entity == "Customer" && row.Check == "UpdateGuard").Subject.Detail.Should().Be("As acme, SaveChanges updated globex's row (Id: 2); the context does not use UseTenantGuard. As globex, SaveChanges updated acme's row (Id: 1); the context does not use UseTenantGuard.");
+        return Task.CompletedTask;
+    }
+
+    private Task Then_the_guard_rows_name_the_apps_exception()
+    {
+        _report.Rows.Where(row => _guardChecks.Contains(row.Check)).Should().HaveCount(12).And.AllSatisfy(row => row.Detail.Should().Be(
+            "As acme, the app's SaveChanges threw InvalidOperationException before the database, so nothing was saved: Wrong tenant. "
+            + "As globex, the app's SaveChanges threw InvalidOperationException before the database, so nothing was saved: Wrong tenant."));
+        _report.Rows.Where(row => !_guardChecks.Contains(row.Check)).Should().AllSatisfy(row => row.Detail.Should().BeEmpty());
+        return Task.CompletedTask;
+    }
+
+    private Task Then_only_the_guard_rows_fail_naming_the_apps_exception()
+    {
+        var notPassed = _report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).ToList();
+        notPassed.Select(row => (row.Entity, row.Check, row.Outcome)).Should().Equal(from entity in _shopEntities from check in _guardChecks select (entity, check, ProbeOutcome.Failed));
+        notPassed.Should().AllSatisfy(row => row.Detail.Should().Contain("SaveChanges threw InvalidOperationException rather than TenantIsolationViolationException: Saved another tenant's row."));
         return Task.CompletedTask;
     }
 

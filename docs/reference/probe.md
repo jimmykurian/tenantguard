@@ -59,9 +59,9 @@ check, for every ordered pair of tenants:
 | ReadIsolation | `Set<E>()` returns none of A's keys. |
 | FindIsolation | `FindAsync` with A's key returns null. |
 | BulkIsolation | `Set<E>().ExecuteDeleteAsync()` deletes none of A's rows (skipped with a note when the provider doesn't support it). |
-| UpdateGuard | Attaching a copy of A's row, changing a scalar and saving throws `TenantIsolationViolationException`. |
-| InsertGuard | Adding a new row stamped with A and saving throws. |
-| DeleteGuard | Removing A's row (attached) and saving throws. |
+| UpdateGuard | Attaching a copy of A's row, changing a scalar and saving throws `TenantIsolationViolationException`, or the app's own `SaveChanges` blocks it (see below). |
+| InsertGuard | Adding a new row stamped with A and saving throws, as UpdateGuard. |
+| DeleteGuard | Removing A's row (attached) and saving throws, as UpdateGuard. |
 | NavigationLeak | `Include` of a navigation on B's row loads none of A's rows (see below). |
 
 Each check gives one row per entity type, failed when any pair failed; NavigationLeak gives
@@ -71,6 +71,15 @@ writes runs in a transaction that is rolled back, so a leak can't change what a 
 sees. BulkIsolation deletes by A's key, which removes nothing when the filter holds.
 ReadIsolation is skipped when tenant B can't read its own row, because then it proves
 nothing.
+
+The guard checks also pass when the app's own `SaveChanges` blocks the write before EF Core
+saves anything, as Finbuckle's `MultiTenantDbContext` does with its default
+`TenantMismatchMode.Throw`: any exception other than a database error (`DbUpdateException`
+or `DbException`), when every change the check made is still pending afterwards. The row's
+detail names the exception, so a passed row doesn't hide whose check blocked it. A database
+error still fails the row, and so does an exception thrown after the save, once EF Core has
+accepted the changes. To prove that TenantGuard's own write guard blocks the write, switch the
+app's check off in the probe's factory, such as `TenantMismatchMode.Ignore` for Finbuckle.
 
 ## NavigationLeak
 
@@ -121,5 +130,6 @@ NavigationLeak runs after the read checks and before the checks that write.
 
 `ProbeReport.Rows` is `(Entity, Check, Outcome, Detail)`, with outcomes `Passed`, `Failed`
 and `Skipped`. `AssertAllPassed()` throws `TenantIsolationProbeException`, whose message is
-a fixed-width table of the rows that didn't pass ([Exceptions](exceptions.md)). Details name
-tenants and key values, never other entity values.
+a fixed-width table of the rows that didn't pass ([Exceptions](exceptions.md)). A passed
+row's detail is empty, except a guard check the app's own `SaveChanges` blocked, which names
+its exception. Details name tenants and key values, never other entity values.

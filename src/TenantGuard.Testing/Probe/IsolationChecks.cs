@@ -53,6 +53,9 @@ internal sealed class IsolationChecks<TContext>(
 
     private static string OneLine(string message) => message.ReplaceLineEndings(" ");
 
+    private static bool IsDatabaseError(Exception exception)
+        => exception is DbUpdateException or DbException || exception.GetBaseException() is DbException;
+
     private async Task<CheckResult> ReadAsync(ProbeTarget target, string viewer, string owner, CancellationToken cancellationToken)
     {
         await using var context = createContext(viewer);
@@ -141,9 +144,16 @@ internal sealed class IsolationChecks<TContext>(
     private async Task<IDbContextTransaction?> BeginAsync(DbContext context, CancellationToken cancellationToken)
         => relational ? await context.Database.BeginTransactionAsync(cancellationToken) : null;
 
-    // The write guard should throw before the write reaches the database.
+    // The write guard should throw before the write reaches the database. The app's own SaveChanges
+    // can block it first, as Finbuckle's MultiTenantDbContext does by default: any exception other
+    // than a database error passes, when every change the check made is still pending, so EF Core
+    // saved none of them.
     private async Task<CheckResult> ExpectBlockedAsync(DbContext context, string viewer, string write, CancellationToken cancellationToken)
     {
+        var pending = context.ChangeTracker.Entries()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .Select(entry => (Entry: entry, entry.State))
+            .ToList();
         try
         {
             await context.SaveChangesAsync(cancellationToken);
@@ -151,6 +161,13 @@ internal sealed class IsolationChecks<TContext>(
         catch (TenantIsolationViolationException)
         {
             return CheckResult.Passed;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException
+            && !IsDatabaseError(exception)
+            && pending.All(change => change.Entry.State == change.State))
+        {
+            return CheckResult.PassedWith(
+                $"As {viewer}, the app's SaveChanges threw {exception.GetType().Name} before the database, so nothing was saved: {OneLine(exception.GetBaseException().Message)}");
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
