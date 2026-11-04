@@ -54,6 +54,10 @@ internal sealed class RowFactory<TContext>(
             : null;
     }
 
+    // The type's tenant property, or null when it is not tenant-scoped.
+    public IProperty? TenantProperty(IEntityType type)
+        => entities.TryGet(type, out var tenant) ? tenant.Property : null;
+
     // Creates the row and adds it to the context; the caller saves.
     public EntityEntry Add(TContext context, IEntityType type, string tenant, IEnumerable<(IForeignKey ForeignKey, SeededRow Principal)> principals)
     {

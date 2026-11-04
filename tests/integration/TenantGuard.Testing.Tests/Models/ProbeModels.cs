@@ -96,6 +96,41 @@ internal static class ProbeModels
         }
     }
 
+    // Stamps every added row with the current tenant in its own SaveChanges, as Finbuckle's
+    // MultiTenantDbContext does with TenantMismatchMode.Overwrite.
+    internal class RestampingShop(DbContextOptions options, string? tenant) : ShopBase(options, tenant)
+    {
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            StampAdded();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            StampAdded();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        private void StampAdded()
+        {
+            foreach (var entry in ChangeTracker.Entries().Where(entry => entry.State == EntityState.Added && entry.Metadata.FindProperty("TenantId") is not null))
+            {
+                entry.Property("TenantId").CurrentValue = CurrentTenant;
+            }
+        }
+    }
+
+    // As RestampingShop, with one Order per tenant: the stamped row collides with the viewer's own.
+    internal sealed class RestampingShopWithOneOrderPerTenant(DbContextOptions options, string? tenant) : RestampingShop(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Order>().HasIndex(row => row.TenantId).IsUnique();
+        }
+    }
+
     // Saves first, then complains: the write has reached the database.
     internal sealed class LateCheckingShop(DbContextOptions options, string? tenant) : ShopBase(options, tenant)
     {
