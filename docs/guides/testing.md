@@ -48,7 +48,7 @@ For each tenant-scoped entity type, as tenant B, against tenant A's row:
 | FindIsolation | `FindAsync` with the row's key returns null |
 | BulkIsolation | `ExecuteDeleteAsync` aimed at the row's key deletes nothing |
 | UpdateGuard | Saving a change to an attached copy of the row throws `TenantIsolationViolationException`, or the app's own `SaveChanges` blocks it before the database |
-| InsertGuard | Saving a new row stamped with A throws |
+| InsertGuard | Saving a new row stamped with A throws, or the app's own `SaveChanges` stamps it with B |
 | DeleteGuard | Saving the removal of the row throws |
 | NavigationLeak | `Include` of a navigation on B's own row loads none of A's rows, once B's row is linked to A's |
 

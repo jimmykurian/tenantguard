@@ -63,7 +63,9 @@ row has no tenant and is rejected; `StampOnAdd()` gives it the current tenant in
 In the isolation probe, Finbuckle's default `TenantMismatchMode.Throw` blocks the guard
 checks' writes before TenantGuard sees them. The rows pass and name Finbuckle's exception
 ([The isolation probe](../reference/probe.md)). To prove TenantGuard's own guard instead, set
-`TenantMismatchMode.Ignore` on the contexts the probe's factory creates.
+`TenantMismatchMode.Ignore` on the contexts the probe's factory creates. With
+`TenantMismatchMode.Overwrite`, Finbuckle stamps the probe's new rows with the current
+tenant, and the InsertGuard rows pass saying so.
 
 ## IgnoreQueryFilters
 

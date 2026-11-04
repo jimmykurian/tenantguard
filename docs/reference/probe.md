@@ -60,7 +60,7 @@ check, for every ordered pair of tenants:
 | FindIsolation | `FindAsync` with A's key returns null. |
 | BulkIsolation | `Set<E>().ExecuteDeleteAsync()` deletes none of A's rows (skipped with a note when the provider doesn't support it). |
 | UpdateGuard | Attaching a copy of A's row, changing a scalar and saving throws `TenantIsolationViolationException`, or the app's own `SaveChanges` blocks it (see below). |
-| InsertGuard | Adding a new row stamped with A and saving throws, as UpdateGuard. |
+| InsertGuard | Adding a new row stamped with A and saving throws, as UpdateGuard, or the app's own `SaveChanges` stamps the row with B (see below). |
 | DeleteGuard | Removing A's row (attached) and saving throws, as UpdateGuard. |
 | NavigationLeak | `Include` of a navigation on B's row loads none of A's rows (see below). |
 
@@ -80,6 +80,11 @@ detail names the exception, so a passed row doesn't hide whose check blocked it.
 error still fails the row, and so does an exception thrown after the save, once EF Core has
 accepted the changes. To prove that TenantGuard's own write guard blocks the write, switch the
 app's check off in the probe's factory, such as `TenantMismatchMode.Ignore` for Finbuckle.
+
+InsertGuard also passes when the app's own `SaveChanges` stamps the new row with B's tenant,
+as Finbuckle's `TenantMismatchMode.Overwrite` does: the row is then B's own, so nothing
+crosses tenants, whether the database stores it or refuses it, such as on a unique index
+that allows one row per tenant. The row's detail says the app stamped it.
 
 ## NavigationLeak
 
@@ -132,4 +137,4 @@ NavigationLeak runs after the read checks and before the checks that write.
 and `Skipped`. `AssertAllPassed()` throws `TenantIsolationProbeException`, whose message is
 a fixed-width table of the rows that didn't pass ([Exceptions](exceptions.md)). A passed
 row's detail is empty, except a guard check the app's own `SaveChanges` blocked, which names
-its exception. Details name tenants and key values, never other entity values.
+its exception, or an insert the app stamped with B. Details name tenants and key values, never other entity values.
