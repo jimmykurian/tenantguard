@@ -42,6 +42,22 @@ public sealed class ModelRuleTests
         => TestModels.Validate<Tgm001Models.ShadowGuarded>().Findings.Should().BeEmpty();
 
     [Fact]
+    public void EF_Property_with_a_captured_name_passes()
+        => TestModels.Validate<Tgm001Models.CapturedPropertyName>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void EF_Property_with_a_captured_name_in_a_lifted_comparison_passes()
+        => TestModels.Validate<Tgm001Models.CapturedPropertyNameLifted>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void EF_Property_with_a_name_passed_to_a_base_context_helper_passes()
+        => TestModels.Validate<Tgm001Models.CapturedPropertyNameFromHelper>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void EF_Property_with_a_captured_name_of_another_property_is_TGM001()
+        => TestModels.Validate<Tgm001Models.CapturedOtherPropertyName>().Findings.Should().ContainSingle().Subject.Should().Be(Unguarded("Invoice", "TenantId"));
+
+    [Fact]
     public void Filter_through_a_navigation_counts_as_a_tenant_filter()
         => TestModels.Validate<Tgm001Models.ThroughNavigation>().Findings.Should().BeEmpty();
 

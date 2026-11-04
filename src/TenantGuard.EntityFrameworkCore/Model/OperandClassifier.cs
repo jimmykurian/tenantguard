@@ -76,6 +76,29 @@ internal static class OperandClassifier
         return expression;
     }
 
+    // The value of a constant, or of a field chain rooted at a compiler-generated closure: a captured
+    // local, fixed when the model is built. Null for anything else.
+    public static object? EvaluateFixedValue(Expression expression)
+        => StripConversions(expression) switch
+        {
+            ConstantExpression constant => constant.Value,
+            MemberExpression { Member: FieldInfo field, Expression: { } owner } when IsClosureChain(owner)
+                => EvaluateFixedValue(owner) is { } instance ? field.GetValue(instance) : null,
+            _ => null,
+        };
+
+    private static bool IsClosureChain(Expression expression)
+        => StripConversions(expression) switch
+        {
+            ConstantExpression { Value: { } value } => IsClosure(value.GetType()),
+            MemberExpression { Member: FieldInfo, Expression: { } owner } => IsClosureChain(owner),
+            _ => false,
+        };
+
+    private static bool IsClosure(Type type)
+        => type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false)
+            || type.Name.Contains("<>c__DisplayClass", StringComparison.Ordinal);
+
     private static bool IsConversion(ExpressionType nodeType)
         => nodeType is ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.TypeAs or ExpressionType.Quote;
 
@@ -113,8 +136,7 @@ internal static class OperandClassifier
             return Kind.Context;
         }
 
-        if (type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false)
-            || type.Name.Contains("<>c__DisplayClass", StringComparison.Ordinal))
+        if (IsClosure(type))
         {
             return Kind.Captured;
         }
