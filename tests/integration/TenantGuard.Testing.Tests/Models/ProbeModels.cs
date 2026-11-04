@@ -27,6 +27,12 @@ internal static class ProbeModels
         // A leaky model leaves Customer without its filter.
         protected virtual bool FiltersCustomers => true;
 
+        // Whether a pending change writes a row of a tenant other than the current one.
+        protected bool WritesOtherTenant()
+            => ChangeTracker.Entries().Any(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+                && entry.Metadata.FindProperty("TenantId") is { } tenant
+                && !Equals(entry.Property(tenant.Name).CurrentValue, CurrentTenant));
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Country>();
@@ -63,6 +69,49 @@ internal static class ProbeModels
     internal sealed class LeakyShop(DbContextOptions options, string? tenant) : ShopBase(options, tenant)
     {
         protected override bool FiltersCustomers => false;
+    }
+
+    // Blocks a write of another tenant's row in its own SaveChanges, before EF Core saves anything,
+    // as Finbuckle's MultiTenantDbContext does with TenantMismatchMode.Throw.
+    internal sealed class SelfCheckingShop(DbContextOptions options, string? tenant) : ShopBase(options, tenant)
+    {
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            if (WritesOtherTenant())
+            {
+                throw new InvalidOperationException("Wrong tenant.");
+            }
+
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            if (WritesOtherTenant())
+            {
+                throw new InvalidOperationException("Wrong tenant.");
+            }
+
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+    }
+
+    // Saves first, then complains: the write has reached the database.
+    internal sealed class LateCheckingShop(DbContextOptions options, string? tenant) : ShopBase(options, tenant)
+    {
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            var other = WritesOtherTenant();
+            var saved = base.SaveChanges(acceptAllChangesOnSuccess);
+            return other ? throw new InvalidOperationException("Saved another tenant's row.") : saved;
+        }
+
+        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            var other = WritesOtherTenant();
+            var saved = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            return other ? throw new InvalidOperationException("Saved another tenant's row.") : saved;
+        }
     }
 
     // CycleA and CycleB require each other; Plain needs nothing.
