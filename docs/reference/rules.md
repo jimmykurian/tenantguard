@@ -59,7 +59,10 @@ tenant-scoped, and TGM001 still applies to it.
 
 Without a filter, every query returns every tenant's rows. A filter that reaches the
 tenant property through a navigation, such as `post => post.Blog.TenantId == TenantId`,
-counts: the row is scoped through its principal. So do named filters.
+counts: the row is scoped through its principal. So do named filters. A filter that is
+always true counts as no filter, such as `true || e.TenantId == null`, which a filter built
+by hand from the tenant can become when the model is built with no tenant (see
+[how the operand is classified](#how-the-operand-is-classified)).
 
 ```csharp
 // TGM001
@@ -254,3 +257,10 @@ and call chain to its root:
 
 A comparison with `null`, such as `e.TenantId != null`, isn't a tenant comparison, so it
 is skipped; a filter that has no other comparison of the tenant property is TGM007.
+
+Before it looks, TenantGuard folds the `bool` constants in the filter, such as
+`Expression.Constant(tenant == null)` in a filter built with the `Expression` API, which
+are fixed when the model is built: `true || x` is `true`, and `false || x` and `true && x`
+are `x`. So `false || e.TenantId == "acme"` is TGM004, and `true || e.TenantId == null`
+filters nothing and references no tenant property, so it is TGM001. `false && x` is left
+as it is: it hides every row, and leaks none.
