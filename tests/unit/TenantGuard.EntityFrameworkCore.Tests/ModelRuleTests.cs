@@ -140,6 +140,20 @@ public sealed class ModelRuleTests
                 "Shipment: the tenant filter compares 'TenantId' to the constant 42. Reference a DbContext member instead."));
 
     [Fact]
+    public void Literal_beside_a_false_constant_under_or_is_TGM004()
+        => TestModels.Validate<Tgm004Models.OrElseBuiltAsTenant>().Findings.Should().ContainSingle().Subject.Should().Be(new ModelFinding(
+                "TGM004",
+                Severity.Error,
+                "Invoice",
+                "TenantId",
+                "Invoice: the tenant filter compares 'TenantId' to the constant \"acme\". Reference a DbContext member instead."));
+
+    [Fact]
+    public void Filter_made_always_true_by_a_true_constant_under_or_is_TGM001()
+        => TestModels.Validate<Tgm004Models.OrElseBuiltWithoutTenant>().Findings.Should().ContainSingle().Subject.Should().Be(
+            Unguarded("Invoice", "TenantId"));
+
+    [Fact]
     public void Required_tenant_property_passes()
         => TestModels.Validate<Tgm005Models.RequiredTenant>().Findings.Should().BeEmpty();
 
