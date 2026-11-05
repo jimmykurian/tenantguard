@@ -4,5 +4,10 @@
 
 namespace TenantGuard;
 
-// The findings, plus the tenant property of each tenant-scoped entity type by entity type name.
-internal sealed record TenantModelCheck(ModelReport Report, IReadOnlyDictionary<string, string> TenantProperties);
+// The findings, the tenant property of each tenant-scoped entity type by entity type name, the names
+// of the ones declared Unfiltered, and whether the model is cross-tenant.
+internal sealed record TenantModelCheck(
+    ModelReport Report,
+    IReadOnlyDictionary<string, string> TenantProperties,
+    IReadOnlySet<string> Unfiltered,
+    CrossTenantModel CrossTenant);

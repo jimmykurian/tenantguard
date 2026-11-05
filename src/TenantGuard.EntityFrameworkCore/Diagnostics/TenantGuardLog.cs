@@ -35,4 +35,25 @@ internal static partial class TenantGuardLog
         Level = LogLevel.Error,
         Message = "TenantGuard blocked SaveChanges on {Context}; cross-tenant writes: {Count}")]
     public static partial void ViolationBlocked(ILogger logger, string context, int count);
+
+    [LoggerMessage(
+        EventId = 6,
+        EventName = "UnfilteredEntity",
+        Level = LogLevel.Information,
+        Message = "TenantGuard left {Entity} unfiltered, as declared: {Reason}")]
+    public static partial void UnfilteredEntity(ILogger logger, string entity, string reason);
+
+    [LoggerMessage(
+        EventId = 7,
+        EventName = "CrossTenantModel",
+        Level = LogLevel.Information,
+        Message = "TenantGuard skipped the rules for {Context}, declared cross-tenant: {Reason}")]
+    public static partial void CrossTenantModel(ILogger logger, string context, string reason);
+
+    [LoggerMessage(
+        EventId = 8,
+        EventName = "FindingSuppressed",
+        Level = LogLevel.Debug,
+        Message = "{RuleId} suppressed for {Entity}: {Reason}")]
+    public static partial void FindingSuppressed(ILogger logger, string ruleId, string entity, string reason);
 }

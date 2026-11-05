@@ -24,7 +24,7 @@ internal static class PerTenantModel
         }
 
         var factory = context.GetService<IModelCacheKeyFactory>();
-        if (factory.GetType() == typeof(ModelCacheKeyFactory))
+        if (IsEfCoreFactory(factory))
         {
             return null;
         }
@@ -34,4 +34,15 @@ internal static class PerTenantModel
             ? null
             : tenant;
     }
+
+    // CrossTenantWhenNoTenant: whether the model a context is building is the no-tenant model of a model
+    // per tenant. The context has no current tenant, and its model cache key factory isn't EF Core's own,
+    // which would hand the no-tenant model to every tenant.
+    public static bool IsNoTenantModel(DbContext context, TenantGuardOptions options)
+        => options.CrossTenantWhenNoTenantReason is not null
+            && options.CurrentTenant is { } resolve
+            && resolve(context) is null
+            && !IsEfCoreFactory(context.GetService<IModelCacheKeyFactory>());
+
+    private static bool IsEfCoreFactory(IModelCacheKeyFactory factory) => factory.GetType() == typeof(ModelCacheKeyFactory);
 }

@@ -33,6 +33,16 @@ public sealed class TenantIsolationViolationException : InvalidOperationExceptio
         Violations = [];
     }
 
+    // A save with a current tenant through the no-tenant model, under CrossTenantWhenNoTenant.
+    internal TenantIsolationViolationException(string context, object currentTenant)
+        : base(
+            $"TenantGuard blocked a save to {context}: its model was built with no tenant and declared cross-tenant, "
+            + $"so its query filters read every tenant's rows, but the current tenant is {TenantValueFormatter.Format(currentTenant)}. "
+            + "Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.")
+    {
+        Violations = [];
+    }
+
     /// <summary>
     /// Gets every blocked write; empty when the save was blocked because the context's model was built
     /// for another tenant.

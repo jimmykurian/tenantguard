@@ -17,11 +17,13 @@ internal sealed class TenantGuardEntities
     private TenantGuardEntities(
         IReadOnlyDictionary<string, string> tenantProperties,
         Dictionary<IReadOnlyEntityType, TenantPropertyMetadata> byEntityType,
-        object? modelTenant)
+        object? modelTenant,
+        CrossTenantModel crossTenant)
     {
         TenantProperties = tenantProperties;
         _byEntityType = byEntityType;
         ModelTenant = modelTenant;
+        CrossTenant = crossTenant;
     }
 
     // Tenant property name by entity type name, for tenant-scoped root entity types.
@@ -32,30 +34,37 @@ internal sealed class TenantGuardEntities
     // The tenant a per-tenant model was built for, under AllowCapturedValues, or null.
     public object? ModelTenant { get; }
 
+    // Whether the model is declared cross-tenant (CrossTenant, CrossTenantWhenNoTenant).
+    public CrossTenantModel CrossTenant { get; }
+
     // The convention's metadata, or the same computed here for a model the convention never saw,
     // such as a compiled model.
     public static TenantGuardEntities For(IModel model, TenantGuardOptions options)
         => model.GetOrAddRuntimeAnnotationValue(
             AnnotationName,
-            static arguments => Create(arguments.Model, TenantModelRules.Check(arguments.Model, arguments.Options).TenantProperties),
+            static arguments => Create(arguments.Model, TenantModelRules.Check(arguments.Model, arguments.Options)),
             (Model: model, Options: options));
 
     // Every non-owned entity type whose root is tenant-scoped, derived types included.
-    public static TenantGuardEntities Create(IModel model, IReadOnlyDictionary<string, string> tenantProperties, object? modelTenant = null)
+    public static TenantGuardEntities Create(IModel model, TenantModelCheck check, object? modelTenant = null)
     {
         var byEntityType = new Dictionary<IReadOnlyEntityType, TenantPropertyMetadata>();
         foreach (var entityType in model.GetEntityTypes())
         {
             var root = entityType.GetRootType();
             if (!entityType.IsOwned()
-                && tenantProperties.TryGetValue(root.Name, out var name)
+                && check.TenantProperties.TryGetValue(root.Name, out var name)
                 && root.FindProperty(name) is { } property)
             {
-                byEntityType[entityType] = new TenantPropertyMetadata(property, property.GetValueComparer(), property.Sentinel);
+                byEntityType[entityType] = new TenantPropertyMetadata(
+                    property,
+                    property.GetValueComparer(),
+                    property.Sentinel,
+                    check.Unfiltered.Contains(root.DisplayName()));
             }
         }
 
-        return new TenantGuardEntities(tenantProperties, byEntityType, modelTenant);
+        return new TenantGuardEntities(check.TenantProperties, byEntityType, modelTenant, check.CrossTenant);
     }
 
     // Owned types are absent, so the write guard skips them.
