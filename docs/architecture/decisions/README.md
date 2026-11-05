@@ -35,6 +35,7 @@ accepted record isn't edited later except to mark it superseded
 | [0026](0026-tgm003-allows-a-captured-tenant-in-a-per-tenant-model.md) | TGM003 allows a captured tenant in a per-tenant model | Accepted | 2026-11-03 |
 | [0027](0027-no-source-generator-while-compiled-models-refuse-query-filters.md) | No source generator while compiled models refuse query filters | Accepted | 2026-11-04 |
 | [0028](0028-docs-site-has-a-design-of-its-own.md) | The docs site has a design of its own | Accepted | 2026-11-04 |
+| [0029](0029-declare-cross-tenant-data-with-a-reason.md) | Declare cross-tenant data, each with a reason | Proposed | 2026-11-05 |
 
 ## Proposing a change
 
