@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace TenantGuard.Testing;
 
 // A navigation the NavigationLeak check covers: declared on, or inherited by, a tenant-scoped entity type,
-// and pointing at a tenant-scoped entity type that isn't owned. docs/reference/probe.md lists which count.
+// and pointing at a tenant-scoped entity type that isn't owned or declared Unfiltered. docs/reference/probe.md lists which count.
 internal sealed record NavigationCase(
     IEntityType Type,
     INavigationBase Navigation,
@@ -28,7 +28,7 @@ internal sealed record NavigationCase(
         foreach (var navigation in type.GetNavigations())
         {
             if (navigation.ForeignKey.IsOwnership || navigation.TargetEntityType.IsOwned()
-                || Concrete(navigation.TargetEntityType) is not { } target || !entities.TryGet(target, out _))
+                || Concrete(navigation.TargetEntityType) is not { } target || !IsProbed(target, entities))
             {
                 continue;
             }
@@ -44,7 +44,7 @@ internal sealed record NavigationCase(
         foreach (var skip in type.GetSkipNavigations())
         {
             // A tenant-scoped join type is checked through its own navigations.
-            if (Concrete(skip.TargetEntityType) is { } target && entities.TryGet(target, out _) && !entities.TryGet(skip.JoinEntityType, out _))
+            if (Concrete(skip.TargetEntityType) is { } target && IsProbed(target, entities) && !entities.TryGet(skip.JoinEntityType, out _))
             {
                 cases.Add(new NavigationCase(type, skip, NavigationKind.Skip, target, null, null, false));
             }
@@ -52,6 +52,10 @@ internal sealed record NavigationCase(
 
         return [.. cases.OrderBy(navigationCase => navigationCase.Name, StringComparer.Ordinal)];
     }
+
+    // Tenant-scoped and not declared Unfiltered, whose rows are shared across tenants on purpose.
+    private static bool IsProbed(IEntityType type, TenantGuardEntities entities)
+        => entities.TryGet(type, out var tenant) && !tenant.Unfiltered;
 
     // The first concrete type of a hierarchy, as the seed plan picks a principal.
     private static IEntityType? Concrete(IEntityType type) => type.GetDerivedTypesInclusive().FirstOrDefault(candidate => !candidate.IsAbstract());

@@ -10,29 +10,54 @@ namespace TenantGuard;
 
 // Runs the rules on the finalized model, stores the per-entity metadata, then throws or logs per
 // Enforcement. contextType is the type of the context whose model it is, relational whether its
-// provider is relational, and modelTenant the tenant a per-tenant model is built for
-// (AllowCapturedValues), or null.
+// provider is relational, modelTenant the tenant a per-tenant model is built for
+// (AllowCapturedValues), or null, and noTenantModel whether it is the no-tenant model of a model per
+// tenant (CrossTenantWhenNoTenant).
 internal sealed class TenantModelConvention(
     TenantGuardOptions options,
     ILogger logger,
     Type contextType,
     bool relational,
-    object? modelTenant)
+    object? modelTenant,
+    bool noTenantModel)
     : IModelFinalizedConvention
 {
     public IModel ProcessModelFinalized(IModel model)
     {
-        var check = TenantModelRules.Check(model, options, contextType, relational, capturedValuesAllowed: modelTenant is not null);
+        var check = TenantModelRules.Check(
+            model,
+            options,
+            contextType,
+            relational,
+            capturedValuesAllowed: modelTenant is not null,
+            noTenantModel: noTenantModel);
         model.GetOrAddRuntimeAnnotationValue(
             TenantGuardEntities.AnnotationName,
-            static arguments => TenantGuardEntities.Create(arguments.Model, arguments.TenantProperties, arguments.ModelTenant),
-            (Model: model, check.TenantProperties, ModelTenant: modelTenant));
+            static arguments => TenantGuardEntities.Create(arguments.Model, arguments.Check, arguments.ModelTenant),
+            (Model: model, Check: check, ModelTenant: modelTenant));
 
         var report = check.Report;
+        if (report.CrossTenantReason is { } crossTenantReason)
+        {
+            TenantGuardLog.CrossTenantModel(logger, contextType.Name, crossTenantReason);
+            return model;
+        }
+
+        CheckDeclarations(model);
+        foreach (var unfiltered in report.Unfiltered)
+        {
+            TenantGuardLog.UnfilteredEntity(logger, unfiltered.Entity, unfiltered.Reason);
+        }
+
         TenantGuardLog.ModelValidated(logger, check.TenantProperties.Count, report.Errors.Count, report.Warnings.Count);
         foreach (var warning in report.Warnings)
         {
             TenantGuardLog.ModelFinding(logger, LogLevel.Warning, warning.RuleId, warning.Message);
+        }
+
+        foreach (var suppressed in report.SuppressedWithReasons)
+        {
+            TenantGuardLog.FindingSuppressed(logger, suppressed.Finding.RuleId, suppressed.Finding.Entity, suppressed.Reason);
         }
 
         if (report.Errors.Count > 0)
@@ -49,5 +74,34 @@ internal sealed class TenantModelConvention(
         }
 
         return model;
+    }
+
+    // An Unfiltered declaration names a root entity type with a tenant property; a type the model
+    // doesn't map is left alone, so contexts can share one configuration.
+    private void CheckDeclarations(IModel model)
+    {
+        foreach (var clrType in options.UnfilteredTypes.Keys)
+        {
+            if (model.FindEntityType(clrType) is not { } entityType)
+            {
+                continue;
+            }
+
+            var name = entityType.DisplayName();
+            if (entityType.IsOwned() || entityType.BaseType is not null)
+            {
+                var root = entityType.IsOwned()
+                    ? entityType.FindOwnership()?.PrincipalEntityType.DisplayName()
+                    : entityType.GetRootType().DisplayName();
+                throw new InvalidOperationException(
+                    $"Unfiltered<{name}>() names a derived or owned type. Declare the root of its hierarchy, or its owner, {root}.");
+            }
+
+            if (TenantPropertyDiscovery.Find(entityType, options) is null)
+            {
+                throw new InvalidOperationException(
+                    $"Unfiltered<{name}>() names a type with no tenant property. Declare a tenant-free type with Shared<{name}>().");
+            }
+        }
     }
 }

@@ -84,15 +84,15 @@ each one then needs a tenant property, or `Shared<T>()` for a lookup table.
 
 | Finding | Usual cause | Fix |
 |---|---|---|
-| TGM001 | An entity has a `TenantId`, but its configuration has no `HasQueryFilter` | Add the filter on the root type of the hierarchy |
-| TGM002 | Under `RequireAllEntitiesScoped`, an entity type has no tenant property | Add one, or declare the type with `Shared<T>()` |
+| TGM001 | An entity has a `TenantId`, but its configuration has no `HasQueryFilter` | Add the filter on the root type of the hierarchy; for a table that's cross-tenant on purpose, such as memberships or an outbox, declare it with [`Unfiltered<T>("why")`](../reference/options.md#an-unfiltered-entity-type), and for a whole context, [`CrossTenant("why")`](../reference/options.md#a-cross-tenant-context) |
+| TGM002 | Under `RequireAllEntitiesScoped`, an entity type has no tenant property | Add one, or declare the type with `Shared<T>()`; for the table of tenants, name its key as its tenant property ([a tenant registry](../reference/options.md#a-tenant-registry)) |
 | TGM003 | The filter reads a local variable, captured when the model was built | Compare with a member of the context, such as its `TenantId`; for a model per tenant, see [`AllowCapturedValues()`](../reference/options.md#per-tenant-models) |
 | TGM004 | The filter compares with a constant, often left over from a test or a seed | Compare with a member of the context |
-| TGM005 | The tenant property is nullable | Make it required, unless rows without a tenant are meant |
+| TGM005 | The tenant property is nullable | Make it required, unless rows without a tenant are meant; for host data, as in ABP, use [`NullTenantIsHost()`](../reference/options.md#host-rows) |
 | TGM006 | A derived type declares the tenant property | Move it to the root type |
 | TGM007 | The filter reads a value TenantGuard can't trace, such as a field of an `IEntityTypeConfiguration` | Read the tenant from the context; if the value is read per query already, leave it |
 | TGM008 | An owned type has its own tenant property | Remove it, or keep it knowing TenantGuard ignores it: owned rows follow their owner |
-| TGM009 | No index or key starts with the tenant property | Add `HasIndex(e => e.TenantId)`, or put the tenant property first in an index you have |
-| TGM010 | A unique index, such as one on `InvoiceNumber`, leaves out the tenant property | Make it unique per tenant: `HasIndex(e => new { e.TenantId, e.InvoiceNumber }).IsUnique()` |
+| TGM009 | No index or key starts with the tenant property | Add `HasIndex(e => e.TenantId)`, or put the tenant property first in an index you have; for a small table read by key, [`Suppress<T>("TGM009", "why")`](../reference/options.md#suppressing-a-rule) |
+| TGM010 | A unique index, such as one on `InvoiceNumber`, leaves out the tenant property | Make it unique per tenant: `HasIndex(e => new { e.TenantId, e.InvoiceNumber }).IsUnique()`; for a value unique across tenants on purpose, such as a token hash, [`Suppress<T>("TGM010", "why")`](../reference/options.md#suppressing-a-rule) |
 
 The [reference](../reference/rules.md) has each rule's message and examples.

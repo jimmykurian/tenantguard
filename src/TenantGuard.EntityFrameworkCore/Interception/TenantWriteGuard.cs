@@ -19,14 +19,22 @@ internal static class TenantWriteGuard
             return;
         }
 
-        // Nothing allocates while the model has no tenant-scoped entity type or nothing is tracked.
+        // Nothing allocates while the model has no tenant-scoped entity type or nothing is tracked. A
+        // cross-tenant context's model has none.
         var entities = scope.GetEntities(context);
-        if (entities.IsEmpty || !HasEntries(context.ChangeTracker))
+        if (entities.IsEmpty || entities.CrossTenant == CrossTenantModel.Context || !HasEntries(context.ChangeTracker))
         {
             return;
         }
 
         var options = scope.Options;
+        if (entities.CrossTenant == CrossTenantModel.NoTenant)
+        {
+            CheckNoTenantModel(context, entities, scope, options);
+            return;
+        }
+
+        var host = options.NullTenantIsHost;
         object? currentTenant = null;
         var resolved = false;
         List<Blocked>? blocked = null;
@@ -36,7 +44,8 @@ internal static class TenantWriteGuard
         foreach (var entry in context.ChangeTracker.Entries())
         {
             if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted)
-                || !entities.TryGet(entry.Metadata, out var tenant))
+                || !entities.TryGet(entry.Metadata, out var tenant)
+                || tenant.Unfiltered)
             {
                 continue;
             }
@@ -45,7 +54,9 @@ internal static class TenantWriteGuard
             {
                 currentTenant = ResolveCurrentTenant(context, options);
                 resolved = true;
-                if (currentTenant is null && options.NoTenantPolicy == NoTenantPolicy.Allow)
+
+                // Under NullTenantIsHost, no current tenant is the host, checked like any tenant.
+                if (currentTenant is null && !host && options.NoTenantPolicy == NoTenantPolicy.Allow)
                 {
                     TenantGuardLog.NoTenantAllowed(scope.Logger, context.GetType().Name);
                     return;
@@ -70,7 +81,7 @@ internal static class TenantWriteGuard
             {
                 (stamps ??= []).Add(property);
             }
-            else if (CheckEntry(entry, property, tenant, currentTenant, options) is { } write)
+            else if (CheckEntry(entry, property, tenant, currentTenant, host, options) is { } write)
             {
                 (blocked ??= []).Add(write);
             }
@@ -111,6 +122,21 @@ internal static class TenantWriteGuard
         }
     }
 
+    // CrossTenantWhenNoTenant: the no-tenant model's saves aren't checked, but one with a current tenant
+    // means that tenant's context was handed the no-tenant model, whose filters read every tenant's rows.
+    private static void CheckNoTenantModel(DbContext context, TenantGuardEntities entities, TenantGuardScope scope, TenantGuardOptions options)
+    {
+        var writesTenantRows = context.ChangeTracker.Entries().Any(entry =>
+            entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+            && entities.TryGet(entry.Metadata, out var tenant)
+            && !tenant.Unfiltered);
+        if (writesTenantRows && ResolveCurrentTenant(context, options) is { } currentTenant)
+        {
+            TenantGuardLog.ViolationBlocked(scope.Logger, context.GetType().Name, 0);
+            throw new TenantIsolationViolationException(context.GetType().Name, currentTenant);
+        }
+    }
+
     private static object? ResolveCurrentTenant(DbContext context, TenantGuardOptions options)
         => options.CurrentTenant is { } resolve
             ? resolve(context)
@@ -122,26 +148,30 @@ internal static class TenantWriteGuard
         PropertyEntry property,
         TenantPropertyMetadata tenant,
         object? currentTenant,
+        bool host,
         TenantGuardOptions options)
     {
+        // The current tenant, or under NullTenantIsHost with none, the host, whose rows have a null tenant.
+        bool Owns(object? value) => currentTenant is not null ? tenant.Matches(value, currentTenant) : host && value is null;
+
         var name = tenant.Property.Name;
         if (entry.State == EntityState.Added)
         {
             var value = property.CurrentValue;
-            return currentTenant is not null && tenant.Matches(value, currentTenant)
+            return Owns(value)
                 ? null
                 : Block(entry, options, currentTenant, value, $"{name} is {TenantValueFormatter.Format(value)}");
         }
 
         // Modified or Deleted: the stored row must be the current tenant's, and an update must not move it.
         var original = property.OriginalValue;
-        if (currentTenant is null || !tenant.Matches(original, currentTenant))
+        if (!Owns(original))
         {
             return Block(entry, options, currentTenant, original, $"{name} is {TenantValueFormatter.Format(original)}");
         }
 
         var changed = property.CurrentValue;
-        return entry.State == EntityState.Modified && !tenant.Matches(changed, currentTenant)
+        return entry.State == EntityState.Modified && !Owns(changed)
             ? Block(entry, options, currentTenant, changed, $"{name} changes from {TenantValueFormatter.Format(original)} to {TenantValueFormatter.Format(changed)}")
             : null;
     }

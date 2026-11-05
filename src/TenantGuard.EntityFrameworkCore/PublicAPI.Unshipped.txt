@@ -1,2 +1,9 @@
 #nullable enable
+TenantGuard.ModelReport.Suppressed.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
 TenantGuard.TenantGuardOptionsBuilder.AllowCapturedValues() -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.CrossTenant(string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.CrossTenantWhenNoTenant(string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.NullTenantIsHost() -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.Suppress(string! ruleId, string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.Suppress<TEntity>(string! ruleId, string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.Unfiltered<TEntity>(string! reason) -> TenantGuard.TenantGuardOptionsBuilder!

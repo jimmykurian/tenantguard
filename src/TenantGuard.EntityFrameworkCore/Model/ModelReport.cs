@@ -9,11 +9,19 @@ namespace TenantGuard;
 /// </summary>
 public sealed class ModelReport
 {
-    internal ModelReport(IReadOnlyList<ModelFinding> findings)
+    internal ModelReport(
+        IReadOnlyList<ModelFinding> findings,
+        IReadOnlyList<SuppressedFinding>? suppressed = null,
+        IReadOnlyList<Declaration>? unfiltered = null,
+        string? crossTenantReason = null)
     {
         Findings = findings;
         Errors = [.. findings.Where(finding => finding.Severity == Severity.Error)];
         Warnings = [.. findings.Where(finding => finding.Severity == Severity.Warning)];
+        SuppressedWithReasons = suppressed ?? [];
+        Suppressed = [.. SuppressedWithReasons.Select(suppression => suppression.Finding)];
+        Unfiltered = unfiltered ?? [];
+        CrossTenantReason = crossTenantReason;
     }
 
     /// <summary>
@@ -30,4 +38,22 @@ public sealed class ModelReport
     /// Gets the findings with <see cref="Severity.Warning"/> severity.
     /// </summary>
     public IReadOnlyList<ModelFinding> Warnings { get; }
+
+    /// <summary>
+    /// Gets the findings that <c>Suppress</c> left out of <see cref="Findings"/>, ordered as they are.
+    /// </summary>
+    public IReadOnlyList<ModelFinding> Suppressed { get; }
+
+    // Each suppressed finding with the reason it was suppressed for.
+    internal IReadOnlyList<SuppressedFinding> SuppressedWithReasons { get; }
+
+    // The entity types declared Unfiltered, by display name, with their reasons.
+    internal IReadOnlyList<Declaration> Unfiltered { get; }
+
+    // The reason the model is cross-tenant, under CrossTenant or CrossTenantWhenNoTenant, when no rule ran.
+    internal string? CrossTenantReason { get; }
+
+    internal readonly record struct SuppressedFinding(ModelFinding Finding, string Reason);
+
+    internal readonly record struct Declaration(string Entity, string Reason);
 }

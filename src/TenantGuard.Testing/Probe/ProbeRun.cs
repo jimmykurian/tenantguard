@@ -47,8 +47,14 @@ internal sealed class ProbeRun<TContext>(
         }
 
         _entities = TenantGuardEntities.For(model, options);
+        if (_entities.CrossTenant != CrossTenantModel.No)
+        {
+            throw new InvalidOperationException($"{typeof(TContext).Name} is declared cross-tenant, so there is no tenant isolation to probe.");
+        }
+
+        // A type declared Unfiltered shares its rows across tenants on purpose, so it isn't probed.
         var scoped = model.GetEntityTypes()
-            .Where(type => !type.IsOwned() && !type.IsAbstract() && _entities.TryGet(type, out _))
+            .Where(type => !type.IsOwned() && !type.IsAbstract() && _entities.TryGet(type, out var tenant) && !tenant.Unfiltered)
             .OrderBy(type => type.DisplayName(), StringComparer.Ordinal)
             .ToList();
         if (scoped.Count == 0)

@@ -45,7 +45,8 @@ internal static class ModelCheck
             options,
             contextType,
             RelationalProvider.Uses(contextOptions),
-            capturedValuesAllowed: PerTenantModel.TenantFor(context, options) is not null).Report;
+            capturedValuesAllowed: PerTenantModel.TenantFor(context, options) is not null,
+            noTenantModel: PerTenantModel.IsNoTenantModel(context, options)).Report;
     }
 
     /// <summary>

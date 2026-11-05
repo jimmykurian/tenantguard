@@ -62,13 +62,34 @@ public sealed class ValidateTests
     }
 
     [Fact]
+    public async Task Declarations_are_printed_and_do_not_fail_the_run()
+    {
+        var run = await ToolRun.StartAsync("validate", "--assembly", ToolRun.Fixture, "--context", "DeclaredDbContext", "--warnings-as-errors");
+
+        run.ExitCode.Should().Be(0);
+        run.Output.Should().Be(
+            "- TGM005 (suppressed: a note without a tenant is a draft): Note.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.\n"
+            + "Unfiltered on purpose: Membership (maps users to their tenants)\n"
+            + "TenantGuard validated DeclaredDbContext: 0 errors, 0 warnings, 1 suppressed.\n");
+    }
+
+    [Fact]
+    public async Task A_cross_tenant_context_runs_no_rules()
+    {
+        var run = await ToolRun.StartAsync("validate", "--assembly", ToolRun.Fixture, "--context", "ReportingDbContext");
+
+        run.ExitCode.Should().Be(0);
+        run.Output.Should().Be("TenantGuard validated ReportingDbContext: declared cross-tenant (reports across tenants), so no rules ran.\n");
+    }
+
+    [Fact]
     public async Task More_than_one_context_needs_context()
     {
         var run = await ToolRun.StartAsync("validate", "--assembly", ToolRun.Fixture);
 
         run.ExitCode.Should().Be(2);
         run.Output.Should().BeEmpty();
-        run.Error.Should().Be("The assembly has 3 DbContext types: CleanDbContext, GuardedDbContext, LeakyDbContext. Pass --context to pick one.\n");
+        run.Error.Should().Be("The assembly has 5 DbContext types: CleanDbContext, DeclaredDbContext, GuardedDbContext, LeakyDbContext, ReportingDbContext. Pass --context to pick one.\n");
     }
 
     [Fact]
@@ -78,7 +99,7 @@ public sealed class ValidateTests
 
         run.ExitCode.Should().Be(2);
         run.Error.Should().Be(
-            "ValidateTool.Fixture has no DbContext type named 'AuditDbContext'. Its DbContext types: CleanDbContext, GuardedDbContext, LeakyDbContext.\n");
+            "ValidateTool.Fixture has no DbContext type named 'AuditDbContext'. Its DbContext types: CleanDbContext, DeclaredDbContext, GuardedDbContext, LeakyDbContext, ReportingDbContext.\n");
     }
 
     [Fact]
