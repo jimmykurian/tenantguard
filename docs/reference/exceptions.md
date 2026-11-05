@@ -67,6 +67,13 @@ message names both tenants:
 TenantGuard blocked a save to AppDbContext: its model was built for tenant "acme", so its query filters read "acme"'s rows, but the current tenant is "globex". Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.
 ```
 
+Under [`CrossTenantWhenNoTenant`](options.md#the-no-tenant-model-of-a-per-tenant-model), a
+save with a current tenant through the no-tenant model is blocked the same way:
+
+```text
+TenantGuard blocked a save to AppDbContext: its model was built with no tenant and declared cross-tenant, so its query filters read every tenant's rows, but the current tenant is "acme". Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.
+```
+
 ## TenantIsolationProbeException
 
 `TenantIsolationProbeException : Exception`, thrown by `ProbeReport.AssertAllPassed()`

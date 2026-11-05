@@ -1,6 +1,6 @@
 # 0029. Declare cross-tenant data, each with a reason
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-05
 
 ## Context
