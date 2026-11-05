@@ -20,7 +20,7 @@ dotnet tenantguard validate --assembly src/App/bin/Release/net10.0/App.dll
   needs. The tool creates the context the way `dotnet ef` does (see below).
 - The tool's version is the version of `TenantGuard.EntityFrameworkCore` the app references.
   An app that doesn't reference it can be checked with any version, under the default
-  options.
+  options: the tool loads its own copy of the runtime package.
 
 ## Options
 
