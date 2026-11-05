@@ -36,6 +36,21 @@ type tenant-free on purpose, which matters under `RequireAllEntitiesScoped` (TGM
 applies only to a type with no tenant property: one that has a tenant property stays
 tenant-scoped, and TGM001 still applies to it.
 
+Tenant data that is cross-tenant on purpose is declared, each with a reason
+([cross-tenant data](options.md#cross-tenant-data)):
+
+- `Unfiltered<TEntity>` keeps a type tenant-scoped and leaves out the rules about its
+  filter: TGM001, TGM003, TGM004 and TGM007.
+- `CrossTenant`, and `CrossTenantWhenNoTenant` for the model of a context with no current
+  tenant, skip every rule for the model.
+- `NullTenantIsHost` leaves out TGM005.
+- `Suppress` and `Suppress<TEntity>` leave out one rule, for every type (warnings only) or
+  for one. A suppressed finding goes to `ModelReport.Suppressed` instead of `Findings`.
+
+The table of tenants, filtered on its own key, is tenant-scoped once its key is named as
+its tenant property, `TenantProperty<Club>(club => club.Id)`: TGM001 checks its filter, and
+TGM002 doesn't report it.
+
 ## Rules
 
 | ID | Name | Severity | Reported when |
@@ -133,6 +148,8 @@ rows to everyone. `{Value}` is the constant, with strings quoted.
 
 A row whose tenant is null matches no tenant's filter, and the write guard has no tenant
 to compare it with. Make the property required unless rows without a tenant are meant.
+When a null tenant means host data, `NullTenantIsHost()` says so, and TGM005 isn't
+reported ([host rows](options.md#host-rows)).
 
 ### TGM006 tenant-on-derived
 

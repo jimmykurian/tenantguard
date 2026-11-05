@@ -49,6 +49,28 @@ parameterless constructor or a required complex property, keyless entity types, 
 that share a CLR type. A model with no tenant-scoped entity type gets a single skipped
 `(model)` row.
 
+## Entity types it leaves out
+
+An entity type declared with [`Unfiltered<TEntity>`](options.md#an-unfiltered-entity-type)
+isn't probed, and has no rows in the report: it shares rows across tenants on purpose. It
+is still seeded when another type needs it as a required principal, with its tenant
+property set to that row's tenant. A navigation to it isn't checked by NavigationLeak.
+
+A context declared [`CrossTenant`](options.md#a-cross-tenant-context) has no isolation to
+prove, so `RunAsync` throws ([exceptions](exceptions.md#configuration-errors)). So does a
+context whose first model is the no-tenant model under `CrossTenantWhenNoTenant`: the
+probe's factory gives each context a tenant.
+
+Under [`NullTenantIsHost()`](options.md#host-rows), the probe checks the tenants it is
+given; it doesn't probe the host.
+
+## A tenant registry
+
+When an entity type's tenant property is its primary key, as in the table of tenants
+([a tenant registry](options.md#a-tenant-registry)), each tenant's row has the tenant as
+its key. The checks run as for any type, except InsertGuard: a new row stamped A is A's own
+row, which is already seeded, so InsertGuard is skipped with a note saying so.
+
 ## Checks
 
 Each check runs as tenant B against tenant A's row, with a fresh context per tenant per

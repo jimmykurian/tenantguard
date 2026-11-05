@@ -95,6 +95,14 @@ message of an argument exception ends with the parameter's name, as in
 | `Enforcement(...)` or `WhenNoCurrentTenant(...)`, with a value the enum doesn't define | `ArgumentOutOfRangeException`: `Unknown enforcement.` or `Unknown policy.` |
 | `SaveChanges` that writes a tenant-scoped row, with no `CurrentTenant` configured | `InvalidOperationException`: `TenantGuard checks the writes of {Context} against its current tenant, but no CurrentTenant is configured. Add CurrentTenant(ctx => ...) to UseTenantGuard.` |
 | `SaveChanges`, when `CurrentTenant` returns another type | `InvalidOperationException`: `CurrentTenant returned a {ReturnedType}, but {Entity}.{Property} is a {PropertyType}. Return a value of the tenant property's type.` |
+| `Unfiltered<TEntity>`, `CrossTenant`, `CrossTenantWhenNoTenant`, `Suppress` or `Suppress<TEntity>`, with a null, empty or whitespace reason | `ArgumentNullException` for null, `ArgumentException` otherwise |
+| `Suppress` or `Suppress<TEntity>`, with an unknown rule ID | `ArgumentException`: `Unknown rule '{RuleId}'. Pass a rule ID from TGM001 to TGM010.` |
+| `Suppress`, with an error rule | `ArgumentException`: `{RuleId} is an error, so it is suppressed one entity type at a time: Suppress<TEntity>("{RuleId}", reason).` |
+| `Suppress<TEntity>("TGM001", ...)` | `ArgumentException`: `Declare {Entity} unfiltered with Unfiltered<{Entity}>(reason) rather than suppressing TGM001.` |
+| `Suppress<TEntity>("TGM002", ...)` | `ArgumentException`: `Declare {Entity} shared with Shared<{Entity}>() rather than suppressing TGM002.` |
+| Building the model, when `Unfiltered<TEntity>` names a type with no tenant property | `InvalidOperationException`: `Unfiltered<{Entity}>() names a type with no tenant property. Declare a tenant-free type with Shared<{Entity}>().` |
+| Building the model, when `Unfiltered<TEntity>` names a derived or owned type | `InvalidOperationException`: `Unfiltered<{Entity}>() names a derived or owned type. Declare the root of its hierarchy, or its owner, {Root}.` |
+| `RunAsync`, on a context declared `CrossTenant`, or on the no-tenant model under `CrossTenantWhenNoTenant` | `InvalidOperationException`: `{Context} is declared cross-tenant, so there is no tenant isolation to probe.` |
 | `context.TenantGuard()`, without `UseTenantGuard` | `InvalidOperationException`: `{Context} does not use TenantGuard. Add UseTenantGuard to its options.` |
 | `Bypass(reason)`, with a null, empty or whitespace reason | `ArgumentNullException` for null, `ArgumentException` otherwise |
 | Host start, from `AddTenantGuardStartupValidation`, when the context isn't registered | `OptionsValidationException`: `AddTenantGuardStartupValidation<{Context}>() found neither {Context} nor IDbContextFactory<{Context}>. Register the context before the host starts.` |
