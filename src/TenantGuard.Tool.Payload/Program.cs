@@ -25,7 +25,8 @@ internal static class Program
     {
         // An app that doesn't reference TenantGuard has no copy of it in its dependencies, so it
         // loads from beside the payload. This runs before any method that touches TenantGuard's types.
-        var payloadDirectory = AppContext.BaseDirectory;
+        // Not AppContext.BaseDirectory: under dotnet exec --depsfile, that is the app's directory.
+        var payloadDirectory = Path.GetDirectoryName(typeof(Program).Assembly.Location)!;
         AssemblyLoadContext.Default.Resolving += (context, name) =>
         {
             var path = Path.Combine(payloadDirectory, RuntimeAssembly + ".dll");

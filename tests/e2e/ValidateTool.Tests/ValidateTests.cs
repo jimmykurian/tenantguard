@@ -23,6 +23,18 @@ public sealed class ValidateTests
     }
 
     [Fact]
+    public async Task An_app_that_does_not_reference_TenantGuard_is_checked_under_the_default_options()
+    {
+        var run = await ToolRun.StartAsync("validate", "--assembly", ToolRun.UnreferencedFixture);
+
+        run.ExitCode.Should().Be(1);
+        run.Output.Should().Be(
+            "- TGM001: Invoice has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type.\n"
+            + "TenantGuard validated AppDbContext: 1 error, 0 warnings.\n");
+        run.Error.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task An_error_the_convention_throws_under_UseTenantGuard_is_reported()
     {
         var run = await ToolRun.StartAsync("validate", "--assembly", ToolRun.Fixture, "--context", "GuardedDbContext");

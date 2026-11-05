@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Runs dotnet tenantguard validate, as built, on tests/e2e/ValidateTool.Fixture and on the
+  <!-- Runs dotnet tenantguard validate, as built, on tests/e2e/ValidateTool.Fixture, on an app that
+       doesn't reference TenantGuard and on the
        sample apps. The references only build them; the tests start the tool as CI would. -->
   <PropertyGroup>
     <TargetFrameworks>$(TenantGuardRuntimeTargetFrameworks)</TargetFrameworks>
@@ -9,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="../../../src/TenantGuard.Tool/TenantGuard.Tool.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../ValidateTool.Fixture/ValidateTool.Fixture.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../ValidateTool.UnreferencedFixture/ValidateTool.UnreferencedFixture.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../../samples/HandRolled.Api/HandRolled.Api.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../../samples/Finbuckle.Api/Finbuckle.Api.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
@@ -16,6 +18,7 @@
   <ItemGroup>
     <AssemblyMetadata Include="Tool" Value="$(MSBuildThisFileDirectory)../../../src/TenantGuard.Tool/bin/$(Configuration)/$(TargetFramework)/TenantGuard.Tool.dll" />
     <AssemblyMetadata Include="Fixture" Value="$(MSBuildThisFileDirectory)../ValidateTool.Fixture/bin/$(Configuration)/$(TargetFramework)/ValidateTool.Fixture.dll" />
+    <AssemblyMetadata Include="UnreferencedFixture" Value="$(MSBuildThisFileDirectory)../ValidateTool.UnreferencedFixture/bin/$(Configuration)/$(TargetFramework)/ValidateTool.UnreferencedFixture.dll" />
     <AssemblyMetadata Include="Samples" Value="$(MSBuildThisFileDirectory)../../../samples/SAMPLE/bin/$(Configuration)/net10.0/SAMPLE.dll" />
   </ItemGroup>
 
