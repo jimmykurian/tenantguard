@@ -85,6 +85,10 @@ var everyTenant = await db.Invoices.IgnoreQueryFilters([Constants.TenantToken]).
 
 Without the setting, every `IgnoreQueryFilters` call is TG001.
 
+Leave `tenantguard.tenant_members_only` unset. `IsMultiTenant()` adds `TenantId` as a
+shadow property, which the analyzer can't see, so under that key TG001 would skip every
+`IsMultiTenant()` entity.
+
 ## Prove it
 
 The probe needs a context for a given tenant. Finbuckle's context gets its tenant from

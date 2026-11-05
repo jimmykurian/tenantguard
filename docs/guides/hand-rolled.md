@@ -145,6 +145,17 @@ If your tenant column has another name, tell TG002 in `.editorconfig`:
 tenantguard.tenant_column = OrgId
 ```
 
+If every tenant property is a property of its entity class, not a shadow property, say so,
+and TG001 skips `IgnoreQueryFilters()` on a type with no tenant column, such as a tenant
+registry with only a soft-delete filter. A tenant property named with
+`TenantProperty<TEntity>(...)` needs its name in `tenantguard.tenant_column` too;
+`[TenantKey]` is seen as it is:
+
+```ini
+[*.cs]
+tenantguard.tenant_members_only = true
+```
+
 If your own data access helpers take SQL, list them so TG002 and TG004 check it too:
 
 ```ini

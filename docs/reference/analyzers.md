@@ -18,18 +18,21 @@ Change a severity in `.editorconfig` like any other diagnostic:
 
 ## Configuration
 
-Three `.editorconfig` keys, read for each file. Each takes a comma-separated list, and a
-`#` comment after the value is ignored.
+Four `.editorconfig` keys, read for each file. Each takes a comma-separated list, except
+`tenantguard.tenant_members_only`, which takes `true` or `false`, and a `#` comment after
+the value is ignored.
 
 ```ini
 [*.cs]
 tenantguard.tenant_column = TenantId           # the default
 tenantguard.tenant_filter_names = TenantFilter # optional: the names of your tenant filters
 tenantguard.raw_sql_methods = Acme.Data.Sql.Query, Acme.Data.Sql.Execute # optional
+tenantguard.tenant_members_only = true         # optional: no shadow tenant properties
 ```
 
 - `tenantguard.tenant_column`: the columns raw SQL has to mention (TG002), matched
-  ignoring case. The default is `TenantId`.
+  ignoring case. Under `tenantguard.tenant_members_only`, also the members that make an
+  entity type tenant-scoped (TG001). The default is `TenantId`.
 - `tenantguard.tenant_filter_names`: the names of the query filters that hold the tenant
   predicate (TG001), matched exactly, case included. Set it if you use EF Core's named
   filters.
@@ -39,6 +42,13 @@ tenantguard.raw_sql_methods = Acme.Data.Sql.Query, Acme.Data.Sql.Execute # optio
   matched exactly, case included, and it covers every overload, generic or not, and
   extension methods called either way. A nested type is written with dots:
   `Acme.Data.Outer.Inner.Query`.
+- `tenantguard.tenant_members_only`: `true` says every tenant property is a property or
+  field of its entity's class, never a shadow property, and is named in
+  `tenantguard.tenant_column` or marked `[TenantKey]`. Then TG001 can skip a query over a
+  type with no tenant member. Matched ignoring case; the default is `false`. Don't set it
+  with Finbuckle, whose `IsMultiTenant()` adds a shadow `TenantId`, or with any shadow
+  tenant property, and add each name given to `TenantProperty<TEntity>(...)` to
+  `tenantguard.tenant_column`.
 
 ## Which calls take raw SQL
 
@@ -87,6 +97,16 @@ is reported too, unless `tenantguard.tenant_filter_names` is set and the names a
 constants that leave every tenant filter on. Constant names are an array, a collection
 initializer, or a collection expression without a spread, of string constants.
 
+With `tenantguard.tenant_members_only = true`, it isn't reported when the query's entity
+type has no tenant filter to turn off: a class or struct with no property or field named
+in `tenantguard.tenant_column` or marked `[TenantKey]`, on itself or a base type, and none
+on a type it reaches through reference navigations, followed one after another, as a
+filter such as `post => post.Blog.TenantId == TenantId` does. Collection navigations don't
+count. A navigation to an interface or a type parameter counts as reaching a tenant. A
+query over a type parameter, an interface or `object` is still reported. Without the key,
+the analyzer can't tell a type with a shadow tenant property from one with none, so every
+call is reported.
+
 ```csharp
 // TG001
 var all = await db.Invoices.IgnoreQueryFilters().ToListAsync();
@@ -94,6 +114,10 @@ var all = await db.Invoices.IgnoreQueryFilters().ToListAsync();
 // With tenantguard.tenant_filter_names = TenantFilter, this one passes:
 // it switches off only the soft-delete filter.
 var deleted = await db.Invoices.IgnoreQueryFilters(["SoftDelete"]).ToListAsync();
+
+// With tenantguard.tenant_members_only = true, this one passes:
+// Company has no TenantId, so its only filter is soft delete.
+var exists = await db.Companies.IgnoreQueryFilters().AnyAsync(company => company.Slug == slug);
 ```
 
 The diagnostic underlines the call, from the method name to its closing parenthesis.
