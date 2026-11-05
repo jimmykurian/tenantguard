@@ -18,6 +18,10 @@ For every entry whose entity type is tenant-scoped, against the current tenant:
 Values are compared with the tenant property's `ValueComparer`, so the tenant can be any
 type EF Core maps.
 
+Entity types declared with `Unfiltered<TEntity>` are skipped, and so is every save of a
+context declared `CrossTenant`, or of the no-tenant model under `CrossTenantWhenNoTenant`
+([cross-tenant data](options.md#cross-tenant-data)).
+
 Owned entity types are skipped: an entry of an owned type isn't checked, and changing only
 the owned part of another tenant's row isn't blocked yet
 ([0014](../architecture/decisions/0014-owned-entity-writes-checked-through-the-owner.md)).
@@ -31,6 +35,22 @@ The current tenant comes from `CurrentTenant(context)`. When it returns null,
 A tenant-scoped write with no `CurrentTenant` configured, or with a current tenant that
 isn't of the tenant property's type, throws `InvalidOperationException` naming the context,
 or the entity and the property ([Exceptions](exceptions.md#configuration-errors)).
+
+## Host rows
+
+Under `NullTenantIsHost()`, the host is the context with no current tenant, and its tenant
+value is null. The checks above run against it as against any tenant, and
+`WhenNoCurrentTenant` doesn't apply:
+
+| Current tenant | Row's tenant | Result |
+| --- | --- | --- |
+| none (the host) | null | Written |
+| none (the host) | `"acme"` | A violation: the host doesn't write a tenant's row |
+| `"acme"` | null | A violation, or stamped with `"acme"` when added under `StampOnAdd` |
+| `"acme"` | `"acme"` | Written |
+
+A tenant property that can't hold null has no host rows, so with no current tenant every
+write to it is a violation.
 
 ## StampOnAdd
 
@@ -48,7 +68,9 @@ message. No other value of the entity is in the exception or the logs.
 ## A model built for another tenant
 
 Under [`AllowCapturedValues()`](options.md#per-tenant-models), a model whose filters capture
-the tenant remembers the tenant it was built for. When a save writes a tenant-scoped row
+the tenant remembers the tenant it was built for. Under `CrossTenantWhenNoTenant`, the
+cross-tenant model remembers that it was built with no tenant, and a save on it with a
+current tenant is blocked the same way. When a save writes a tenant-scoped row
 and the context's current tenant is a different one, the guard blocks the whole save, before
 it checks any entry: the context has another tenant's model, so what it read came from that
 tenant. The [exception](exceptions.md#tenantisolationviolationexception) names both tenants

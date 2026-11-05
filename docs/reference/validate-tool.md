@@ -76,6 +76,25 @@ A model with no findings prints only the summary:
 `TenantGuard validated AppDbContext: 0 errors, 0 warnings.` The output never includes
 entity property values.
 
+[Declarations](options.md#cross-tenant-data) are printed too, so the exemptions show in CI.
+Suppressed findings come after the others, with their reason, then one line lists the
+unfiltered entity types, and the summary counts the suppressed findings when there are any.
+Neither fails the run, `--warnings-as-errors` included:
+
+```text
+- TGM005 (warning): Invoice.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.
+- TGM009 (suppressed: a lookup table, read by key): Country has no index or key that starts with 'TenantId', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key.
+Unfiltered on purpose: Membership (maps users to their tenants), OutboxMessage (dispatched for every tenant by one worker)
+TenantGuard validated AppDbContext: 0 errors, 1 warning, 1 suppressed.
+```
+
+A context declared `CrossTenant`, or whose model is the no-tenant model under
+`CrossTenantWhenNoTenant`, prints one line and exits 0:
+
+```text
+TenantGuard validated ReportingDbContext: declared cross-tenant (reports and data deletion across tenants), so no rules ran.
+```
+
 Findings and the summary go to standard output; a reason the tool couldn't run goes to
 standard error. The app's own logging runs too, as it does under `dotnet ef`, so a host
 with a console logger prints its lines among them.

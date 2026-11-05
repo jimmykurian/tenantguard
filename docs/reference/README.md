@@ -14,7 +14,7 @@ ID, a message, an option name or an exception type is a breaking change
   TUnit
 - [Validate tool](validate-tool.md): `dotnet tenantguard validate`, the model rules in CI
   without a database
-- [Options](options.md): `UseTenantGuard`, startup validation, `TenantGuardModel.Validate`
+- [Options](options.md): `UseTenantGuard`, cross-tenant declarations, startup validation, `TenantGuardModel.Validate`
   and the bypass scope
 - [Exceptions](exceptions.md): what TenantGuard throws, and when
 - [Logging](logging.md): the `TenantGuard` log category and its events
