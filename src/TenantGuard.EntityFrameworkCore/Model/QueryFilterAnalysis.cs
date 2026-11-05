@@ -34,7 +34,7 @@ internal sealed class QueryFilterAnalysis
         {
             if (filter.Expression is { Parameters.Count: 1 } lambda)
             {
-                new Visitor(analysis, lambda.Parameters[0], tenantProperty, contextType).Visit(lambda.Body);
+                new Visitor(analysis, lambda.Parameters[0], tenantProperty, contextType).Visit(ConstantFolder.Fold(lambda.Body));
             }
         }
 
@@ -61,6 +61,51 @@ internal sealed class QueryFilterAnalysis
                 HasUnclassifiedOperand = true;
                 break;
         }
+    }
+
+    // Folds the bool constants a filter built by hand can hold, such as Expression.Constant(tenant == null),
+    // fixed when the model was built: true || x is true, false || x and true && x are x. A filter folded
+    // to true references no tenant property, so it is TGM001. false && x is left as it is.
+    private sealed class ConstantFolder : ExpressionVisitor
+    {
+        public static Expression Fold(Expression body) => new ConstantFolder().Visit(body);
+
+        protected override Expression VisitBinary(BinaryExpression node)
+        {
+            var visited = base.VisitBinary(node);
+            if (visited is not BinaryExpression { NodeType: ExpressionType.OrElse or ExpressionType.AndAlso, Method: null } binary)
+            {
+                return visited;
+            }
+
+            var absorbing = binary.NodeType == ExpressionType.OrElse;
+            if (IsConstant(binary.Left, absorbing) || IsConstant(binary.Right, absorbing))
+            {
+                return absorbing ? Expression.Constant(true) : visited;
+            }
+
+            if (IsConstant(binary.Left, !absorbing))
+            {
+                return binary.Right;
+            }
+
+            return IsConstant(binary.Right, !absorbing) ? binary.Left : visited;
+        }
+
+        protected override Expression VisitUnary(UnaryExpression node)
+        {
+            var visited = base.VisitUnary(node);
+            if (visited is UnaryExpression { NodeType: ExpressionType.Not, Method: null } not
+                && OperandClassifier.StripConversions(not.Operand) is ConstantExpression { Value: bool value })
+            {
+                return Expression.Constant(!value);
+            }
+
+            return visited;
+        }
+
+        private static bool IsConstant(Expression expression, bool value)
+            => OperandClassifier.StripConversions(expression) is ConstantExpression { Value: bool constant } && constant == value;
     }
 
     private sealed class Visitor(QueryFilterAnalysis analysis, ParameterExpression parameter, IReadOnlyProperty tenantProperty, Type? contextType)
