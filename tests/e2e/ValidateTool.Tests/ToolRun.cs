@@ -12,6 +12,8 @@ internal sealed record ToolRun(int ExitCode, string Output, string Error)
 {
     public static string Fixture => Metadata("Fixture");
 
+    public static string UnreferencedFixture => Metadata("UnreferencedFixture");
+
     public static string Sample(string name) => Metadata("Samples").Replace("SAMPLE", name, StringComparison.Ordinal);
 
     public static async Task<ToolRun> StartAsync(params string[] args)
