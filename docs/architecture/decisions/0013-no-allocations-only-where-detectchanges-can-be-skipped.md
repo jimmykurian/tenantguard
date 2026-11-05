@@ -1,6 +1,6 @@
 # 0013. No allocations only where the guard can skip DetectChanges
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-30
 
 ## Context
@@ -26,5 +26,6 @@ otherwise.
 ## Consequences
 
 Implemented: the guard reads the model metadata, then checks for an empty change tracker
-without `DetectChanges`, and three tests pin the three cases. The record waits for the
-maintainer's acceptance.
+without `DetectChanges`, and three tests pin the three cases. A save whose tracked entries
+are all shared still allocates inside EF Core, and [the architecture
+overview](../README.md) states the goal as this record words it.
