@@ -9,7 +9,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace TenantGuard.Analyzers;
 
-// The analyzers' .editorconfig keys, read for the file being analyzed. Each takes a comma-separated list.
+// The analyzers' .editorconfig keys, read for the file being analyzed. Each takes a comma-separated list,
+// except tenant_members_only, which takes true or false.
 internal static class AnalyzerSettings
 {
     public const string TenantColumnKey = "tenantguard.tenant_column";
@@ -17,6 +18,8 @@ internal static class AnalyzerSettings
     public const string TenantFilterNamesKey = "tenantguard.tenant_filter_names";
 
     public const string RawSqlMethodsKey = "tenantguard.raw_sql_methods";
+
+    public const string TenantMembersOnlyKey = "tenantguard.tenant_members_only";
 
     private static readonly ImmutableArray<string> _defaultTenantColumns = ImmutableArray.Create("TenantId");
 
@@ -36,6 +39,12 @@ internal static class AnalyzerSettings
     // More methods that take raw SQL, as Namespace.Type.Method, or none when not set.
     public static ImmutableArray<string> RawSqlMethods(AnalyzerOptions options, SyntaxTree tree)
         => Read(options, tree, RawSqlMethodsKey);
+
+    // Whether every tenant property is a member of its entity's class, never a shadow property:
+    // true only when set to true.
+    public static bool TenantMembersOnly(AnalyzerOptions options, SyntaxTree tree)
+        => options.AnalyzerConfigOptionsProvider.GetOptions(tree).TryGetValue(TenantMembersOnlyKey, out var value)
+            && string.Equals(value.Trim(), "true", System.StringComparison.OrdinalIgnoreCase);
 
     private static ImmutableArray<string> Read(AnalyzerOptions options, SyntaxTree tree, string key)
         => options.AnalyzerConfigOptionsProvider.GetOptions(tree).TryGetValue(key, out var value)
