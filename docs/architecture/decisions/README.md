@@ -20,7 +20,7 @@ accepted record isn't edited later except to mark it superseded
 | [0011](0011-per-file-copyright-headers.md) | Apache-2.0, with per-file copyright headers | Accepted | 2026-10-30 |
 | [0012](0012-public-api-for-options-and-severity.md) | Public API for options and severity | Accepted | 2026-10-30 |
 | [0013](0013-no-allocations-only-where-detectchanges-can-be-skipped.md) | No allocations only where the guard can skip DetectChanges | Accepted | 2026-10-30 |
-| [0014](0014-owned-entity-writes-checked-through-the-owner.md) | Writes through an owned entity are checked through its owner | Proposed | 2026-10-30 |
+| [0014](0014-owned-entity-writes-checked-through-the-owner.md) | Writes through an owned entity are checked through its owner | Accepted | 2026-10-30 |
 | [0015](0015-tgm003-treats-ef-context-replacement-as-the-context.md) | TGM003 treats an operand EF Core swaps for the context as the context | Accepted | 2026-10-30 |
 | [0016](0016-first-release-is-a-preview.md) | The first release is a preview until EF Core 11 is stable | Accepted | 2026-10-31 |
 | [0017](0017-end-to-end-tests-live-in-tests-e2e.md) | End-to-end tests live in tests/e2e, with Finbuckle | Accepted | 2026-11-01 |
