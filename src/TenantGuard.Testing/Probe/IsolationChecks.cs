@@ -129,13 +129,20 @@ internal sealed class IsolationChecks<TContext>(
 
     private async Task<CheckResult> InsertAsync(ProbeTarget target, string viewer, string owner, CancellationToken cancellationToken)
     {
+        // A tenant registry: a new row stamped with the owner is the owner's own row, already seeded.
+        var tenantProperty = factory.TenantProperty(target.Type);
+        if (tenantProperty is not null && target.Type.FindPrimaryKey() is { Properties: [var key] } && key == tenantProperty)
+        {
+            return CheckResult.Skipped(
+                $"{target.Name}'s tenant property {tenantProperty.Name} is its primary key, so a new row stamped {owner} would be {owner}'s own row, which is already seeded.");
+        }
+
         await using var context = createContext(viewer);
         await using var transaction = await BeginAsync(context, cancellationToken);
         var entry = factory.Add(context, target.Type, owner, principalsOf(target.Type, owner));
 
         // The app's SaveChanges can stamp an added row with the current tenant, as Finbuckle's
         // TenantMismatchMode.Overwrite does: then the row is the viewer's own, and nothing crosses.
-        var tenantProperty = factory.TenantProperty(target.Type);
         bool StampedAsViewer()
             => tenantProperty is not null && Equals(entry.Property(tenantProperty.Name).CurrentValue, TenantValues.Convert(viewer, tenantProperty));
 
