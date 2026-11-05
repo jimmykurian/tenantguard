@@ -53,6 +53,9 @@ internal sealed class IsolationChecks<TContext>(
 
     private static string OneLine(string message) => message.ReplaceLineEndings(" ");
 
+    private static string Article(string name)
+        => name.Length > 0 && "AEIOUaeiou".Contains(name[0], StringComparison.Ordinal) ? "an" : "a";
+
     private static bool IsDatabaseError(Exception exception)
         => exception is DbUpdateException or DbException || exception.GetBaseException() is DbException;
 
@@ -128,8 +131,20 @@ internal sealed class IsolationChecks<TContext>(
     {
         await using var context = createContext(viewer);
         await using var transaction = await BeginAsync(context, cancellationToken);
-        factory.Add(context, target.Type, owner, principalsOf(target.Type, owner));
-        return await ExpectBlockedAsync(context, viewer, $"inserted a {target.Name} row stamped {owner}", cancellationToken);
+        var entry = factory.Add(context, target.Type, owner, principalsOf(target.Type, owner));
+
+        // The app's SaveChanges can stamp an added row with the current tenant, as Finbuckle's
+        // TenantMismatchMode.Overwrite does: then the row is the viewer's own, and nothing crosses.
+        var tenantProperty = factory.TenantProperty(target.Type);
+        bool StampedAsViewer()
+            => tenantProperty is not null && Equals(entry.Property(tenantProperty.Name).CurrentValue, TenantValues.Convert(viewer, tenantProperty));
+
+        return await ExpectBlockedAsync(
+            context,
+            viewer,
+            $"inserted {Article(target.Name)} {target.Name} row stamped {owner}",
+            cancellationToken,
+            StampedAsViewer);
     }
 
     private async Task<CheckResult> DeleteAsync(ProbeTarget target, string viewer, string owner, CancellationToken cancellationToken)
@@ -148,7 +163,14 @@ internal sealed class IsolationChecks<TContext>(
     // can block it first, as Finbuckle's MultiTenantDbContext does by default: any exception other
     // than a database error passes, when every change the check made is still pending, so EF Core
     // saved none of them.
-    private async Task<CheckResult> ExpectBlockedAsync(DbContext context, string viewer, string write, CancellationToken cancellationToken)
+    // stampedAsViewer, for an insert, says whether the app's SaveChanges stamped the new row with the
+    // viewer's tenant, which passes whether the database then stored the row or refused it.
+    private async Task<CheckResult> ExpectBlockedAsync(
+        DbContext context,
+        string viewer,
+        string write,
+        CancellationToken cancellationToken,
+        Func<bool>? stampedAsViewer = null)
     {
         var pending = context.ChangeTracker.Entries()
             .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
@@ -169,10 +191,20 @@ internal sealed class IsolationChecks<TContext>(
             return CheckResult.PassedWith(
                 $"As {viewer}, the app's SaveChanges threw {exception.GetType().Name} before the database, so nothing was saved: {OneLine(exception.GetBaseException().Message)}");
         }
+        catch (Exception exception) when (exception is not OperationCanceledException && IsDatabaseError(exception) && stampedAsViewer?.Invoke() == true)
+        {
+            return CheckResult.PassedWith(
+                $"As {viewer}, the app's SaveChanges stamped the new row {viewer}, and the database refused it: {OneLine(exception.GetBaseException().Message)}");
+        }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             return CheckResult.Failed(
                 $"As {viewer}, SaveChanges threw {exception.GetType().Name} rather than TenantIsolationViolationException: {OneLine(exception.GetBaseException().Message)}");
+        }
+
+        if (stampedAsViewer?.Invoke() == true)
+        {
+            return CheckResult.PassedWith($"As {viewer}, the app's SaveChanges stamped the new row {viewer}, so it was saved as {viewer}'s own.");
         }
 
         return CheckResult.Failed(guarded

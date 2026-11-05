@@ -69,6 +69,29 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
             Then_only_the_guard_rows_fail_naming_the_apps_exception);
 
     [Fact]
+    public Task Insert_the_app_stamps_with_the_current_tenant_passes()
+        => Runner.RunScenarioAsync(
+            Given_a_guarded_shop_whose_SaveChanges_stamps_added_rows,
+            When_the_probe_runs,
+            Then_every_row_passes,
+            Then_the_insert_rows_say_the_app_stamped_the_row);
+
+    [Fact]
+    public Task Insert_the_app_stamps_and_the_database_refuses_passes()
+        => Runner.RunScenarioAsync(
+            Given_a_guarded_shop_whose_SaveChanges_stamps_added_rows_and_allows_one_order_per_tenant,
+            When_the_probe_runs,
+            Then_every_row_passes,
+            Then_the_order_insert_row_says_the_database_refused_the_stamped_row);
+
+    [Fact]
+    public Task Insert_the_context_saves_names_the_entity_with_its_article()
+        => Runner.RunScenarioAsync(
+            Given_a_shop_without_the_write_guard,
+            When_the_probe_runs,
+            Then_the_invoice_insert_row_reads_an_invoice);
+
+    [Fact]
     public Task Cycle_of_required_relationships_is_skipped_as_needing_a_seeder()
         => Runner.RunScenarioAsync(
             Given_a_model_whose_required_relationships_form_a_cycle,
@@ -220,6 +243,12 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
     private Task Given_a_shop_whose_SaveChanges_throws_after_saving_without_the_write_guard()
         => UseDatabase((options, tenant) => new LateCheckingShop(options, tenant), tenantGuard: null);
 
+    private Task Given_a_guarded_shop_whose_SaveChanges_stamps_added_rows()
+        => UseDatabase((options, tenant) => new RestampingShop(options, tenant), Guard<ShopBase>(shop => shop.CurrentTenant));
+
+    private Task Given_a_guarded_shop_whose_SaveChanges_stamps_added_rows_and_allows_one_order_per_tenant()
+        => UseDatabase((options, tenant) => new RestampingShopWithOneOrderPerTenant(options, tenant), Guard<ShopBase>(shop => shop.CurrentTenant));
+
     private Task Given_a_model_whose_required_relationships_form_a_cycle()
         => UseDatabase((options, tenant) => new CycleShop(options, tenant), Guard<CycleShop>(shop => shop.CurrentTenant));
 
@@ -323,6 +352,29 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
         var notPassed = _report.Rows.Where(row => row.Outcome != ProbeOutcome.Passed).ToList();
         notPassed.Select(row => (row.Entity, row.Check, row.Outcome)).Should().Equal(from entity in _shopEntities from check in _guardChecks select (entity, check, ProbeOutcome.Failed));
         notPassed.Should().AllSatisfy(row => row.Detail.Should().Contain("SaveChanges threw InvalidOperationException rather than TenantIsolationViolationException: Saved another tenant's row."));
+        return Task.CompletedTask;
+    }
+
+    private Task Then_the_insert_rows_say_the_app_stamped_the_row()
+    {
+        _report.Rows.Where(row => row.Check == "InsertGuard").Should().HaveCount(4).And.AllSatisfy(row => row.Detail.Should().Be(
+            "As acme, the app's SaveChanges stamped the new row acme, so it was saved as acme's own. "
+            + "As globex, the app's SaveChanges stamped the new row globex, so it was saved as globex's own."));
+        _report.Rows.Where(row => row.Check != "InsertGuard").Should().AllSatisfy(row => row.Detail.Should().BeEmpty());
+        return Task.CompletedTask;
+    }
+
+    private Task Then_the_order_insert_row_says_the_database_refused_the_stamped_row()
+    {
+        _report.Rows.Should().ContainSingle(row => row.Entity == "Order" && row.Check == "InsertGuard")
+            .Subject.Detail.Should().StartWith("As acme, the app's SaveChanges stamped the new row acme, and the database refused it: ");
+        return Task.CompletedTask;
+    }
+
+    private Task Then_the_invoice_insert_row_reads_an_invoice()
+    {
+        _report.Rows.Should().ContainSingle(row => row.Entity == "Invoice" && row.Check == "InsertGuard")
+            .Subject.Detail.Should().StartWith("As acme, SaveChanges inserted an Invoice row stamped globex;");
         return Task.CompletedTask;
     }
 
