@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.1.0-preview.9](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.8...v0.1.0-preview.9) (2026-11-05)
+
+
+### Features
+
+* **analyzers:** check raw SQL through Dapper, ADO.NET and configured methods ([#57](https://github.com/jimmykurian/tenantguard/issues/57)) ([8b05b0f](https://github.com/jimmykurian/tenantguard/commit/8b05b0f2121c5cd8c7f73d3138dd35c427e2de47))
+* **model:** add AllowCapturedValues for a model per tenant ([#59](https://github.com/jimmykurian/tenantguard/issues/59)) ([18112c8](https://github.com/jimmykurian/tenantguard/commit/18112c8574f5ff1d8b5a55fad9868cb151849813))
+* **model:** add TGM009 and TGM010 for the tenant index ([#56](https://github.com/jimmykurian/tenantguard/issues/56)) ([22ca3f0](https://github.com/jimmykurian/tenantguard/commit/22ca3f0aa532423e91ce3a7df96c78b4cdf4c800))
+* **options:** declare cross-tenant data, each with a reason ([#87](https://github.com/jimmykurian/tenantguard/issues/87)) ([750dec7](https://github.com/jimmykurian/tenantguard/commit/750dec768854b60b15e2fe5118738a5067819188))
+* **probe:** add the NavigationLeak check ([#55](https://github.com/jimmykurian/tenantguard/issues/55)) ([afebb55](https://github.com/jimmykurian/tenantguard/commit/afebb553e95e85acc4fa0299be15dfae4ea28301))
+* **probe:** add xUnit v3 and TUnit adapters that make each probe row a test ([#58](https://github.com/jimmykurian/tenantguard/issues/58)) ([8f239b0](https://github.com/jimmykurian/tenantguard/commit/8f239b04b1bff6323632bef25938d8ffc9e8cd78))
+* **tool:** add dotnet tenantguard validate ([#53](https://github.com/jimmykurian/tenantguard/issues/53)) ([fa54c21](https://github.com/jimmykurian/tenantguard/commit/fa54c216225ef99b123f809023287b24b5454dd0))
+
+
+### Bug Fixes
+
+* **analyzers:** skip TG001 on a type with no tenant member under tenant_members_only ([#85](https://github.com/jimmykurian/tenantguard/issues/85)) ([61b6a14](https://github.com/jimmykurian/tenantguard/commit/61b6a14cfc3f3b7dfd19006776105d01a4c96768))
+* **model:** fold bool constants in the tenant filter before the rules look ([#83](https://github.com/jimmykurian/tenantguard/issues/83)) ([da67f12](https://github.com/jimmykurian/tenantguard/commit/da67f12a7e0b9df203aa4f39fb330594fbba48ae))
+* **model:** resolve an EF.Property name held in a captured string ([#76](https://github.com/jimmykurian/tenantguard/issues/76)) ([020fd6e](https://github.com/jimmykurian/tenantguard/commit/020fd6e5fa7bc8e95f3ba2bd2f675d94dfe15fdf))
+* **model:** skip an owned type's ownership key in TGM008 ([#79](https://github.com/jimmykurian/tenantguard/issues/79)) ([e23076a](https://github.com/jimmykurian/tenantguard/commit/e23076ab32062613f17a7b92465ac666dde1f4c3))
+* **model:** skip TGM010 on a unique index over a tenant-scoped foreign key ([#80](https://github.com/jimmykurian/tenantguard/issues/80)) ([935855e](https://github.com/jimmykurian/tenantguard/commit/935855ec7ee21d7e0763aa5b46ef2d1fa7d88fd5))
+* **probe:** pass a guard check the app's own SaveChanges blocks ([#81](https://github.com/jimmykurian/tenantguard/issues/81)) ([bff297b](https://github.com/jimmykurian/tenantguard/commit/bff297b64102ec6938f80f964647dd3d7d037f6c))
+* **probe:** pass an insert the app's SaveChanges stamps with the current tenant ([#82](https://github.com/jimmykurian/tenantguard/issues/82)) ([87f7488](https://github.com/jimmykurian/tenantguard/commit/87f7488ef6997c103c591a81da67795238ac9722))
+* **tool:** load the payload's own runtime package for an app without TenantGuard ([#84](https://github.com/jimmykurian/tenantguard/issues/84)) ([af8e9cf](https://github.com/jimmykurian/tenantguard/commit/af8e9cfde788d57c61998c4b62c328252135b6e2))
+
+
+### Documentation
+
+* give the docs site a design of its own ([#78](https://github.com/jimmykurian/tenantguard/issues/78)) ([82fdaf5](https://github.com/jimmykurian/tenantguard/commit/82fdaf554c1b242c5fa2633e26b96613a9347d37))
+* move the docs site to tenantguard.is-cool.dev ([#52](https://github.com/jimmykurian/tenantguard/issues/52)) ([8003b18](https://github.com/jimmykurian/tenantguard/commit/8003b180670a92ba0a1396ea7f096e68b72e4412))
+* name the TUnit adapter's real base class ([#60](https://github.com/jimmykurian/tenantguard/issues/60)) ([9ac4222](https://github.com/jimmykurian/tenantguard/commit/9ac4222f31b23d97a02acf7d561a0e609fca788b))
+* **options:** specify declarations for cross-tenant data ([#86](https://github.com/jimmykurian/tenantguard/issues/86)) ([d963334](https://github.com/jimmykurian/tenantguard/commit/d963334425941c2bfa52bdeeb9480314ff519a23)), closes [#67](https://github.com/jimmykurian/tenantguard/issues/67)
+
 ## [0.1.0-preview.8](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.7...v0.1.0-preview.8) (2026-11-02)
 
 
