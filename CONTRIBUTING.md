@@ -5,6 +5,12 @@ requests are all welcome. Everyone taking part follows the
 [Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through
 [SECURITY.md](SECURITY.md), not public issues.
 
+Questions and early ideas go to
+[Discussions](https://github.com/jimmykurian/tenantguard/discussions). The
+[wiki](https://github.com/jimmykurian/tenantguard/wiki) is for notes from people using
+TenantGuard; what TenantGuard does is in [docs/](docs/README.md), and the wiki doesn't
+change it.
+
 ## Before you start
 
 TenantGuard's behavior is a contract, so most changes start in the docs:
