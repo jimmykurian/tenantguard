@@ -1,6 +1,6 @@
 # 0015. TGM003 treats an operand EF Core swaps for the context as the context
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-30
 
 ## Context
@@ -29,4 +29,3 @@ that is not the context is still TGM003.
 Implemented: the Finbuckle sample runs with `UseTenantGuard`, behavior pin 5 pins EF Core's
 replacement, and [the rules reference](../../reference/rules.md) describes the
 classification. Reverting it means the Finbuckle sample has to leave `UseTenantGuard` out.
-The record waits for the maintainer's acceptance.
