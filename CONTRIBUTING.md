@@ -7,9 +7,9 @@ requests are all welcome. Everyone taking part follows the
 
 Questions and early ideas go to
 [Discussions](https://github.com/jimmykurian/tenantguard/discussions). The
-[wiki](https://github.com/jimmykurian/tenantguard/wiki) is for notes from people using
-TenantGuard; what TenantGuard does is in [docs/](docs/README.md), and the wiki doesn't
-change it.
+[wiki](https://github.com/jimmykurian/tenantguard/wiki) only points to the documentation:
+what TenantGuard does is in [docs/](docs/README.md), so a docs change goes in a pull
+request, not the wiki.
 
 ## Before you start
 
