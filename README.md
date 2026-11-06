@@ -218,6 +218,8 @@ The full documentation is at **<https://tenantguard.is-cool.dev/>**, with search
 | [Roadmap](https://github.com/users/jimmykurian/projects/2) | What's planned next, by milestone |
 | [Samples](samples/) | A hand-rolled app and a Finbuckle app, each with a probe test in [`tests/e2e`](tests/e2e/) |
 | [Changelog](CHANGELOG.md) | Every release |
+| [Discussions](https://github.com/jimmykurian/tenantguard/discussions) | Questions and ideas |
+| [Wiki](https://github.com/jimmykurian/tenantguard/wiki) | Notes from people using TenantGuard |
 
 ## Architecture
 
