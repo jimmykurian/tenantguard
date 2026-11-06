@@ -49,9 +49,9 @@ sequenceDiagram
     Rules->>Rules: discover tenant properties, run TGM001 to TGM010
     Rules->>EF: store TenantGuard:Entities on the model
     alt an error, Enforcement.Throw
-        Rules-->>Host: TenantGuardModelException with every error; the host fails to start
+        Rules-->>Host: TenantGuardModelException with every error, and the host fails to start
     else Enforcement.Log, or warnings only
-        Rules-->>Host: findings logged; the host starts
+        Rules-->>Host: findings logged, and the host starts
     end
 ```
 
@@ -76,7 +76,7 @@ sequenceDiagram
     alt bypass open, nothing tracked, or no tenant-scoped type
         Guard-->>EF: continue, no allocations
     else
-        Guard->>Guard: CurrentTenant(context); check each Added, Modified and Deleted entry
+        Guard->>Guard: CurrentTenant(context), then check each Added, Modified and Deleted entry
         alt a write outside the current tenant
             Guard-->>App: TenantIsolationViolationException
         else every write in the current tenant
@@ -107,7 +107,7 @@ sequenceDiagram
         Probe->>Ctx: NavigationLeak per navigation: link B's row to A's, Include, delete the link
         Probe->>Ctx: BulkIsolation, UpdateGuard, InsertGuard, DeleteGuard, each rolled back
     end
-    Probe-->>Test: ProbeReport; AssertAllPassed throws a table of what leaked
+    Probe-->>Test: ProbeReport, whose AssertAllPassed throws a table of what leaked
 ```
 
 [The isolation probe](../reference/probe.md) has the seeding rules and each check.
