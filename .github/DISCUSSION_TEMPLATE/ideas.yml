@@ -1,0 +1,27 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+title: "[Idea]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share an idea before it's ready for an issue. Check the roadmap
+        (https://github.com/users/jimmykurian/projects/2) first. An idea that's agreed becomes a
+        feature issue, and a new rule, option or message is added to the reference before any
+        code.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: The leak TenantGuard misses, or the work it makes harder than it should be.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What TenantGuard could do about it.
+    validations:
+      required: true

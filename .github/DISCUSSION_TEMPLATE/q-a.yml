@@ -1,0 +1,36 @@
+# Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
+
+title: "[Question]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask how to use TenantGuard, or why it reports what it does. The reference
+        (https://tenantguard.is-cool.dev/reference/) has every rule, message and option. A
+        finding you think is wrong is a "Wrong finding" issue instead, and a vulnerability goes
+        through SECURITY.md, not here.
+
+        Use synthetic tenants such as acme, globex and initech, and leave out real tenant ids,
+        connection strings and other people's data.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What you're trying to do, and what you tried.
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code
+      description: The entity, the query filter, the UseTenantGuard call, or the message TenantGuard printed.
+      render: csharp
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: TenantGuard, EF Core, the provider, and the tenancy package if you use one.
+      placeholder: TenantGuard 0.1.0, EF Core 10.0.14, Npgsql, Finbuckle 10
