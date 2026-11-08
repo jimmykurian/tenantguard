@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.0-preview.10](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.9...v0.1.0-preview.10) (2026-11-06)
+
+
+### Documentation
+
+* accept ADRs 0013, 0014 and 0015 ([#88](https://github.com/jimmykurian/tenantguard/issues/88)) ([99c5e63](https://github.com/jimmykurian/tenantguard/commit/99c5e63d9145c8f7ba37ee134825d104b09462c3))
+* describe the wiki as a start page that points to the docs ([#92](https://github.com/jimmykurian/tenantguard/issues/92)) ([a9dfbe3](https://github.com/jimmykurian/tenantguard/commit/a9dfbe348925b991ae5b4458831f85d0861e78e2))
+* drop the semicolons that broke three diagrams on the flows page ([#93](https://github.com/jimmykurian/tenantguard/issues/93)) ([8aa1cd0](https://github.com/jimmykurian/tenantguard/commit/8aa1cd08dfa94b6f5a63712629b3413953d4993d))
+
 ## [0.1.0-preview.9](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.8...v0.1.0-preview.9) (2026-11-05)
 
 
