@@ -97,8 +97,10 @@ internal sealed class NavigationChecks<TContext>(
         try
         {
             // Toward the principal, the viewer's row is the link itself; toward dependents, it's the viewer's seeded row.
+            // The owner's row the navigation could leak is the principal, or toward dependents the link.
             var viewersRow = navigation.Kind == NavigationKind.ToPrincipal ? link : rowsOf(navigation.Type)![viewer];
-            return await LoadAsync(navigation, viewer, viewersRow, cancellationToken);
+            var (ownersType, ownersRow) = navigation.Kind == NavigationKind.ToPrincipal ? (navigation.Target, principal) : (dependent, link);
+            return await LoadAsync(navigation, viewer, viewersRow, owner, ownersType, ownersRow, cancellationToken);
         }
         finally
         {
@@ -126,7 +128,7 @@ internal sealed class NavigationChecks<TContext>(
 
         try
         {
-            return await LoadAsync(navigation, viewer, viewersRow, cancellationToken);
+            return await LoadAsync(navigation, viewer, viewersRow, owner, navigation.Target, rowsOf(navigation.Target)![owner], cancellationToken);
         }
         finally
         {
@@ -140,7 +142,22 @@ internal sealed class NavigationChecks<TContext>(
     }
 
     // As the viewer, loads the viewer's row with Include of the navigation; any row of another tenant in it is a leak.
-    private async Task<CheckResult> LoadAsync(NavigationCase navigation, string viewer, SeededRow viewersRow, CancellationToken cancellationToken)
+    // A pass proves nothing when another filter hides the viewer's row or the owner's from their own tenant.
+    private async Task<CheckResult> LoadAsync(
+        NavigationCase navigation,
+        string viewer,
+        SeededRow viewersRow,
+        string owner,
+        IEntityType ownersType,
+        SeededRow ownersRow,
+        CancellationToken cancellationToken)
+        => await LeakAsync(navigation, viewer, viewersRow, cancellationToken)
+            ?? await IsolationChecks<TContext>.HiddenFromItsTenantAsync(createContext, navigation.Type, viewersRow, viewer, cancellationToken)
+            ?? await IsolationChecks<TContext>.HiddenFromItsTenantAsync(createContext, ownersType, ownersRow, owner, cancellationToken)
+            ?? CheckResult.Passed;
+
+    // Failed when the navigation loaded a row of another tenant, or null.
+    private async Task<CheckResult?> LeakAsync(NavigationCase navigation, string viewer, SeededRow viewersRow, CancellationToken cancellationToken)
     {
         await using var context = createContext(viewer);
         var row = await EntityQueries.For(navigation.Type).IncludeAsync(context, viewersRow.KeyValues, navigation.Name, cancellationToken);
@@ -148,7 +165,7 @@ internal sealed class NavigationChecks<TContext>(
         // A required navigation to a filtered principal hides the whole row, which leaks nothing.
         if (row is null)
         {
-            return CheckResult.Passed;
+            return null;
         }
 
         var value = context.Entry(row).Navigation(navigation.Name).CurrentValue;
@@ -166,7 +183,7 @@ internal sealed class NavigationChecks<TContext>(
             }
         }
 
-        return CheckResult.Passed;
+        return null;
     }
 
     // The probe's name for the tenant, or the value as TenantGuard formats it when no probe tenant has it.
