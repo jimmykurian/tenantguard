@@ -10,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace TenantGuard.Testing;
 
 // Creates one row of an entity type for a tenant: with the seeder Seed<T> set, else with every
-// required value the database does not generate filled. Either way the tenant property gets the tenant,
-// and a required foreign key left unset points at the principal row seeded for the same tenant, or at
-// the one shared row of a principal that is not tenant-scoped.
+// required value the database does not generate filled, through a parameterless constructor or the
+// constructor EF Core binds. Either way the tenant property gets the tenant, and a required foreign key
+// left unset points at the principal row seeded for the same tenant, or at the one shared row of a
+// principal that is not tenant-scoped. A key that another type's tenant property points at, as in a
+// table of tenants, gets the tenant too, so that type's rows have a principal per tenant.
 internal sealed class RowFactory<TContext>(
     IReadOnlyDictionary<Type, Func<string, TContext, object>> seeders,
     TenantGuardEntities entities,
@@ -34,9 +36,9 @@ internal sealed class RowFactory<TContext>(
             return $"it shares the CLR type {type.ClrType.Name} with other entity types";
         }
 
-        if (type.ClrType.GetConstructor(Constructors, Type.EmptyTypes) is null)
+        if (!CanInstantiate(type))
         {
-            return $"{type.ClrType.Name} has no parameterless constructor";
+            return $"{type.ClrType.Name} has no parameterless constructor, and EF Core doesn't bind one of its constructors";
         }
 
         if (type.GetComplexProperties().FirstOrDefault(complex => !complex.IsNullable) is { } required)
@@ -44,14 +46,41 @@ internal sealed class RowFactory<TContext>(
             return $"the default seeder does not fill the required complex property {required.Name}";
         }
 
-        if (FilledProperties(type).FirstOrDefault(property => !ValueGenerator.CanFill(property)) is { } unfillable)
+        if (FilledProperties(type).Select(ValueGenerator.WhyCannotFill).FirstOrDefault(reason => reason is not null) is { } unfillable)
         {
-            return $"the default seeder cannot fill the required {unfillable.ClrType.Name} property {unfillable.Name}";
+            return unfillable;
         }
 
-        return OwnedTypesToCreate(type).FirstOrDefault(owned => owned.ClrType.GetConstructor(Constructors, Type.EmptyTypes) is null) is { } ownedType
-            ? $"the owned type {ownedType.ClrType.Name} has no parameterless constructor"
-            : null;
+        foreach (var owned in OwnedTypesToCreate(type))
+        {
+            if (!CanInstantiate(owned))
+            {
+                return $"the owned type {owned.ClrType.Name} has no parameterless constructor, and EF Core doesn't bind one of its constructors";
+            }
+
+            if (OwnedProperties(owned).Select(ValueGenerator.WhyCannotFill).FirstOrDefault(reason => reason is not null) is { } ownedUnfillable)
+            {
+                return ownedUnfillable;
+            }
+        }
+
+        return null;
+    }
+
+    // The keys of the type that another type's tenant property points at as a foreign key, other than
+    // the type's own tenant property: each row seeded for a tenant gets the tenant in them.
+    public IReadOnlyList<IProperty> TenantKeys(IEntityType type)
+    {
+        var ownTenant = entities.TryGet(type, out var own) ? own.Property : null;
+        return type.GetReferencingForeignKeys()
+            .Where(foreignKey => !foreignKey.IsOwnership && entities.TryGet(foreignKey.DeclaringEntityType, out _))
+            .SelectMany(foreignKey => foreignKey.Properties
+                .Select((property, index) => (property, index))
+                .Where(pair => entities.TryGet(foreignKey.DeclaringEntityType, out var tenant) && pair.property == tenant.Property)
+                .Select(pair => foreignKey.PrincipalKey.Properties[pair.index]))
+            .Where(key => key != ownTenant)
+            .Distinct()
+            .ToList();
     }
 
     // The type's tenant property, or null when it is not tenant-scoped.
@@ -62,14 +91,14 @@ internal sealed class RowFactory<TContext>(
     public EntityEntry Add(TContext context, IEntityType type, string tenant, IEnumerable<(IForeignKey ForeignKey, SeededRow Principal)> principals)
     {
         var seeded = seeders.TryGetValue(type.ClrType, out var seed);
-        var entity = seeded ? seed!(tenant, context) : Activator.CreateInstance(type.ClrType, nonPublic: true)!;
-
         var tenantProperty = entities.TryGet(type, out var tenantMetadata) ? tenantMetadata.Property : null;
         var values = new List<(IProperty Property, object? Value, bool OnlyIfUnset)>();
         if (tenantProperty is not null)
         {
             values.Add((tenantProperty, TenantValues.Convert(tenant, tenantProperty), false));
         }
+
+        values.AddRange(TenantKeys(type).Select(key => (key, (object?)TenantValues.Convert(tenant, key), false)));
 
         foreach (var (foreignKey, principal) in principals)
         {
@@ -82,10 +111,16 @@ internal sealed class RowFactory<TContext>(
             }
         }
 
-        if (!seeded)
+        object entity;
+        if (seeded)
+        {
+            entity = seed!(tenant, context);
+        }
+        else
         {
             values.AddRange(FilledProperties(type).Select(property => (property, generator.Next(property), false)));
-            FillOwned(type, entity);
+            entity = Instantiate(type, context, property => values.FirstOrDefault(value => value.Property == property).Value);
+            FillOwned(type, entity, context);
         }
 
         // A key EF does not generate has to be on the entity before it is tracked; shadow values come after.
@@ -117,6 +152,39 @@ internal sealed class RowFactory<TContext>(
     public object? NextValue(IProperty property) => generator.Next(property);
 
     private static bool IsUnset(IReadOnlyProperty property, object? value) => value is null || Equals(value, property.Sentinel);
+
+    private static bool CanInstantiate(ITypeBase type)
+        => type.ClrType.GetConstructor(Constructors, Type.EmptyTypes) is not null || type.ConstructorBinding is ConstructorBinding;
+
+    // Through the parameterless constructor, or as EF Core does, through the constructor it binds: a
+    // property parameter gets valueOf's value, or the parameter type's default.
+    private static object Instantiate(ITypeBase type, DbContext context, Func<IProperty, object?> valueOf)
+    {
+        if (type.ClrType.GetConstructor(Constructors, Type.EmptyTypes) is not null)
+        {
+            return Activator.CreateInstance(type.ClrType, nonPublic: true)!;
+        }
+
+        var binding = (ConstructorBinding)type.ConstructorBinding!;
+        var arguments = binding.ParameterBindings.Select(parameter => parameter switch
+        {
+            PropertyParameterBinding { ConsumedProperties: [IProperty property] } => Fit(valueOf(property), parameter.ParameterType),
+            ContextParameterBinding => context,
+            EntityTypeParameterBinding => type,
+            _ => Fit(null, parameter.ParameterType),
+        }).ToArray();
+        return binding.Constructor.Invoke(arguments);
+    }
+
+    // The value when the parameter takes it, else the parameter type's default.
+    private static object? Fit(object? value, Type parameterType)
+        => value is not null && parameterType.IsInstanceOfType(value)
+            ? value
+            : parameterType.IsValueType && Nullable.GetUnderlyingType(parameterType) is null ? Activator.CreateInstance(parameterType) : null;
+
+    // The required values of an owned type the default seeder fills.
+    private static IEnumerable<IProperty> OwnedProperties(IEntityType owned)
+        => owned.GetProperties().Where(property => !property.IsNullable && !property.IsShadowProperty() && !property.IsKey() && property.ValueGenerated == ValueGenerated.Never);
 
     private static bool TrySetClrValue(IPropertyBase property, object entity, object? value, bool onlyIfUnset)
     {
@@ -160,22 +228,24 @@ internal sealed class RowFactory<TContext>(
         => type.GetNavigations().Where(navigation => !navigation.IsCollection && navigation.ForeignKey.IsOwnership && !navigation.IsOnDependent);
 
     // The required properties the default seeder fills: not generated by the database, not the tenant
-    // property, not part of a required foreign key, and not the discriminator.
+    // property or a key that gets the tenant, not part of a required foreign key, and not the discriminator.
     private IEnumerable<IProperty> FilledProperties(IEntityType type)
     {
         var tenantProperty = entities.TryGet(type, out var tenant) ? tenant.Property : null;
+        var tenantKeys = TenantKeys(type);
         var discriminator = type.FindDiscriminatorProperty();
         return type.GetProperties().Where(property =>
             !property.IsNullable
             && property.ValueGenerated == ValueGenerated.Never
             && property != tenantProperty
+            && !tenantKeys.Contains(property)
             && property != discriminator
             && !property.GetContainingForeignKeys().Any(foreignKey => foreignKey.IsRequired && !foreignKey.IsOwnership));
     }
 
     // Creates each required owned reference left null, and fills the required values left null in every
     // owned reference: an owned row is saved with its owner.
-    private void FillOwned(IEntityType type, object entity)
+    private void FillOwned(IEntityType type, object entity, DbContext context)
     {
         foreach (var navigation in OwnedReferences(type))
         {
@@ -187,12 +257,13 @@ internal sealed class RowFactory<TContext>(
                     continue;
                 }
 
-                owned = Activator.CreateInstance(navigation.TargetEntityType.ClrType, nonPublic: true)!;
+                var filled = OwnedProperties(navigation.TargetEntityType).ToDictionary(property => property, generator.Next);
+                owned = Instantiate(navigation.TargetEntityType, context, property => filled.GetValueOrDefault(property));
                 TrySetClrValue(navigation, entity, owned, onlyIfUnset: false);
             }
 
             var ownedType = navigation.TargetEntityType;
-            foreach (var property in ownedType.GetProperties().Where(property => !property.IsNullable && !property.IsShadowProperty() && !property.IsKey() && property.ValueGenerated == ValueGenerated.Never))
+            foreach (var property in OwnedProperties(ownedType))
             {
                 if (GetClrValue(property, owned) is null)
                 {
@@ -200,7 +271,7 @@ internal sealed class RowFactory<TContext>(
                 }
             }
 
-            FillOwned(ownedType, owned);
+            FillOwned(ownedType, owned, context);
         }
     }
 }

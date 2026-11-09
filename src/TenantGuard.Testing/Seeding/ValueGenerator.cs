@@ -8,30 +8,102 @@ namespace TenantGuard.Testing;
 
 // Deterministic values for the properties the default seeder fills. A counter runs through
 // every value, so no two rows collide on a unique index. A bool is always false, so a flag such
-// as IsDeleted doesn't put the row behind a soft-delete filter. A property whose type it cannot
-// fill is filled through its value converter's provider type when it has one.
+// as IsDeleted doesn't put the row behind a soft-delete filter. A collection, such as a primitive
+// collection or a dictionary stored as JSON, is empty, and a string in a json or jsonb column is
+// {}. A property whose type it cannot fill is filled through its value converter's provider type
+// when it has one, trying a generated value, then {} and [] for a string stored as JSON.
 internal sealed class ValueGenerator
 {
     private static readonly DateTime _epoch = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private int _next;
 
-    public static bool CanFill(IReadOnlyProperty property)
-        => Create(Unwrap(property.ClrType), 1, maxLength: null) is not null
-            || (property.GetValueConverter() is { } converter && Create(Unwrap(converter.ProviderClrType), 1, maxLength: null) is not null);
+    // Why the default seeder can't fill the property, naming it and any value converter, or null.
+    public static string? WhyCannotFill(IReadOnlyProperty property)
+    {
+        try
+        {
+            return TryCreate(property, 1, out _) ? null : Unfillable(property);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return $"{Unfillable(property)}, which threw: {exception.GetBaseException().Message.ReplaceLineEndings(" ").TrimEnd('.')}";
+        }
+    }
+
+    // A C# name for the type, such as Dictionary<String, Object>.
+    public static string TypeName(Type type)
+    {
+        if (type.IsArray)
+        {
+            return $"{TypeName(type.GetElementType()!)}[]";
+        }
+
+        return type.IsGenericType
+            ? $"{type.Name[..type.Name.IndexOf('`', StringComparison.Ordinal)]}<{string.Join(", ", type.GetGenericArguments().Select(TypeName))}>"
+            : type.Name;
+    }
 
     public object? Next(IReadOnlyProperty property)
     {
-        var n = ++_next;
+        TryCreate(property, ++_next, out var value);
+        return value;
+    }
+
+    private static string Unfillable(IReadOnlyProperty property)
+        => property.GetValueConverter() is { } converter
+            ? $"the default seeder cannot fill the required {TypeName(property.ClrType)} property {property.Name}, stored through {TypeName(converter.GetType())}"
+            : $"the default seeder cannot fill the required {TypeName(property.ClrType)} property {property.Name}";
+
+    // Throws the converter's error when it rejects every value tried.
+    private static bool TryCreate(IReadOnlyProperty property, int n, out object? value)
+    {
         var maxLength = property.GetMaxLength();
-        if (Create(Unwrap(property.ClrType), n, maxLength) is { } value)
+        var type = Unwrap(property.ClrType);
+        value = type == typeof(string) && IsJsonColumn(property) ? "{}" : Create(type, n, maxLength);
+        if (value is not null)
         {
-            return value;
+            return true;
         }
 
-        return property.GetValueConverter() is { } converter && Create(Unwrap(converter.ProviderClrType), n, maxLength) is { } stored
-            ? converter.ConvertFromProvider(stored)
-            : null;
+        if (property.GetValueConverter() is not { } converter || Create(Unwrap(converter.ProviderClrType), n, maxLength) is not { } generated)
+        {
+            return false;
+        }
+
+        object?[] candidates = generated is string ? [generated, "{}", "[]"] : [generated];
+        Exception? rejected = null;
+        foreach (var candidate in candidates)
+        {
+            try
+            {
+                value = converter.ConvertFromProvider(candidate);
+                if (value is not null)
+                {
+                    return true;
+                }
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                rejected ??= exception;
+            }
+        }
+
+        return rejected is null ? false : throw rejected;
+    }
+
+    // The column's store type, from the relational annotation or the type mapping, read by name:
+    // the probe has no reference to EF Core's relational package.
+    private static bool IsJsonColumn(IReadOnlyProperty property)
+    {
+        var storeType = property.FindAnnotation("Relational:ColumnType")?.Value as string;
+        if (storeType is null && property.FindTypeMapping() is { } mapping)
+        {
+            storeType = mapping.GetType().GetProperty("StoreType")?.GetValue(mapping) as string;
+        }
+
+        return storeType is not null
+            && (storeType.Equals("json", StringComparison.OrdinalIgnoreCase) || storeType.Equals("jsonb", StringComparison.OrdinalIgnoreCase));
     }
 
     private static Type Unwrap(Type type) => Nullable.GetUnderlyingType(type) ?? type;
@@ -98,6 +170,42 @@ internal sealed class ValueGenerator
             return TimeSpan.FromMinutes(n);
         }
 
-        return type == typeof(byte[]) ? BitConverter.GetBytes(n) : null;
+        return type == typeof(byte[]) ? BitConverter.GetBytes(n) : EmptyCollection(type);
+    }
+
+    // An empty array, list, set or dictionary for a collection type, or null.
+    private static object? EmptyCollection(Type type)
+    {
+        if (type.IsArray)
+        {
+            return Array.CreateInstance(type.GetElementType()!, 0);
+        }
+
+        if (type.IsInterface && type.IsGenericType)
+        {
+            return ListFor(type) is { } concrete ? Activator.CreateInstance(concrete.MakeGenericType(type.GetGenericArguments())) : null;
+        }
+
+        return typeof(System.Collections.IEnumerable).IsAssignableFrom(type) && !type.IsAbstract && type.GetConstructor(Type.EmptyTypes) is not null
+            ? Activator.CreateInstance(type)
+            : null;
+    }
+
+    // The open generic collection to create for a collection interface, or null.
+    private static Type? ListFor(Type type)
+    {
+        var definition = type.GetGenericTypeDefinition();
+        if (definition == typeof(IDictionary<,>) || definition == typeof(IReadOnlyDictionary<,>))
+        {
+            return typeof(Dictionary<,>);
+        }
+
+        if (definition == typeof(ISet<>) || definition == typeof(IReadOnlySet<>))
+        {
+            return typeof(HashSet<>);
+        }
+
+        Type[] lists = [typeof(IEnumerable<>), typeof(ICollection<>), typeof(IList<>), typeof(IReadOnlyCollection<>), typeof(IReadOnlyList<>)];
+        return lists.Contains(definition) ? typeof(List<>) : null;
     }
 }

@@ -390,7 +390,7 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
     {
         _report.Rows.Where(row => row.Outcome == ProbeOutcome.Skipped).Select(row => (row.Entity, row.Detail)).Distinct().Should().Equal([
                 ("Seat", "Needs a seeder: its required principal Subscription cannot be seeded."),
-                ("Subscription", "Needs a seeder: Subscription has no parameterless constructor."),
+                ("Subscription", "Needs a seeder: the default seeder cannot fill the required Money property Price, stored through ValueConverter<Money, String>, which threw: \"probe-1\" is not an amount and a currency."),
             ]);
         _report.Rows.Should().NotContain(row => row.Outcome != ProbeOutcome.Skipped);
         return Task.CompletedTask;

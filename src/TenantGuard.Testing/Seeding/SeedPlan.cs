@@ -7,8 +7,10 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace TenantGuard.Testing;
 
 // The entity types to seed and their order: the probed types and, through every required
-// relationship, the principals they need, each after its principals. A type in a cycle of required
-// relationships, or one whose principal cannot be seeded, gets the reason instead of a place.
+// relationship, the principals they need, each after its principals. A relationship whose foreign key
+// includes the tenant property needs its principal too, required or not: the tenant value points at
+// it. A type in a cycle of required relationships, or one whose principal cannot be seeded, gets the
+// reason instead of a place.
 internal sealed class SeedPlan
 {
     private readonly Dictionary<IEntityType, List<RequiredPrincipal>> _principals;
@@ -29,8 +31,10 @@ internal sealed class SeedPlan
     // Why each of the other types cannot be seeded.
     public IReadOnlyDictionary<IEntityType, string> CannotSeed { get; }
 
-    // whyCannotCreate says why a type's own rows cannot be created, or returns null.
-    public static SeedPlan Create(IEnumerable<IEntityType> targets, Func<IEntityType, string?> whyCannotCreate)
+    // whyCannotCreate says why a type's own rows cannot be created, or returns null; tenantPropertyOf
+    // gives a type's tenant property, or null.
+    public static SeedPlan Create(
+        IEnumerable<IEntityType> targets, Func<IEntityType, string?> whyCannotCreate, Func<IEntityType, IProperty?> tenantPropertyOf)
     {
         var principals = new Dictionary<IEntityType, List<RequiredPrincipal>>();
         var cannotSeed = new Dictionary<IEntityType, string>();
@@ -49,7 +53,9 @@ internal sealed class SeedPlan
                 cannotSeed[type] = reason;
             }
 
-            foreach (var foreignKey in type.GetForeignKeys().Where(foreignKey => foreignKey.IsRequired && !foreignKey.IsOwnership))
+            var tenantProperty = tenantPropertyOf(type);
+            foreach (var foreignKey in type.GetForeignKeys().Where(foreignKey =>
+                !foreignKey.IsOwnership && (foreignKey.IsRequired || foreignKey.Properties.Contains(tenantProperty))))
             {
                 if (foreignKey.PrincipalEntityType.GetDerivedTypesInclusive().FirstOrDefault(candidate => !candidate.IsAbstract()) is not { } principal)
                 {
@@ -83,7 +89,7 @@ internal sealed class SeedPlan
         {
             if (principals[type].FirstOrDefault(principal => cannotSeed.ContainsKey(principal.EntityType)) is { } blocked)
             {
-                cannotSeed[type] = $"its required principal {blocked.EntityType.DisplayName()} cannot be seeded";
+                cannotSeed[type] = Blocked(blocked, tenantPropertyOf(type), "cannot be seeded", cannotSeed[blocked.EntityType]);
             }
         }
 
@@ -91,6 +97,13 @@ internal sealed class SeedPlan
     }
 
     public IReadOnlyList<RequiredPrincipal> PrincipalsOf(IEntityType type) => _principals[type];
+
+    // Why a type can't be seeded when its principal can't: through the tenant property, as for a table of
+    // tenants, that says so and why.
+    internal static string Blocked(RequiredPrincipal principal, IProperty? tenantProperty, string cannot, string why)
+        => tenantProperty is not null && principal.ForeignKey.Properties.Contains(tenantProperty)
+            ? $"its tenant property {tenantProperty.Name} is a foreign key to {principal.EntityType.DisplayName()}, which {cannot}: {why}"
+            : $"its required principal {principal.EntityType.DisplayName()} {cannot}";
 
     // A required relationship of a seeded type, and the concrete type seeded as its principal.
     internal sealed record RequiredPrincipal(IForeignKey ForeignKey, IEntityType EntityType);
