@@ -310,9 +310,9 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 85 | 106 | 14 | 205 |
-| Lines of code | 4,133 | 6,552 | 228 | 10,913 |
-| Methods | 317 | 695 | 21 | 1,033 |
+| Files | 85 | 107 | 14 | 206 |
+| Lines of code | 4,164 | 6,634 | 228 | 11,026 |
+| Methods | 320 | 702 | 21 | 1,043 |
 | Average complexity | 3.3 | 1.1 | 1.2 | 1.8 |
 | Max complexity | 32 | 5 | 4 | 32 |
 
@@ -323,10 +323,10 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | --- | --- | --- |
 | `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 32 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
-| `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:38` | 20 |
+| `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:39` | 20 |
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:113` | 18 |
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:28` | 17 |
-| `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:175` | 13 |
+| `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:201` | 13 |
 | `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
 | `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:62` | 13 |
 | `IgnoreQueryFiltersAnalyzer.ReachesTenantMember` | `src/TenantGuard.Analyzers/IgnoreQueryFiltersAnalyzer.cs:88` | 12 |

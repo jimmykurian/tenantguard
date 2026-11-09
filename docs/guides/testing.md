@@ -67,7 +67,9 @@ transactions, BulkIsolation is always skipped, so use SQLite in memory instead.
 
 The probe seeds one row per tenant for each tenant-scoped entity type. It fills required
 properties from a deterministic generator, seeds required principals first, and sets the
-tenant property. For a type the generator can't fill, give it a seeder:
+tenant property. It sets a bool to `false`, so a soft-delete flag leaves the row visible. A
+row that another query filter hides from its own tenant makes ReadIsolation, FindIsolation,
+BulkIsolation and NavigationLeak skip rather than pass. For a type the generator can't fill, give it a seeder:
 
 ```csharp
 .Seed<Invoice>((tenant, context) => new Invoice { Number = $"{tenant}-1", TenantId = tenant })

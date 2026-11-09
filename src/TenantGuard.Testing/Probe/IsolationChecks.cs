@@ -51,6 +51,18 @@ internal sealed class IsolationChecks<TContext>(
         return entry;
     }
 
+    // A pass proves nothing when another filter, such as a soft delete, hides the row from its own
+    // tenant too. Skipped with a note when the tenant can't find its own row, or null when it can.
+    internal static async Task<CheckResult?> HiddenFromItsTenantAsync(
+        Func<string, TContext> createContext, IEntityType type, SeededRow row, string tenant, CancellationToken cancellationToken)
+    {
+        await using var context = createContext(tenant);
+        return await EntityQueries.For(type).FindAsync(context, row.KeyValues, cancellationToken) is null
+            ? CheckResult.Skipped(
+                $"As {tenant}, FindAsync{row.FormatKey()} did not return {tenant}'s own {type.DisplayName()} row, so the check proves nothing. Does another query filter, such as a soft delete, hide it?")
+            : null;
+    }
+
     private static string OneLine(string message) => message.ReplaceLineEndings(" ");
 
     private static string Article(string name)
@@ -78,11 +90,16 @@ internal sealed class IsolationChecks<TContext>(
 
     private async Task<CheckResult> FindAsync(ProbeTarget target, string viewer, string owner, CancellationToken cancellationToken)
     {
-        await using var context = createContext(viewer);
         var theirs = target.Rows[owner];
-        return await target.Queries.FindAsync(context, theirs.KeyValues, cancellationToken) is null
-            ? CheckResult.Passed
-            : CheckResult.Failed($"As {viewer}, FindAsync{theirs.FormatKey()} returned {owner}'s row.");
+        await using (var context = createContext(viewer))
+        {
+            if (await target.Queries.FindAsync(context, theirs.KeyValues, cancellationToken) is not null)
+            {
+                return CheckResult.Failed($"As {viewer}, FindAsync{theirs.FormatKey()} returned {owner}'s row.");
+            }
+        }
+
+        return await HiddenFromItsTenantAsync(createContext, target.Type, theirs, owner, cancellationToken) ?? CheckResult.Passed;
     }
 
     // ExecuteDelete aimed at the owner's key, which deletes nothing when the query filter holds.
@@ -93,13 +110,22 @@ internal sealed class IsolationChecks<TContext>(
             return CheckResult.Skipped("The provider does not support ExecuteDelete.");
         }
 
+        var theirs = target.Rows[owner];
+        var result = await TryBulkDeleteAsync(target, viewer, owner, theirs, cancellationToken);
+
+        // After the delete's transaction is rolled back, so the owner's context doesn't run inside it.
+        return result ?? await HiddenFromItsTenantAsync(createContext, target.Type, theirs, owner, cancellationToken) ?? CheckResult.Passed;
+    }
+
+    // Null when ExecuteDelete removed nothing.
+    private async Task<CheckResult?> TryBulkDeleteAsync(ProbeTarget target, string viewer, string owner, SeededRow theirs, CancellationToken cancellationToken)
+    {
         await using var context = createContext(viewer);
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-        var theirs = target.Rows[owner];
         try
         {
             return await target.Queries.ExecuteDeleteAsync(context, theirs.KeyValues, cancellationToken) == 0
-                ? CheckResult.Passed
+                ? null
                 : CheckResult.Failed($"As {viewer}, ExecuteDelete removed {owner}'s row {theirs.FormatKey()}.");
         }
         catch (DbException exception)

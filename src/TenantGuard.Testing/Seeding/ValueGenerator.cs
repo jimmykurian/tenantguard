@@ -7,8 +7,9 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace TenantGuard.Testing;
 
 // Deterministic values for the properties the default seeder fills. A counter runs through
-// every value, so no two rows collide on a unique index. A property whose type it cannot fill is
-// filled through its value converter's provider type when it has one.
+// every value, so no two rows collide on a unique index. A bool is always false, so a flag such
+// as IsDeleted doesn't put the row behind a soft-delete filter. A property whose type it cannot
+// fill is filled through its value converter's provider type when it has one.
 internal sealed class ValueGenerator
 {
     private static readonly DateTime _epoch = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -52,7 +53,7 @@ internal sealed class ValueGenerator
 
         return Type.GetTypeCode(type) switch
         {
-            TypeCode.Boolean => n % 2 == 1,
+            TypeCode.Boolean => false,
             TypeCode.Char => (char)('a' + (n % 26)),
             TypeCode.SByte => (sbyte)(n % sbyte.MaxValue),
             TypeCode.Byte => (byte)(n % byte.MaxValue),
