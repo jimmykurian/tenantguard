@@ -33,7 +33,9 @@ entity types and properties by name in each context.
 For every tenant-scoped entity type, the default seeder creates one row per tenant, with:
 
 - required scalar properties filled from a deterministic generator (string, numeric, bool,
-  `Guid`, `DateTime`, `DateOnly`, `TimeOnly`, enum), keys that aren't generated included;
+  `Guid`, `DateTime`, `DateOnly`, `TimeOnly`, enum), keys that aren't generated included. A
+  bool is always `false`, so a flag such as `IsDeleted` doesn't put the row behind a
+  soft-delete filter;
 - required foreign keys satisfied by seeding the principals first, in topological order over
   the model's required relationships; a shared principal is seeded once;
 - required owned references created too.
@@ -92,7 +94,10 @@ for every entity type before any check writes. On a relational provider, each ch
 writes runs in a transaction that is rolled back, so a leak can't change what a later check
 sees. BulkIsolation deletes by A's key, which removes nothing when the filter holds.
 ReadIsolation is skipped when tenant B can't read its own row, because then it proves
-nothing.
+nothing. For the same reason, FindIsolation and BulkIsolation are skipped when tenant A
+can't find its own row with `FindAsync`: another query filter, such as a soft delete, hides
+it from every tenant, so not finding it says nothing about the tenant filter. A check that
+failed stays failed.
 
 The guard checks also pass when the app's own `SaveChanges` blocks the write before EF Core
 saves anything, as Finbuckle's `MultiTenantDbContext` does with its default
@@ -142,7 +147,10 @@ a link across tenants, so the row passes without seeding one. A skip navigation 
 entity type is tenant-scoped isn't checked as a skip navigation: the join type's own
 navigations are. The row is skipped, naming the reason, when the type of the new dependent
 couldn't be seeded or can't be probed, or when saving the link fails, as it does for a
-one-to-one relationship whose row already has its dependent.
+one-to-one relationship whose row already has its dependent. A row that passed is skipped
+too when B can't find its own row with `FindAsync`, or A can't find the row the link
+reaches (A's principal, A's new dependent or A's target row), because another query filter
+hides it.
 
 The rows come after the entity's six checks, one per navigation, by name:
 
