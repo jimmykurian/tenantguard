@@ -30,15 +30,29 @@ entity types and properties by name in each context.
 
 ## Seeding
 
-For every tenant-scoped entity type, the default seeder creates one row per tenant, with:
+For every tenant-scoped entity type, the default seeder creates one row per tenant, through
+a parameterless constructor or else the constructor EF Core binds for the type, with:
 
 - required scalar properties filled from a deterministic generator (string, numeric, bool,
   `Guid`, `DateTime`, `DateOnly`, `TimeOnly`, enum), keys that aren't generated included. A
   bool is always `false`, so a flag such as `IsDeleted` doesn't put the row behind a
   soft-delete filter;
+- required collections empty: an array, list, set or dictionary, such as a primitive
+  collection, or a dictionary stored as JSON through a value converter. A required string in
+  a `json` or `jsonb` column is `{}`;
+- any other required property with a value converter filled through the converter's
+  provider type: a generated value, then `{}` and `[]` when the provider type is a string;
 - required foreign keys satisfied by seeding the principals first, in topological order over
   the model's required relationships; a shared principal is seeded once;
-- required owned references created too.
+- required owned references created too, through the constructor EF Core binds when the
+  owned type has no parameterless one.
+
+When a tenant property is also a foreign key to another entity type, as to a table of
+tenants (`Role.TenantId` to `Tenant.Id`), the tenant value is what points at that type's
+row. So the probe seeds that type once per tenant, with the key the tenant property points
+at set to the tenant, whether the relationship is required or not and whether the type is
+tenant-scoped or not. A `Seed<T>` for that type fills its other values; the probe still sets
+the key.
 
 `Seed<T>` replaces the default seeder for `T`. The probe always sets the tenant property, and
 any required foreign key left unset, even on a row from `Seed<T>`. Seeding runs per tenant
@@ -47,9 +61,17 @@ it too.
 
 What the default seeder can't create is skipped, never a silent pass: an entity type in a
 cycle of required relationships, one whose required principal can't be seeded, one with no
-parameterless constructor or a required complex property, keyless entity types, and types
-that share a CLR type. A model with no tenant-scoped entity type gets a single skipped
-`(model)` row.
+parameterless constructor that EF Core doesn't create through a constructor either, one
+with a required complex property or a required value the generator can't fill, keyless
+entity types, and types that share a CLR type. The skip names the property, and the value
+converter when the converter threw on every value tried. When the tenant property points at
+a type that can't be seeded, the skip says so:
+
+```text
+Needs a seeder: its tenant property TenantId is a foreign key to Tenant, which cannot be seeded: ...
+```
+
+A model with no tenant-scoped entity type gets a single skipped `(model)` row.
 
 ## Entity types it leaves out
 
