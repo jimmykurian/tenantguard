@@ -59,6 +59,28 @@ deletes it afterwards. The read checks and NavigationLeak run before any check w
 On a relational provider, each check that writes runs in a transaction that is rolled
 back, so a leak can't change what a later check sees.
 
+## A context with no tenant
+
+A background job, a startup task or a request that reached the database before its tenant
+was resolved has a context with no current tenant. A filter such as
+`CurrentTenantId == null || e.TenantId == CurrentTenantId` shows that context every
+tenant's rows. Give the probe a factory for one, and it checks that it reads none:
+
+```csharp
+var report = await new TenantIsolationProbe<AppDbContext>(tenant => CreateContext(tenant))
+    .WithTenants("acme", "globex")
+    .WithoutTenant(() => CreateContext(tenant: null))
+    .RunAsync();
+```
+
+Each probed entity type gets a NoTenantIsolation row: `Set<E>()` returns none of the
+tenants' rows, and `FindAsync` with each tenant's key returns null. A query that throws when
+there's no tenant passes, since it returns nothing. Call `WithoutTenant` when your app has
+any context without a tenant; without it, the report has no NoTenantIsolation rows.
+[The probe reference](../reference/probe.md#a-context-with-no-tenant) has the details.
+
+## Skipped rows
+
 A skipped row fails `AssertAllPassed()` too, because a check that couldn't run proves
 nothing. On EF Core's in-memory provider, which has no `ExecuteDelete` and no
 transactions, BulkIsolation is always skipped, so use SQLite in memory instead.
