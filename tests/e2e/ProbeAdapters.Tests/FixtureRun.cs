@@ -4,6 +4,7 @@
 
 using System.Diagnostics;
 using System.Reflection;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace ProbeAdapters.Tests;
@@ -48,23 +49,35 @@ internal static class FixtureRun
         var directory = Directory.CreateTempSubdirectory("probe-adapters-");
         var report = Path.Combine(directory.FullName, "results.xml");
         var output = await RunAsync(Metadata("XunitFixture"), "-xml", report);
-        return File.Exists(report) ? ([.. XDocument.Load(report).Descendants("test").Select(FromXunit)], output) : ([], output);
+        return Load(report) is { } document ? ([.. document.Descendants("test").Select(FromXunit)], output) : ([], output);
     }
 
     private static async Task<(IReadOnlyList<TestResult> Results, string Output)> TUnitOnceAsync()
     {
         var directory = Directory.CreateTempSubdirectory("probe-adapters-");
         var output = await RunAsync(Metadata("TUnitFixture"), "--report-trx", "--results-directory", directory.FullName);
-        if (directory.GetFiles("*.trx") is not [var file])
+        if (directory.GetFiles("*.trx") is not [var file] || Load(file.FullName) is not { } report)
         {
             return ([], output);
         }
 
-        var report = XDocument.Load(file.FullName);
         var methods = report.Descendants(_trx + "UnitTest").ToDictionary(
             test => (string)test.Attribute("id")!,
             test => (string)test.Element(_trx + "TestMethod")!.Attribute("name")!);
         return ([.. report.Descendants(_trx + "UnitTestResult").Select(result => FromTrx(result, methods))], output);
+    }
+
+    // A report the crashed process left missing, empty or cut short reads as no report.
+    private static XDocument? Load(string path)
+    {
+        try
+        {
+            return XDocument.Load(path);
+        }
+        catch (Exception exception) when (exception is XmlException or FileNotFoundException)
+        {
+            return null;
+        }
     }
 
     private static TestResult FromXunit(XElement test)
