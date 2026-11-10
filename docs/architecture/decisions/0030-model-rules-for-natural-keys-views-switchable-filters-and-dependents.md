@@ -1,6 +1,6 @@
 # 0030. Model rules for natural keys, views, switchable filters and unscoped dependents
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-10
 
 ## Context
