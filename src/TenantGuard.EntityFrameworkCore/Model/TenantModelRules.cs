@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
-// Runs rules TGM001 to TGM010 over every entity type in name order, so the findings are
+// Runs rules TGM001 to TGM014 over every entity type in name order, so the findings are
 // deterministic.
 internal static class TenantModelRules
 {
@@ -38,6 +38,11 @@ internal static class TenantModelRules
         var unfiltered = new List<ModelReport.Declaration>();
         var tenantProperties = new Dictionary<string, string>(StringComparer.Ordinal);
 
+        // TGM011 reports a view only in a model that has tenant data.
+        var hasTenantData = model.GetEntityTypes().Any(entityType => !entityType.IsOwned()
+            && entityType.BaseType is null
+            && TenantPropertyDiscovery.Find(entityType, options) is not null);
+
         foreach (var entityType in model.GetEntityTypes().OrderBy(entityType => entityType.Name, StringComparer.Ordinal))
         {
             var start = findings.Count;
@@ -51,7 +56,7 @@ internal static class TenantModelRules
             }
             else
             {
-                CheckRoot(entityType, options, findings, tenantProperties, unfiltered, contextType, checksIndexes, capturedValuesAllowed);
+                CheckRoot(entityType, options, findings, tenantProperties, unfiltered, contextType, checksIndexes, capturedValuesAllowed, hasTenantData);
             }
 
             Suppress(entityType, options, findings, start, suppressed);
@@ -118,17 +123,14 @@ internal static class TenantModelRules
         List<ModelReport.Declaration> unfiltered,
         Type? contextType,
         bool checksIndexes,
-        bool capturedValuesAllowed)
+        bool capturedValuesAllowed,
+        bool hasTenantData)
     {
         var entity = entityType.DisplayName();
         var tenantProperty = TenantPropertyDiscovery.Find(entityType, options);
         if (tenantProperty is null)
         {
-            if (options.RequireAllEntitiesScoped && !options.SharedTypes.Contains(entityType.ClrType))
-            {
-                findings.Add(RuleMessages.UnscopedEntity(entity, options.TenantPropertyNames[0]));
-            }
-
+            CheckUnscoped(entityType, options, findings, checksIndexes, hasTenantData);
             return;
         }
 
@@ -170,11 +172,82 @@ internal static class TenantModelRules
             findings.Add(RuleMessages.FilterNotParameterized(entity, property));
         }
 
+        if (checksFilter && filters.ReferencesTenantProperty)
+        {
+            var (switchable, openWithoutTenant) = FilterSwitches.Analyze(entityType, tenantProperty);
+            if (switchable)
+            {
+                findings.Add(RuleMessages.SwitchableFilter(entity, property));
+            }
+
+            if (openWithoutTenant)
+            {
+                findings.Add(RuleMessages.OpenWithoutTenant(entity, property));
+            }
+        }
+
         if (checksIndexes)
         {
             TenantIndexRules.Check(entityType, tenantProperty, options, findings);
         }
     }
+
+    // A root with no tenant property: TGM002 under RequireAllEntitiesScoped, else TGM011 for a view and
+    // TGM014 for a dependent of a tenant-scoped principal. A shared type gets none of them.
+    private static void CheckUnscoped(
+        IReadOnlyEntityType entityType,
+        TenantGuardOptions options,
+        List<ModelFinding> findings,
+        bool checksIndexes,
+        bool hasTenantData)
+    {
+        var entity = entityType.DisplayName();
+        if (options.SharedTypes.Contains(entityType.ClrType))
+        {
+            return;
+        }
+
+        if (options.RequireAllEntitiesScoped)
+        {
+            findings.Add(RuleMessages.UnscopedEntity(entity, options.TenantPropertyNames[0]));
+            return;
+        }
+
+        if (checksIndexes && hasTenantData && TenantIndexRules.NonTableSource(entityType) is { } source)
+        {
+            findings.Add(RuleMessages.TenantFreeView(entity, source, options.TenantPropertyNames[0]));
+        }
+
+        if (IsImplicitJoin(entityType))
+        {
+            return;
+        }
+
+        var principal = entityType.GetDerivedTypesInclusive()
+            .SelectMany(type => type.GetDeclaredForeignKeys())
+            .Where(foreignKey => foreignKey.IsRequired
+                && !foreignKey.IsOwnership
+                && !foreignKey.PrincipalEntityType.IsOwned()
+                && TenantPropertyDiscovery.Find(foreignKey.PrincipalEntityType.GetRootType(), options) is not null)
+            .OrderBy(foreignKey => foreignKey.PrincipalEntityType.GetRootType().DisplayName(), StringComparer.Ordinal)
+            .ThenBy(foreignKey => string.Join(",", foreignKey.Properties.Select(column => column.Name)), StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (principal is not null && !QueryFilterAnalysis.ReachesTenantProperty(entityType, options))
+        {
+            findings.Add(RuleMessages.UnscopedDependent(
+                entity,
+                principal.PrincipalEntityType.GetRootType().DisplayName(),
+                [.. principal.Properties.Select(column => column.Name)],
+                options.TenantPropertyNames[0]));
+        }
+    }
+
+    // The join entity type EF Core creates for a many-to-many relationship: a shared
+    // Dictionary<string, object> type that a skip navigation joins through.
+    private static bool IsImplicitJoin(IReadOnlyEntityType entityType)
+        => entityType.HasSharedClrType
+            && entityType.ClrType == typeof(Dictionary<string, object>)
+            && entityType.Model.GetEntityTypes().SelectMany(type => type.GetDeclaredSkipNavigations()).Any(skip => skip.JoinEntityType == entityType);
 
     private static void CheckDerived(IReadOnlyEntityType entityType, TenantGuardOptions options, List<ModelFinding> findings)
     {

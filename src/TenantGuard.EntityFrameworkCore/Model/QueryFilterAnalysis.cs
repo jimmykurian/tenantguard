@@ -3,8 +3,6 @@
 // </copyright>
 
 using System.Linq.Expressions;
-using System.Reflection;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
@@ -40,6 +38,29 @@ internal sealed class QueryFilterAnalysis
 
         return analysis;
     }
+
+    // Whether a query filter of the type reaches the tenant property of a tenant-scoped type through
+    // navigations, such as line => line.Order.TenantId == TenantId (TGM014).
+    public static bool ReachesTenantProperty(IReadOnlyEntityType entityType, TenantGuardOptions options)
+    {
+        foreach (var filter in entityType.GetDeclaredQueryFilters())
+        {
+            if (filter.Expression is { Parameters.Count: 1 } lambda)
+            {
+                var finder = new NavigationTenantFinder(entityType, lambda.Parameters[0], options);
+                finder.Visit(lambda.Body);
+                if (finder.Found)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // The filter's body with its bool constants folded, as every filter rule reads it.
+    public static Expression Fold(Expression body) => ConstantFolder.Fold(body);
 
     private void Record(OperandClassifier.Kind kind, string? literal)
     {
@@ -108,12 +129,61 @@ internal sealed class QueryFilterAnalysis
             => OperandClassifier.StripConversions(expression) is ConstantExpression { Value: bool constant } && constant == value;
     }
 
+    // Finds a member chain from the parameter through navigations that ends at the tenant property of
+    // the type the last navigation reaches.
+    private sealed class NavigationTenantFinder(IReadOnlyEntityType entityType, ParameterExpression parameter, TenantGuardOptions options)
+        : ExpressionVisitor
+    {
+        public bool Found { get; private set; }
+
+        protected override Expression VisitMember(MemberExpression node)
+        {
+            Found |= EndsAtTenantProperty(node);
+            return base.VisitMember(node);
+        }
+
+        private bool EndsAtTenantProperty(MemberExpression member)
+        {
+            var names = new Stack<string>();
+            Expression? current = member;
+            while (OperandClassifier.StripConversions(current!) is MemberExpression step)
+            {
+                names.Push(step.Member.Name);
+                current = step.Expression;
+                if (current is null)
+                {
+                    return false;
+                }
+            }
+
+            if (OperandClassifier.StripConversions(current!) != parameter || names.Count < 2)
+            {
+                return false;
+            }
+
+            var type = entityType;
+            while (names.Count > 1)
+            {
+                if (type.FindNavigation(names.Pop()) is not { } navigation)
+                {
+                    return false;
+                }
+
+                type = navigation.TargetEntityType;
+            }
+
+            return !type.IsOwned() && TenantPropertyDiscovery.Find(type.GetRootType(), options)?.Name == names.Pop();
+        }
+    }
+
     private sealed class Visitor(QueryFilterAnalysis analysis, ParameterExpression parameter, IReadOnlyProperty tenantProperty, Type? contextType)
         : ExpressionVisitor
     {
+        private readonly TenantAccess _access = new(parameter, tenantProperty);
+
         protected override Expression VisitMember(MemberExpression node)
         {
-            if (IsTenantAccess(node))
+            if (_access.IsTenantAccess(node))
             {
                 analysis.ReferencesTenantProperty = true;
             }
@@ -133,7 +203,7 @@ internal sealed class QueryFilterAnalysis
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            if (IsTenantAccess(node))
+            if (_access.IsTenantAccess(node))
             {
                 analysis.ReferencesTenantProperty = true;
             }
@@ -154,71 +224,16 @@ internal sealed class QueryFilterAnalysis
             return base.VisitMethodCall(node);
         }
 
-        private static bool IsEfProperty(MethodCallExpression call, out Expression instance, out string? name)
-        {
-            if (call.Method.DeclaringType == typeof(EF)
-                && call.Method.Name == nameof(EF.Property)
-                && call.Arguments.Count == 2)
-            {
-                instance = call.Arguments[0];
-                name = OperandClassifier.EvaluateFixedValue(call.Arguments[1]) as string;
-                return name is not null;
-            }
-
-            instance = call;
-            name = null;
-            return false;
-        }
-
         private void ClassifyOther(Expression left, Expression right)
         {
-            if (IsTenantAccess(left))
+            if (_access.IsTenantAccess(left))
             {
                 analysis.Record(OperandClassifier.Classify(right, contextType, out var literal), literal);
             }
-            else if (IsTenantAccess(right))
+            else if (_access.IsTenantAccess(right))
             {
                 analysis.Record(OperandClassifier.Classify(left, contextType, out var literal), literal);
             }
-        }
-
-        // e.TenantId, e.Blog.TenantId through a navigation, or EF.Property<T>(e, "TenantId"), with
-        // the name a constant or a captured string.
-        private bool IsTenantAccess(Expression expression)
-            => OperandClassifier.StripConversions(expression) switch
-            {
-                MemberExpression member => IsTenantMember(member.Member) && IsRootedAtParameter(member.Expression),
-                MethodCallExpression call => IsEfProperty(call, out var instance, out var name)
-                    && name == tenantProperty.Name
-                    && IsRootedAtParameter(instance),
-                _ => false,
-            };
-
-        private bool IsTenantMember(MemberInfo member)
-            => member.Name == tenantProperty.Name
-                || member == tenantProperty.PropertyInfo
-                || member == tenantProperty.FieldInfo;
-
-        private bool IsRootedAtParameter(Expression? expression)
-        {
-            while (expression is not null)
-            {
-                switch (OperandClassifier.StripConversions(expression))
-                {
-                    case ParameterExpression root:
-                        return root == parameter;
-                    case MemberExpression member:
-                        expression = member.Expression;
-                        break;
-                    case MethodCallExpression call when IsEfProperty(call, out var instance, out _):
-                        expression = instance;
-                        break;
-                    default:
-                        return false;
-                }
-            }
-
-            return false;
         }
     }
 }

@@ -8,9 +8,27 @@ namespace TenantGuard;
 
 // TGM009 and TGM010: the indexes and keys of a tenant-scoped table, on a relational provider. The
 // relational annotations are read by name, so the runtime package needs no relational reference.
+// TGM011 reads the same annotations for the types these rules skip.
 internal static class TenantIndexRules
 {
     private static readonly string[] _nonTableMappings = ["Relational:ViewName", "Relational:SqlQuery", "Relational:FunctionName"];
+
+    // What the type is mapped to when it isn't a table, as TGM011 names it: "the view 'name'", "a SQL
+    // query" or "the function 'name'"; null for a table.
+    public static string? NonTableSource(IReadOnlyEntityType root)
+    {
+        if (root.FindAnnotation("Relational:ViewName")?.Value is string view)
+        {
+            return $"the view '{view}'";
+        }
+
+        if (root.FindAnnotation("Relational:SqlQuery")?.Value is not null)
+        {
+            return "a SQL query";
+        }
+
+        return root.FindAnnotation("Relational:FunctionName")?.Value is string function ? $"the function '{function}'" : null;
+    }
 
     public static void Check(IReadOnlyEntityType root, IReadOnlyProperty tenantProperty, TenantGuardOptions options, List<ModelFinding> findings)
     {
@@ -27,6 +45,17 @@ internal static class TenantIndexRules
         if (!keys.Any(key => StartsWith(key.Properties, property)) && !indexes.Any(index => StartsWith(index.Properties, property)))
         {
             findings.Add(RuleMessages.UnindexedTenant(root.DisplayName(), property));
+        }
+
+        // A natural primary key: no property's values are generated. A single Guid is random, so
+        // another tenant can't reuse it.
+        if (root.FindPrimaryKey() is { } primaryKey
+            && !Includes(primaryKey.Properties, property)
+            && primaryKey.Properties.All(column => column.ValueGenerated == ValueGenerated.Never)
+            && !IsSingleGuid(primaryKey.Properties)
+            && !CoversTenantScopedForeignKey(root, primaryKey.Properties, options))
+        {
+            findings.Add(RuleMessages.TenantFreePrimaryKey(root.DisplayName(), property, Names(primaryKey.Properties)));
         }
 
         foreach (var key in keys.Where(key => !key.IsPrimaryKey()
@@ -63,6 +92,9 @@ internal static class TenantIndexRules
         => entityType.GetForeignKeys().Any(foreignKey => foreignKey.Properties.All(column => properties.Contains(column))
             && !foreignKey.PrincipalEntityType.IsOwned()
             && TenantPropertyDiscovery.Find(foreignKey.PrincipalEntityType.GetRootType(), options) is not null);
+
+    private static bool IsSingleGuid(IReadOnlyList<IReadOnlyProperty> properties)
+        => properties is [var only] && (Nullable.GetUnderlyingType(only.ClrType) ?? only.ClrType) == typeof(Guid);
 
     private static bool StartsWith(IReadOnlyList<IReadOnlyPropertyBase> properties, string property)
         => properties.Count > 0 && properties[0].Name == property;

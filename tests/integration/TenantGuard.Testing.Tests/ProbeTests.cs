@@ -206,12 +206,14 @@ public sealed class ProbeTests : FeatureFixture, IAsyncDisposable
         }
     }
 
-    // UseTenantGuard with CurrentTenant read from the context, plus anything else the test needs.
+    // UseTenantGuard with CurrentTenant read from the context, plus anything else the test needs. Note's
+    // key is natural on purpose, to seed a key EF doesn't generate, so its TGM010 is suppressed.
     private static Action<TenantGuardOptionsBuilder> Guard<TContext>(Func<TContext, object?> currentTenant, Action<TenantGuardOptionsBuilder>? more = null)
         where TContext : DbContext
         => tg =>
         {
-            tg.CurrentTenant(context => currentTenant((TContext)context));
+            tg.CurrentTenant(context => currentTenant((TContext)context))
+                .Suppress<Note>("TGM010", "the probe tests seed a key EF doesn't generate");
             more?.Invoke(tg);
         };
 
