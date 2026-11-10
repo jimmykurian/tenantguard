@@ -69,7 +69,10 @@ cycle of required relationships, one whose required principal can't be seeded, o
 parameterless constructor that EF Core doesn't create through a constructor either, one
 with a required complex property or a required value the generator can't fill, keyless
 entity types, and types that share a CLR type. The skip names the property, and the value
-converter when the converter threw on every value tried. When the tenant property points at
+converter when the converter threw on every value tried. When the probe can't make an
+owner ahead of seeding, as when its constructor needs the tenant, its owned values are
+checked as the row is seeded, and one that can't be filled skips the type with the
+seeding error instead. When the tenant property points at
 a type that can't be seeded, the skip says so:
 
 ```text
