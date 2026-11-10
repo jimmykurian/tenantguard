@@ -319,9 +319,11 @@ with no negation above it. `!(BlockAll || e.TenantId != TenantId)` is
 reported; `!(Enabled && e.TenantId != TenantId)` is `!Enabled || e.TenantId == TenantId`,
 and is.
 
-Each such `||` above the tenant comparison is a switch of its own. One whose other side is
-a null check of the current tenant is TGM013, and every other one is TGM012, so a filter
-with both, such as `!IsTenantFilterEnabled || (CurrentTenantId == null || e.TenantId == CurrentTenantId)`,
+A chain of `||`, however it is grouped, is read as one list of conditions, so
+`(a || b) || e.TenantId == TenantId` and `a || (b || e.TenantId == TenantId)` are the same
+filter. Each condition in the list that doesn't read the row is a switch of its own. One
+that is a null check of the current tenant is TGM013, and every other one is TGM012, so a
+filter with both, such as `!IsTenantFilterEnabled || (CurrentTenantId == null || e.TenantId == CurrentTenantId)`,
 gets both, and suppressing one leaves the other. A switch isn't reported when an `&&` above
 it has, on its other side, the opposite of the switch's condition, which rules the switch
 out: `Enabled && (!Enabled || e.TenantId == TenantId)`, or
