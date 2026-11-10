@@ -23,6 +23,9 @@ internal sealed class RowFactory<TContext>(
 {
     private const BindingFlags Constructors = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+    // TenantKeys per model, worked out once: a model per tenant has entity types of its own.
+    private readonly Dictionary<IModel, IReadOnlyDictionary<IEntityType, IReadOnlyList<IProperty>>> _tenantKeys = [];
+
     // Why the default seeder cannot create a row of the type, or null when it can or Seed<T> is set.
     public string? WhyCannotCreate(IEntityType type)
     {
@@ -51,20 +54,8 @@ internal sealed class RowFactory<TContext>(
             return unfillable;
         }
 
-        foreach (var owned in OwnedTypesToCreate(type))
-        {
-            if (!CanInstantiate(owned))
-            {
-                return $"the owned type {owned.ClrType.Name} has no parameterless constructor, and EF Core doesn't bind one of its constructors";
-            }
-
-            if (OwnedPropertiesToFill(owned).Select(ValueGenerator.WhyCannotFill).FirstOrDefault(reason => reason is not null) is { } ownedUnfillable)
-            {
-                return ownedUnfillable;
-            }
-        }
-
-        return null;
+        var filled = FilledProperties(type).ToList();
+        return WhyCannotFillOwned(type, Sample(type, filled));
     }
 
     // The keys of the type that a tenant value reaches as a foreign key, other than the type's own
@@ -73,8 +64,13 @@ internal sealed class RowFactory<TContext>(
     // a shared primary key (Role.TenantId to Tenant.Id, which is the foreign key to Organization.Id).
     public IReadOnlyList<IProperty> TenantKeys(IEntityType type)
     {
-        var ownTenant = TenantProperty(type);
-        return [.. KeysATenantReaches(type, []).Where(key => key != ownTenant).Distinct()];
+        var model = type.Model;
+        if (!_tenantKeys.TryGetValue(model, out var keys))
+        {
+            keys = _tenantKeys[model] = KeysATenantReaches(model);
+        }
+
+        return keys.GetValueOrDefault(type) ?? [];
     }
 
     // The type's tenant property, or null when it is not tenant-scoped.
@@ -187,27 +183,63 @@ internal sealed class RowFactory<TContext>(
             ? [.. binding.ParameterBindings.OfType<PropertyParameterBinding>().SelectMany(parameter => parameter.ConsumedProperties).OfType<IProperty>().Intersect(OwnedProperties(owned))]
             : [];
 
-    // The owned values the seeder has to generate: the constructor's, and the others a new instance
-    // leaves null. A value the constructor or an initializer sets is kept, so it needn't be fillable.
-    // When the instance can't be made here, every other value counts.
-    private static IEnumerable<IProperty> OwnedPropertiesToFill(IEntityType owned)
+    // A new instance of the type, made as the seeder makes one, to see which values its constructor and
+    // initializers set; arguments are the values generated for the constructor, any other parameter
+    // gets its default. Null when the instance can't be made here: a value can't be generated, or the
+    // constructor throws.
+    private static object? Sample(ITypeBase type, IReadOnlyCollection<IProperty> arguments)
     {
-        var arguments = ConstructorProperties(owned);
         var sampler = new ValueGenerator();
-        object? sample;
         try
         {
-            // As FillOwned does: a parameter outside the arguments, such as a nullable one, gets its default.
-            sample = arguments.Any(property => ValueGenerator.WhyCannotFill(property) is not null)
+            return arguments.Any(property => ValueGenerator.WhyCannotFill(property) is not null)
                 ? null
-                : Instantiate(owned, context: null, property => arguments.Contains(property) ? sampler.Next(property) : null);
+                : Instantiate(type, context: null, property => arguments.Contains(property) ? sampler.Next(property) : null);
         }
-        catch (Exception exception) when (exception is TargetInvocationException or ArgumentException or MemberAccessException)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            sample = null;
+            return null;
+        }
+    }
+
+    // Why the seeder can't fill an owned reference of the type, or null. instance is the owner as the
+    // seeder makes it, or null when it couldn't be made: an owned value it already holds, set by the
+    // owned type or by the owner, is kept, so only the values left null have to be fillable.
+    private static string? WhyCannotFillOwned(IEntityType type, object? instance)
+    {
+        foreach (var navigation in OwnedReferences(type))
+        {
+            var owned = navigation.TargetEntityType;
+            var existing = instance is null ? null : GetClrValue(navigation, instance);
+            IEnumerable<IProperty> toFill;
+            if (existing is null)
+            {
+                if (!navigation.ForeignKey.IsRequiredDependent)
+                {
+                    continue;
+                }
+
+                if (!CanInstantiate(owned))
+                {
+                    return $"the owned type {owned.ClrType.Name} has no parameterless constructor, and EF Core doesn't bind one of its constructors";
+                }
+
+                var arguments = ConstructorProperties(owned);
+                existing = Sample(owned, arguments);
+                toFill = arguments.Concat(OwnedProperties(owned).Except(arguments).Where(property => existing is null || GetClrValue(property, existing) is null));
+            }
+            else
+            {
+                toFill = OwnedProperties(owned).Where(property => GetClrValue(property, existing) is null);
+            }
+
+            if ((toFill.Select(ValueGenerator.WhyCannotFill).FirstOrDefault(reason => reason is not null) ?? WhyCannotFillOwned(owned, existing)) is { } reason)
+            {
+                return reason;
+            }
         }
 
-        return arguments.Concat(OwnedProperties(owned).Except(arguments).Where(property => sample is null || GetClrValue(property, sample) is null));
+        return null;
     }
 
     private static bool TrySetClrValue(IPropertyBase property, object entity, object? value, bool onlyIfUnset)
@@ -243,35 +275,34 @@ internal sealed class RowFactory<TContext>(
     private static object? GetClrValue(IPropertyBase property, object entity)
         => property.PropertyInfo is { GetMethod: not null } propertyInfo ? propertyInfo.GetValue(entity) : property.FieldInfo?.GetValue(entity);
 
-    // The owned types reached through required owned references, which the default seeder creates.
-    private static IEnumerable<IEntityType> OwnedTypesToCreate(IEntityType type)
-        => OwnedReferences(type).Where(navigation => navigation.ForeignKey.IsRequiredDependent)
-            .SelectMany(navigation => OwnedTypesToCreate(navigation.TargetEntityType).Prepend(navigation.TargetEntityType));
-
     private static IEnumerable<INavigation> OwnedReferences(IEntityType type)
         => type.GetNavigations().Where(navigation => !navigation.IsCollection && navigation.ForeignKey.IsOwnership && !navigation.IsOnDependent);
 
-    // The keys of the type that a dependent's tenant property, or a key a tenant value reaches in the
-    // dependent, points at. visited stops a cycle of relationships.
-    private List<IProperty> KeysATenantReaches(IEntityType type, HashSet<IEntityType> visited)
+    // For each entity type, the keys a tenant value reaches, other than its own tenant property: worked
+    // out from the tenant properties along foreign keys until nothing changes, so each relationship is
+    // followed once per key it adds, however the relationships branch or cycle.
+    private Dictionary<IEntityType, IReadOnlyList<IProperty>> KeysATenantReaches(IModel model)
     {
-        if (!visited.Add(type))
+        var types = model.GetEntityTypes().ToList();
+        var reached = types.ToDictionary(type => type, type => new HashSet<IProperty>(TenantProperty(type) is { } tenant ? [tenant] : []));
+        var foreignKeys = types.SelectMany(type => type.GetDeclaredForeignKeys()).Where(foreignKey => !foreignKey.IsOwnership).ToList();
+        for (var changed = true; changed;)
         {
-            return [];
+            changed = false;
+            foreach (var foreignKey in foreignKeys)
+            {
+                for (var index = 0; index < foreignKey.Properties.Count; index++)
+                {
+                    changed |= reached[foreignKey.DeclaringEntityType].Contains(foreignKey.Properties[index])
+                        && reached[foreignKey.PrincipalEntityType].Add(foreignKey.PrincipalKey.Properties[index]);
+                }
+            }
         }
 
-        var keys = new List<IProperty>();
-        foreach (var foreignKey in type.GetReferencingForeignKeys().Where(foreignKey => !foreignKey.IsOwnership))
-        {
-            var dependent = foreignKey.DeclaringEntityType;
-            var tenantValued = KeysATenantReaches(dependent, [.. visited]).Append(TenantProperty(dependent)).OfType<IProperty>().ToHashSet();
-            keys.AddRange(foreignKey.Properties
-                .Select((property, index) => (property, index))
-                .Where(pair => tenantValued.Contains(pair.property))
-                .Select(pair => foreignKey.PrincipalKey.Properties[pair.index]));
-        }
-
-        return keys;
+        // A type's keys include those reached through a relationship to one of its base types.
+        return types.ToDictionary(
+            type => type,
+            type => (IReadOnlyList<IProperty>)[.. type.GetAllBaseTypesInclusive().SelectMany(baseType => reached[baseType]).Distinct().Where(key => key != TenantProperty(type))]);
     }
 
     // The required properties the default seeder fills: not generated by the database, not the tenant

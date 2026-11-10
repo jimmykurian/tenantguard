@@ -2,6 +2,7 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using System.Globalization;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard.Testing;
@@ -39,9 +40,16 @@ internal sealed class ValueGenerator
             return $"{TypeName(type.GetElementType()!)}[]";
         }
 
-        return type.IsGenericType
-            ? $"{type.Name[..type.Name.IndexOf('`', StringComparison.Ordinal)]}<{string.Join(", ", type.GetGenericArguments().Select(TypeName))}>"
-            : type.Name;
+        // A type nested in a generic one is generic too, but its own type parameters, if any, are the
+        // last arguments, as many as its name's `n suffix says.
+        var tick = type.Name.IndexOf('`', StringComparison.Ordinal);
+        if (!type.IsGenericType || tick < 0)
+        {
+            return type.Name;
+        }
+
+        var arity = int.Parse(type.Name[(tick + 1)..], CultureInfo.InvariantCulture);
+        return $"{type.Name[..tick]}<{string.Join(", ", type.GetGenericArguments()[^arity..].Select(TypeName))}>";
     }
 
     public object? Next(IReadOnlyProperty property)

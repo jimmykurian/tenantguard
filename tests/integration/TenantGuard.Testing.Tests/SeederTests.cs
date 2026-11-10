@@ -36,7 +36,7 @@ public sealed class SeederTests
     }
 
     [Fact]
-    public async Task An_owned_value_the_constructor_or_an_initializer_sets_is_kept()
+    public async Task An_owned_value_its_constructor_or_an_initializer_of_either_type_sets_is_kept()
     {
         await using var database = await DatabaseAsync((options, tenant) => new Shipping(options, tenant));
 
@@ -45,7 +45,8 @@ public sealed class SeederTests
         report.AssertAllPassed();
         await using var acme = database.Create("acme");
         var shipment = await acme.Set<Shipment>().SingleAsync(Token);
-        (shipment.Destination.City.Length > 0, shipment.Destination.Fee.ToString(), shipment.Insurance.Fee.ToString()).Should().Be((true, "0 USD", "5 EUR"));
+        (shipment.Destination.City.Length > 0, shipment.Destination.Fee.ToString(), shipment.Insurance.Fee.ToString(), shipment.Packaging.Fee.ToString())
+            .Should().Be((true, "0 USD", "5 EUR", "2 GBP"));
     }
 
     [Fact]
@@ -58,6 +59,28 @@ public sealed class SeederTests
         report.AssertAllPassed();
         await using var acme = database.Create("acme");
         (await acme.Set<Basket>().SingleAsync(Token)).Coupon.Discount.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task A_constructor_argument_the_converter_rejects_later_does_not_abort_the_probe()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Stamps(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.Rows.Select(row => row.Entity).Distinct().Should().Equal("Letter");
+    }
+
+    [Fact]
+    public async Task A_skip_names_a_type_nested_in_a_generic_type()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Boxes(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.Rows.Select(row => (row.Entity, row.Outcome, row.Detail)).Distinct().Should().Equal(
+            ("Crate", ProbeOutcome.Skipped, "Needs a seeder: the default seeder cannot fill the required Amount property Weight, stored through ValueConverter<Amount, String>, which threw: "
+                + "\"probe-1\" is not an amount."));
     }
 
     [Fact]
@@ -146,6 +169,17 @@ public sealed class SeederTests
         public string? Tenant { get; } = tenant;
     }
 
+    private static class Box<T>
+    {
+        public sealed class Amount(int grams)
+        {
+            public int Grams { get; } = grams;
+
+            public static Amount Parse(string text)
+                => int.TryParse(text, CultureInfo.InvariantCulture, out var grams) ? new Amount(grams) : throw new FormatException($"\"{text}\" is not an amount.");
+        }
+    }
+
     // An invoice with no parameterless constructor, owning a total that has none either.
     private sealed class Ledger(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
     {
@@ -158,7 +192,8 @@ public sealed class SeederTests
     }
 
     // A shipment owning a destination bound through its constructor and an insurance with a
-    // parameterless one; each sets a fee, stored through a converter that rejects every generated value.
+    // parameterless one, each setting its own fee, and a packaging whose fee the shipment's initializer
+    // sets; every fee is stored through a converter that rejects every generated value.
     private sealed class Shipping(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -167,7 +202,9 @@ public sealed class SeederTests
                 shipment.OwnsOne(row => row.Destination, destination => destination.Property(row => row.Fee).HasConversion(fee => fee.ToString(), text => Money.Parse(text)));
                 shipment.OwnsOne(row => row.Insurance, insurance => insurance.Property(row => row.Fee).HasConversion(fee => fee.ToString(), text => Money.Parse(text)));
                 shipment.Navigation(row => row.Destination).IsRequired();
+                shipment.OwnsOne(row => row.Packaging, packaging => packaging.Property(row => row.Fee).HasConversion(fee => fee.ToString(), text => Money.Parse(text)));
                 shipment.Navigation(row => row.Insurance).IsRequired();
+                shipment.Navigation(row => row.Packaging).IsRequired();
                 shipment.HasQueryFilter(row => row.TenantId == Tenant);
             });
     }
@@ -182,6 +219,32 @@ public sealed class SeederTests
                 basket.OwnsOne(row => row.Coupon, coupon => coupon.Property(row => row.Discount).HasConversion(discount => discount!.ToString(), text => Money.Parse(text)));
                 basket.Navigation(row => row.Coupon).IsRequired();
                 basket.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+    }
+
+    // A letter owning a stamp bound through its constructor, whose price converter takes the first
+    // generated value only, so the probe's later values fail.
+    private sealed class Stamps(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Letter>(letter =>
+            {
+                letter.OwnsOne(row => row.Stamp, stamp => stamp.Property(row => row.Price).HasConversion(
+                    price => price.ToString(), text => Money.ParseFirst(text)));
+                letter.Navigation(row => row.Stamp).IsRequired();
+                letter.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+    }
+
+    // A crate whose weight is a type nested in a generic one, stored through a converter that rejects
+    // every generated value.
+    private sealed class Boxes(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Crate>(crate =>
+            {
+                crate.Property(row => row.Weight).HasConversion(weight => weight.Grams.ToString(CultureInfo.InvariantCulture), text => Box<int>.Amount.Parse(text)).IsRequired();
+                crate.HasQueryFilter(row => row.TenantId == Tenant);
             });
     }
 
@@ -291,6 +354,10 @@ public sealed class SeederTests
                 ? new Money(value, currency)
                 : throw new FormatException($"\"{text}\" is not an amount and a currency.");
 
+        // Takes only the first value the probe generates.
+        public static Money ParseFirst(string text)
+            => text == "probe-1" ? new Money(1m, "USD") : throw new FormatException($"\"{text}\" is not a price.");
+
         public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Amount} {Currency}");
     }
 
@@ -303,6 +370,8 @@ public sealed class SeederTests
         public Destination Destination { get; set; } = null!;
 
         public Insurance Insurance { get; set; } = null!;
+
+        public Packaging Packaging { get; set; } = new() { Fee = new(2m, "GBP") };
     }
 
     private sealed class Destination(string city)
@@ -315,6 +384,11 @@ public sealed class SeederTests
     private sealed class Insurance
     {
         public Money Fee { get; private set; } = new(5m, "EUR");
+    }
+
+    private sealed class Packaging
+    {
+        public Money Fee { get; set; } = null!;
     }
 
     private sealed class Basket
@@ -331,6 +405,31 @@ public sealed class SeederTests
         public string Code { get; private set; } = code;
 
         public Money? Discount { get; private set; } = discount;
+    }
+
+    private sealed class Letter
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public Stamp Stamp { get; set; } = null!;
+    }
+
+    private sealed class Stamp(string code, Money price)
+    {
+        public string Code { get; private set; } = code;
+
+        public Money Price { get; private set; } = price;
+    }
+
+    private sealed class Crate
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public Box<int>.Amount Weight { get; set; } = null!;
     }
 
     private sealed class Company
