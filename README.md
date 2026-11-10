@@ -311,8 +311,8 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 85 | 108 | 14 | 207 |
-| Lines of code | 4,334 | 6,891 | 228 | 11,453 |
-| Methods | 334 | 723 | 21 | 1,078 |
+| Lines of code | 4,346 | 6,958 | 228 | 11,532 |
+| Methods | 335 | 727 | 21 | 1,083 |
 | Average complexity | 3.3 | 1.1 | 1.2 | 1.8 |
 | Max complexity | 32 | 5 | 4 | 32 |
 
@@ -328,9 +328,9 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:30` | 18 |
 | `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:201` | 13 |
 | `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
+| `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:85` | 13 |
 | `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:36` | 13 |
 | `IgnoreQueryFiltersAnalyzer.ReachesTenantMember` | `src/TenantGuard.Analyzers/IgnoreQueryFiltersAnalyzer.cs:88` | 12 |
-| `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:15` | 12 |
 
 </details>
 
