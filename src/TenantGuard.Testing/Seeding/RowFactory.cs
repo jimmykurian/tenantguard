@@ -203,14 +203,21 @@ internal sealed class RowFactory<TContext>(
     }
 
     // Why the seeder can't fill an owned reference of the type, or null. instance is the owner as the
-    // seeder makes it, or null when it couldn't be made: an owned value it already holds, set by the
-    // owned type or by the owner, is kept, so only the values left null have to be fillable.
+    // seeder makes it: an owned value it already holds, set by the owned type or by the owner, is kept,
+    // so only the values left null have to be fillable. When the owner couldn't be made here, as when
+    // its constructor needs the tenant, what it holds isn't known, so the check is left to seeding,
+    // where a value that can't be filled makes the type's seeding fail with the converter's error.
     private static string? WhyCannotFillOwned(IEntityType type, object? instance)
     {
+        if (instance is null)
+        {
+            return null;
+        }
+
         foreach (var navigation in OwnedReferences(type))
         {
             var owned = navigation.TargetEntityType;
-            var existing = instance is null ? null : GetClrValue(navigation, instance);
+            var existing = GetClrValue(navigation, instance);
             IEnumerable<IProperty> toFill;
             if (existing is null)
             {
@@ -224,9 +231,12 @@ internal sealed class RowFactory<TContext>(
                     return $"the owned type {owned.ClrType.Name} has no parameterless constructor, and EF Core doesn't bind one of its constructors";
                 }
 
+                // The constructor's arguments are generated whatever it sets; the rest only when the new instance leaves them null.
                 var arguments = ConstructorProperties(owned);
                 existing = Sample(owned, arguments);
-                toFill = arguments.Concat(OwnedProperties(owned).Except(arguments).Where(property => existing is null || GetClrValue(property, existing) is null));
+                toFill = existing is null
+                    ? arguments
+                    : arguments.Concat(OwnedProperties(owned).Except(arguments).Where(property => GetClrValue(property, existing) is null));
             }
             else
             {
@@ -293,7 +303,9 @@ internal sealed class RowFactory<TContext>(
             {
                 for (var index = 0; index < foreignKey.Properties.Count; index++)
                 {
-                    changed |= reached[foreignKey.DeclaringEntityType].Contains(foreignKey.Properties[index])
+                    // A key reached through a relationship to a base type holds a tenant value in the derived type too.
+                    var property = foreignKey.Properties[index];
+                    changed |= foreignKey.DeclaringEntityType.GetAllBaseTypesInclusive().Any(type => reached[type].Contains(property))
                         && reached[foreignKey.PrincipalEntityType].Add(foreignKey.PrincipalKey.Properties[index]);
                 }
             }

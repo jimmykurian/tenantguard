@@ -84,6 +84,18 @@ public sealed class SeederTests
     }
 
     [Fact]
+    public async Task An_owned_value_set_by_an_owner_only_the_seeder_can_construct_is_kept()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Parcels(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.AssertAllPassed();
+        await using var acme = database.Create("acme");
+        (await acme.Set<Parcel>().SingleAsync(Token)).Label.Fee.ToString().Should().Be("3 CHF");
+    }
+
+    [Fact]
     public async Task Collections_and_JSON_are_seeded_empty()
     {
         await using var database = await DatabaseAsync((options, tenant) => new Settings(options, tenant));
@@ -144,6 +156,18 @@ public sealed class SeederTests
         var report = await database.Probe().RunAsync(Token);
 
         report.AssertAllPassed();
+        await using var context = database.Create(tenant: null);
+        (await context.Set<Company>().Select(company => company.Id).OrderBy(id => id).ToListAsync(Token)).Should().Equal("acme", "globex");
+    }
+
+    [Fact]
+    public async Task A_tenant_key_inherited_from_a_base_type_reaches_the_table_it_points_at()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Offices(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.Rows.Where(row => row.Entity == "Desk").Select(row => row.Outcome).Distinct().Should().Equal(ProbeOutcome.Passed);
         await using var context = database.Create(tenant: null);
         (await context.Set<Company>().Select(company => company.Id).OrderBy(id => id).ToListAsync(Token)).Should().Equal("acme", "globex");
     }
@@ -246,6 +270,40 @@ public sealed class SeederTests
                 crate.Property(row => row.Weight).HasConversion(weight => weight.Grams.ToString(CultureInfo.InvariantCulture), text => Box<int>.Amount.Parse(text)).IsRequired();
                 crate.HasQueryFilter(row => row.TenantId == Tenant);
             });
+    }
+
+    // A parcel whose constructor needs its tenant and whose initializer sets its label's fee, stored
+    // through a converter that rejects every generated value.
+    private sealed class Parcels(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Parcel>(parcel =>
+            {
+                parcel.OwnsOne(row => row.Label, label => label.Property(row => row.Fee).HasConversion(fee => fee.ToString(), text => Money.Parse(text)));
+                parcel.Navigation(row => row.Label).IsRequired();
+                parcel.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+    }
+
+    // Seats whose tenant property is the foreign key to an abstract registry; an office, a registry,
+    // has its key as the foreign key to a company, and desks belong to an office.
+    private sealed class Offices(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Registry>();
+            modelBuilder.Entity<Office>().HasOne<Company>().WithOne().HasForeignKey<Office>(row => row.Id);
+            modelBuilder.Entity<Seat>(seat =>
+            {
+                seat.HasOne<Registry>().WithMany().HasForeignKey(row => row.TenantId);
+                seat.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+            modelBuilder.Entity<Desk>(desk =>
+            {
+                desk.HasOne<Office>().WithMany().HasForeignKey(row => row.OfficeId);
+                desk.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+        }
     }
 
     // Seats whose tenant property is the foreign key to a workspace, whose primary key is in turn the
@@ -430,6 +488,40 @@ public sealed class SeederTests
         public string TenantId { get; set; } = string.Empty;
 
         public Box<int>.Amount Weight { get; set; } = null!;
+    }
+
+    private sealed class Parcel(string tenantId)
+    {
+        public int Id { get; private set; }
+
+        public string TenantId { get; private set; } = string.IsNullOrEmpty(tenantId) ? throw new ArgumentException("A parcel needs a tenant.", nameof(tenantId)) : tenantId;
+
+        public Label Label { get; private set; } = new() { Fee = new(3m, "CHF") };
+    }
+
+    private sealed class Label
+    {
+        public Money Fee { get; set; } = null!;
+    }
+
+    private abstract class Registry
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private sealed class Office : Registry
+    {
+    }
+
+    private sealed class Desk
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public string OfficeId { get; set; } = string.Empty;
     }
 
     private sealed class Company
