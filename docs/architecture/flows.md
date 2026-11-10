@@ -28,7 +28,7 @@ sequenceDiagram
 `UseTenantGuard` adds an `IDbContextOptionsExtension` that registers an
 `IConventionSetPlugin` with one `IModelFinalizedConvention`
 ([0003](decisions/0003-model-validation-as-an-ef-convention.md)). When EF Core finalizes the
-model, the convention finds each entity type's tenant property, runs TGM001 to TGM010,
+model, the convention finds each entity type's tenant property, runs TGM001 to TGM014,
 stores the per-entity metadata as a model annotation (`TenantGuard:Entities`), and throws or
 logs per `Enforcement`. EF Core caches the model per context type, so the rules run once.
 
@@ -46,7 +46,7 @@ sequenceDiagram
     Host->>Check: ValidateOnStart, before any hosted service
     Check->>EF: resolve the context, read .Model
     EF->>Rules: model finalized
-    Rules->>Rules: discover tenant properties, run TGM001 to TGM010
+    Rules->>Rules: discover tenant properties, run TGM001 to TGM014
     Rules->>EF: store TenantGuard:Entities on the model
     alt an error, Enforcement.Throw
         Rules-->>Host: TenantGuardModelException with every error, and the host fails to start

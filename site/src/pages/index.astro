@@ -19,7 +19,7 @@ const checkpoints = [
   {
     when: 'At startup',
     what: 'Model rules',
-    ids: 'TGM001 to TGM010',
+    ids: 'TGM001 to TGM014',
     text: 'Fail the host when a tenant-scoped entity has no query filter, or its filter is frozen to one tenant.',
     href: '/reference/rules/',
   },
@@ -41,7 +41,7 @@ const checkpoints = [
 
 const stats = [
   { number: '4', label: 'analyzers', detail: 'TG001 to TG004, at build' },
-  { number: '10', label: 'model rules', detail: 'TGM001 to TGM010, at startup' },
+  { number: '14', label: 'model rules', detail: 'TGM001 to TGM014, at startup' },
   { number: '3', label: 'write states guarded', detail: 'Added, Modified and Deleted, on SaveChanges' },
   { number: '7', label: 'probe checks', detail: 'per entity, for every pair of tenants, in tests' },
 ];
