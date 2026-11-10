@@ -19,7 +19,7 @@ call builds on the settings of the first.
 | `TenantPropertyNames(params string[] names)` | `TenantId` | The property names that mark a tenant property by convention, tried in order; CLR and shadow properties both match |
 | `TenantProperty<TEntity>(e => e.OrgId)` | none | Names the tenant property of one entity type; wins over `[TenantKey]` and the names |
 | `RequireAllEntitiesScoped()` | off | Every entity type must be tenant-scoped or declared shared (TGM002) |
-| `Shared<TEntity>()` | none | Declares an entity type tenant-free on purpose, such as a lookup table |
+| `Shared<TEntity>()` | none | Declares an entity type tenant-free on purpose, such as a lookup table or a view (TGM002, TGM011, TGM014) |
 | `Enforcement(Enforcement)` | `Throw` | What a rule error does: `Throw`, or `Log` and carry on |
 | `AllowCapturedValues()` | off | A tenant filter may capture the tenant when the model cache is keyed by tenant (TGM003); see [per-tenant models](#per-tenant-models) |
 | `CurrentTenant(Func<DbContext, object?>)` | none | How the write guard finds the context's current tenant; required for it |
@@ -68,7 +68,7 @@ so contexts can share one configuration.
 A membership table, an outbox, or a tenant store's own tables keep their tenant column but
 aren't filtered by it. `Unfiltered<TEntity>` keeps the type tenant-scoped, so the rules
 about its column and indexes (TGM005, TGM009, TGM010) still apply, and leaves out the rules
-about its filter (TGM001, TGM003, TGM004 and TGM007). The write guard doesn't check its
+about its filter (TGM001, TGM003, TGM004, TGM007, TGM012 and TGM013). The write guard doesn't check its
 rows, and the [isolation probe](probe.md#entity-types-it-leaves-out) leaves it out. Each
 declaration is logged once per model, at Information level
 ([logging](logging.md)).
