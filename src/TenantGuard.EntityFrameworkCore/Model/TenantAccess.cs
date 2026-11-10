@@ -13,6 +13,23 @@ namespace TenantGuard;
 // navigation, or EF.Property<T>(e, "TenantId"), with the name a constant or a captured string.
 internal sealed class TenantAccess(ParameterExpression parameter, IReadOnlyProperty tenantProperty)
 {
+    // EF.Property<T>(instance, name), with the name a constant or a captured string.
+    public static bool IsEfProperty(MethodCallExpression call, out Expression instance, out string? name)
+    {
+        if (call.Method.DeclaringType == typeof(EF)
+            && call.Method.Name == nameof(EF.Property)
+            && call.Arguments.Count == 2)
+        {
+            instance = call.Arguments[0];
+            name = OperandClassifier.EvaluateFixedValue(call.Arguments[1]) as string;
+            return name is not null;
+        }
+
+        instance = call;
+        name = null;
+        return false;
+    }
+
     public bool IsTenantAccess(Expression expression)
         => OperandClassifier.StripConversions(expression) switch
         {
@@ -63,22 +80,6 @@ internal sealed class TenantAccess(ParameterExpression parameter, IReadOnlyPrope
             }
         }
 
-        return false;
-    }
-
-    private static bool IsEfProperty(MethodCallExpression call, out Expression instance, out string? name)
-    {
-        if (call.Method.DeclaringType == typeof(EF)
-            && call.Method.Name == nameof(EF.Property)
-            && call.Arguments.Count == 2)
-        {
-            instance = call.Arguments[0];
-            name = OperandClassifier.EvaluateFixedValue(call.Arguments[1]) as string;
-            return name is not null;
-        }
-
-        instance = call;
-        name = null;
         return false;
     }
 

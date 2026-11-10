@@ -47,8 +47,9 @@ internal sealed class QueryFilterAnalysis
         {
             if (filter.Expression is { Parameters.Count: 1 } lambda)
             {
+                // Folded first, so a tenant reference under true || doesn't count.
                 var finder = new NavigationTenantFinder(entityType, lambda.Parameters[0], options);
-                finder.Visit(lambda.Body);
+                finder.Visit(ConstantFolder.Fold(lambda.Body));
                 if (finder.Found)
                 {
                     return true;
@@ -129,42 +130,56 @@ internal sealed class QueryFilterAnalysis
             => OperandClassifier.StripConversions(expression) is ConstantExpression { Value: bool constant } && constant == value;
     }
 
-    // Finds a member chain from the parameter through navigations that ends at the tenant property of
-    // the type the last navigation reaches.
+    // Finds a chain from the parameter through navigations that ends at the tenant property of the
+    // type the last navigation reaches. Each step is a member access or EF.Property, so
+    // EF.Property<string>(line.Order, "TenantId") and a shadow tenant property count.
     private sealed class NavigationTenantFinder(IReadOnlyEntityType entityType, ParameterExpression parameter, TenantGuardOptions options)
         : ExpressionVisitor
     {
         public bool Found { get; private set; }
 
-        protected override Expression VisitMember(MemberExpression node)
+        public override Expression? Visit(Expression? node)
         {
-            Found |= EndsAtTenantProperty(node);
-            return base.VisitMember(node);
+            if (node is MemberExpression or MethodCallExpression && Steps(node) is { Count: >= 2 } steps)
+            {
+                Found |= EndsAtTenantProperty(steps);
+            }
+
+            return base.Visit(node);
         }
 
-        private bool EndsAtTenantProperty(MemberExpression member)
+        // The names from the parameter to the expression, or null when it isn't a chain rooted at it.
+        private List<string>? Steps(Expression expression)
         {
-            var names = new Stack<string>();
-            Expression? current = member;
-            while (OperandClassifier.StripConversions(current!) is MemberExpression step)
+            var names = new List<string>();
+            var current = OperandClassifier.StripConversions(expression);
+            while (current != parameter)
             {
-                names.Push(step.Member.Name);
-                current = step.Expression;
-                if (current is null)
+                switch (current)
                 {
-                    return false;
+                    case MemberExpression { Expression: { } instance } member:
+                        names.Add(member.Member.Name);
+                        current = OperandClassifier.StripConversions(instance);
+                        break;
+                    case MethodCallExpression call when TenantAccess.IsEfProperty(call, out var instance, out var name):
+                        names.Add(name!);
+                        current = OperandClassifier.StripConversions(instance);
+                        break;
+                    default:
+                        return null;
                 }
             }
 
-            if (OperandClassifier.StripConversions(current!) != parameter || names.Count < 2)
-            {
-                return false;
-            }
+            names.Reverse();
+            return names;
+        }
 
+        private bool EndsAtTenantProperty(List<string> steps)
+        {
             var type = entityType;
-            while (names.Count > 1)
+            foreach (var step in steps.Take(steps.Count - 1))
             {
-                if (type.FindNavigation(names.Pop()) is not { } navigation)
+                if (type.FindNavigation(step) is not { } navigation)
                 {
                     return false;
                 }
@@ -172,7 +187,7 @@ internal sealed class QueryFilterAnalysis
                 type = navigation.TargetEntityType;
             }
 
-            return !type.IsOwned() && TenantPropertyDiscovery.Find(type.GetRootType(), options)?.Name == names.Pop();
+            return !type.IsOwned() && TenantPropertyDiscovery.Find(type.GetRootType(), options)?.Name == steps[^1];
         }
     }
 

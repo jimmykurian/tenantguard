@@ -79,6 +79,7 @@ public sealed class LeakShapeRuleTests
     [Theory]
     [InlineData(typeof(Tgm012Models.Switch))]
     [InlineData(typeof(Tgm012Models.NegatedAnd))]
+    [InlineData(typeof(Tgm012Models.SwitchComparedWithTrue))]
     public void Filter_ORed_with_a_switch_is_TGM012(Type context)
         => Validate(context).Findings.Should().ContainSingle().Subject.Should().Be(new ModelFinding("TGM012", Severity.Warning, "Invoice", "TenantId", SwitchMessage));
 
@@ -88,12 +89,14 @@ public sealed class LeakShapeRuleTests
     [InlineData(typeof(Tgm012Models.GuardedSwitch))]
     [InlineData(typeof(Tgm012Models.GuardedNullCheck))]
     [InlineData(typeof(Tgm012Models.NegatedNullCheck))]
+    [InlineData(typeof(Tgm012Models.FalseOr))]
     public void Filter_that_cannot_open_up_passes(Type context)
         => Validate(context).Findings.Should().BeEmpty();
 
     [Theory]
     [InlineData(typeof(Tgm012Models.OpenWithoutTenant))]
     [InlineData(typeof(Tgm012Models.OpenWhenEmpty))]
+    [InlineData(typeof(Tgm012Models.OpenComparedWithFalse))]
     public void Filter_ORed_with_a_null_check_of_the_tenant_is_TGM013(Type context)
         => Validate(context).Findings.Should().ContainSingle().Subject.Should().Be(new ModelFinding("TGM013", Severity.Warning, "Invoice", "TenantId", OpenMessage));
 
@@ -127,6 +130,14 @@ public sealed class LeakShapeRuleTests
     [Fact]
     public void Dependent_filtered_through_its_principal_passes()
         => TestModels.Validate<Tgm014Models.ThroughPrincipal>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Dependent_filtered_through_its_principal_with_EF_Property_passes()
+        => TestModels.Validate<Tgm014Models.ThroughPrincipalByName>().Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Dependent_whose_filter_through_its_principal_is_always_true_is_TGM014()
+        => TestModels.Validate<Tgm014Models.AlwaysTrueThroughPrincipal>().Findings.Select(finding => finding.RuleId).Should().Equal("TGM014");
 
     [Fact]
     public void Dependent_on_an_optional_foreign_key_passes()

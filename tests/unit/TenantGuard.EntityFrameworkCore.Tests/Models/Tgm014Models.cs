@@ -2,6 +2,7 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.EntityFrameworkCore.Tests.Models;
@@ -32,6 +33,37 @@ internal static class Tgm014Models
             {
                 line.HasOne(row => row.Order).WithMany(order => order.Lines).HasForeignKey(row => row.OrderId);
                 line.HasQueryFilter(row => row.Order.TenantId == CurrentTenant);
+            });
+        }
+    }
+
+    // Positive: filtered through the order with EF.Property.
+    internal sealed class ThroughPrincipalByName(DbContextOptions options) : Orders(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Order>().Ignore(row => row.Tags);
+            modelBuilder.Entity<OrderLine>(line =>
+            {
+                line.HasOne(row => row.Order).WithMany(order => order.Lines).HasForeignKey(row => row.OrderId);
+                line.HasQueryFilter(row => EF.Property<string>(row.Order, "TenantId") == CurrentTenant);
+            });
+        }
+    }
+
+    // Negative: a filter through the order, built by hand as true || ..., which admits every row.
+    internal sealed class AlwaysTrueThroughPrincipal(DbContextOptions options) : Orders(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Order>().Ignore(row => row.Tags);
+            Expression<Func<OrderLine, bool>> scoped = row => row.Order.TenantId == CurrentTenant;
+            modelBuilder.Entity<OrderLine>(line =>
+            {
+                line.HasOne(row => row.Order).WithMany(order => order.Lines).HasForeignKey(row => row.OrderId);
+                line.HasQueryFilter(Expression.Lambda<Func<OrderLine, bool>>(Expression.OrElse(Expression.Constant(true), scoped.Body), scoped.Parameters));
             });
         }
     }

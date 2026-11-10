@@ -23,6 +23,24 @@ internal static class Tgm012Models
         protected override Expression<Func<Invoice, bool>> Filter => row => !(IsTenantFilterEnabled && row.TenantId != CurrentTenant);
     }
 
+    // Negative TGM012: the switch, compared with true.
+    internal sealed class SwitchComparedWithTrue(DbContextOptions options) : Switches(options)
+    {
+        protected override Expression<Func<Invoice, bool>> Filter => row => (!IsTenantFilterEnabled || row.TenantId == CurrentTenant) == true;
+    }
+
+    // Negative TGM013: the null check, compared with false and negated.
+    internal sealed class OpenComparedWithFalse(DbContextOptions options) : Switches(options)
+    {
+        protected override Expression<Func<Invoice, bool>> Filter => row => !((CurrentTenant == null || row.TenantId == CurrentTenant) == false);
+    }
+
+    // Positive: false | x can't switch anything on.
+    internal sealed class FalseOr(DbContextOptions options) : Switches(options)
+    {
+        protected override Expression<Func<Invoice, bool>> Filter => row => false | (row.TenantId == CurrentTenant);
+    }
+
     // Positive: a condition on the row shows only the rows it selects.
     internal sealed class RowCondition(DbContextOptions options) : Switches(options)
     {

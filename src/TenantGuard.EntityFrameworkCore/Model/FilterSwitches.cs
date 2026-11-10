@@ -34,15 +34,35 @@ internal static class FilterSwitches
         return (switchable, openWithoutTenant);
     }
 
-    // Pushes each ! inward over && and ||, and reads a bool | or & as || or &&.
+    // Pushes each ! inward over && and ||, reads a bool | or & as || or &&, and reads a comparison with
+    // a bool constant as the condition itself or its negation: x == true is x, x == false is !x.
     private static Expression Normalize(Expression expression)
         => OperandClassifier.StripConversions(expression) switch
         {
             UnaryExpression { NodeType: ExpressionType.Not, Method: null } not when not.Type == typeof(bool) => Negate(Normalize(not.Operand)),
             BinaryExpression { Method: null } binary when IsOr(binary) => Expression.OrElse(Normalize(binary.Left), Normalize(binary.Right)),
             BinaryExpression { Method: null } binary when IsAnd(binary) => Expression.AndAlso(Normalize(binary.Left), Normalize(binary.Right)),
+            BinaryExpression { NodeType: ExpressionType.Equal or ExpressionType.NotEqual, Method: null } comparison
+                when BoolConstantComparison(comparison) is var (condition, value) && condition is not null
+                => (comparison.NodeType == ExpressionType.Equal) == value ? Normalize(condition) : Negate(Normalize(condition)),
             _ => expression,
         };
+
+    // The condition and the constant of a comparison between a bool and a bool constant, or nulls.
+    private static (Expression? Condition, bool Value) BoolConstantComparison(BinaryExpression comparison)
+    {
+        if (comparison.Left.Type != typeof(bool) || comparison.Right.Type != typeof(bool))
+        {
+            return (null, false);
+        }
+
+        if (OperandClassifier.StripConversions(comparison.Right) is ConstantExpression { Value: bool right })
+        {
+            return (comparison.Left, right);
+        }
+
+        return OperandClassifier.StripConversions(comparison.Left) is ConstantExpression { Value: bool left } ? (comparison.Right, left) : (null, false);
+    }
 
     // The opposite of a normalized condition, normalized too.
     private static Expression Negate(Expression expression)
@@ -123,7 +143,9 @@ internal static class FilterSwitches
                 if (comparing.Count > 0)
                 {
                     var operands = comparing.SelectMany(ComparedOperands).ToList();
-                    foreach (var condition in conditions.Except(comparing))
+
+                    // A constant false, such as one a bool | left behind, can't switch anything on.
+                    foreach (var condition in conditions.Except(comparing).Where(condition => condition is not ConstantExpression { Value: false }))
                     {
                         if (ReadsRow(condition) || guards.Any(guard => Same(guard, Negate(condition))))
                         {
