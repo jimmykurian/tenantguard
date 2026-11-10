@@ -25,6 +25,8 @@ internal sealed class ProbeRun<TContext>(
 
     private SeedPlan _plan = null!;
 
+    private HashSet<IEntityType> _perTenant = [];
+
     public async Task<ProbeReport> RunAsync(CancellationToken cancellationToken)
     {
         // A model that breaks a TenantGuard rule under Enforcement.Throw throws here, before anything is seeded.
@@ -68,7 +70,8 @@ internal sealed class ProbeRun<TContext>(
         CheckTenants(probed);
 
         var factory = new RowFactory<TContext>(seeders, _entities, new ValueGenerator());
-        _plan = SeedPlan.Create(probed, factory.WhyCannotCreate);
+        _plan = SeedPlan.Create(probed, factory.WhyCannotCreate, factory.TenantProperty);
+        _perTenant = _plan.Order.Where(type => _entities.TryGet(type, out _) || factory.TenantKeys(type).Count > 0).ToHashSet();
         var notSeeded = await SeedAsync(factory, cancellationToken);
 
         var checks = new IsolationChecks<TContext>(createContext, factory, PrincipalsOf, relational, guarded);
@@ -212,11 +215,12 @@ internal sealed class ProbeRun<TContext>(
             {
                 if (_plan.PrincipalsOf(type).FirstOrDefault(principal => notSeeded.ContainsKey(principal.EntityType)) is { } blocked)
                 {
-                    notSeeded[type] = $"its required principal {blocked.EntityType.DisplayName()} could not be seeded";
+                    notSeeded[type] = SeedPlan.Blocked(blocked, factory.TenantProperty(type), "could not be seeded", notSeeded[blocked.EntityType]);
                     continue;
                 }
 
-                var scoped = _entities.TryGet(type, out _);
+                // A tenant-scoped type, or a principal of a tenant property, as a table of tenants: a row per tenant.
+                var scoped = _perTenant.Contains(type);
                 var rows = _rows[type] = [];
                 foreach (var tenant in scoped ? tenants : [tenants[0]])
                 {
@@ -264,7 +268,7 @@ internal sealed class ProbeRun<TContext>(
     // The principal rows a new row of the type points at: the tenant's own, or the shared one.
     private IEnumerable<(IForeignKey ForeignKey, SeededRow Principal)> PrincipalsOf(IEntityType type, string tenant)
         => _plan.PrincipalsOf(type).Select(principal =>
-            (principal.ForeignKey, _rows[principal.EntityType][_entities.TryGet(principal.EntityType, out _) ? tenant : SharedRow]));
+            (principal.ForeignKey, _rows[principal.EntityType][_perTenant.Contains(principal.EntityType) ? tenant : SharedRow]));
 
     private IEnumerable<(string Viewer, string Owner)> Pairs()
         => from viewer in tenants from owner in tenants where viewer != owner select (viewer, owner);

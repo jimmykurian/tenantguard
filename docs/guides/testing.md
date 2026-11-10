@@ -75,6 +75,10 @@ BulkIsolation and NavigationLeak skip rather than pass. For a type the generator
 .Seed<Invoice>((tenant, context) => new Invoice { Number = $"{tenant}-1", TenantId = tenant })
 ```
 
+The default seeder also creates types through the constructor EF Core binds, leaves required
+collections empty, and seeds a row per tenant of a table of tenants that a tenant property
+points at, so a DDD-style model needs few seeders.
+
 The probe still sets the tenant property, and any required foreign key left unset, on a
 row from `Seed<T>`. A type it can't seed, such as one with a required property of a type the
 generator doesn't know, is reported as skipped with the reason.

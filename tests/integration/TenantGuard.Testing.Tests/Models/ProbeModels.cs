@@ -2,6 +2,7 @@
 // Copyright (c) Jimmy Kurian 2026. Licensed under the Apache License, Version 2.0.
 // </copyright>
 
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 
 namespace TenantGuard.Testing.Tests.Models;
@@ -177,7 +178,11 @@ internal static class ProbeModels
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Subscription>().HasQueryFilter(row => row.TenantId == CurrentTenant);
+            modelBuilder.Entity<Subscription>(subscription =>
+            {
+                subscription.Property(row => row.Price).HasConversion(price => price.ToString(), text => Money.Parse(text));
+                subscription.HasQueryFilter(row => row.TenantId == CurrentTenant);
+            });
             modelBuilder.Entity<Seat>(seat =>
             {
                 seat.HasOne<Subscription>().WithMany().HasForeignKey(row => row.SubscriptionId);
@@ -301,6 +306,19 @@ internal static class ProbeModels
         public string TenantId { get; set; } = string.Empty;
 
         public string Plan { get; set; } = plan;
+
+        public Money Price { get; set; } = new(10m, "USD");
+    }
+
+    // Stored as text such as "12.50 USD", which nothing the default seeder generates parses as.
+    internal sealed record Money(decimal Amount, string Currency)
+    {
+        public static Money Parse(string text)
+            => text.Split(' ') is [var amount, var currency] && decimal.TryParse(amount, CultureInfo.InvariantCulture, out var value)
+                ? new Money(value, currency)
+                : throw new FormatException($"\"{text}\" is not an amount and a currency.");
+
+        public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Amount} {Currency}");
     }
 
     internal sealed class Seat
