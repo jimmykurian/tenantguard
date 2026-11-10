@@ -46,8 +46,8 @@ public sealed class IsolationTests
 `ProbeRowsAttribute<TSource>` is a `DataAttribute`, where `TSource` is an `IProbeSource`
 with a parameterless constructor. It gives the theory one data row for each `ProbeRow`:
 
-- The test is named `{Entity}.{Check}`, such as `Invoice.ReadIsolation` or
-  `Order.NavigationLeak(Lines)`.
+- The test is named `{Entity}.{Check}`, such as `Invoice.ReadIsolation`,
+  `Order.NavigationLeak(Lines)` or, with `WithoutTenant`, `Invoice.NoTenantIsolation`.
 - A skipped row is a skipped test, whose reason is the row's detail.
 - The probe runs when xUnit runs the theory, not when it discovers tests, so a test
   explorer shows the rows after the first run. They can't be run one at a time.

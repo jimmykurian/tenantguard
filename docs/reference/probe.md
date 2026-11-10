@@ -2,7 +2,8 @@
 
 `TenantIsolationProbe<TContext>` in `TenantGuard.Testing` proves, entity by entity, that one
 tenant can't read, find, bulk-delete, update, insert over or delete another's rows, or load
-them through a navigation.
+them through a navigation, and, when it's given one, that a context with no tenant reads
+none of them.
 [Testing](../guides/testing.md) shows it in a test; this page says what it does.
 
 ```csharp
@@ -94,7 +95,9 @@ context whose first model is the no-tenant model under `CrossTenantWhenNoTenant`
 probe's factory gives each context a tenant.
 
 Under [`NullTenantIsHost()`](options.md#host-rows), the probe checks the tenants it is
-given; it doesn't probe the host.
+given. It doesn't seed host rows; with [`WithoutTenant`](#a-context-with-no-tenant), the
+host is the context with no tenant, and NoTenantIsolation checks that it reads none of the
+tenants' rows.
 
 ## A tenant registry
 
@@ -106,7 +109,8 @@ row, which is already seeded, so InsertGuard is skipped with a note saying so.
 ## Checks
 
 Each check runs as tenant B against tenant A's row, with a fresh context per tenant per
-check, for every ordered pair of tenants:
+check, for every ordered pair of tenants. NoTenantIsolation, which runs only with
+`WithoutTenant`, has [a section of its own](#a-context-with-no-tenant).
 
 | Check | Expectation |
 | --- | --- |
@@ -182,7 +186,8 @@ too when B can't find its own row with `FindAsync`, or A can't find the row the 
 reaches (A's principal, A's new dependent or A's target row), because another query filter
 hides it.
 
-The rows come after the entity's six checks, one per navigation, by name:
+The rows come after the entity's six checks, one per navigation, by name, and before its
+NoTenantIsolation row:
 
 | Entity | Check |
 | --- | --- |
@@ -190,6 +195,62 @@ The rows come after the entity's six checks, one per navigation, by name:
 | `Order` | `NavigationLeak(Tags)` |
 
 NavigationLeak runs after the read checks and before the checks that write.
+
+## A context with no tenant
+
+```csharp
+var report = await new TenantIsolationProbe<AppDbContext>(tenant => CreateContext(tenant))
+    .WithTenants("acme", "globex")
+    .WithoutTenant(() => CreateContext(tenant: null))
+    .RunAsync();
+```
+
+`WithoutTenant(Func<TContext> createContext)` gives the probe a factory for a context with no
+current tenant: the context a background job, a startup task or a request that reached the
+database before its tenant was resolved gets. It has to use the same database as the other
+contexts. The probe creates a fresh one for each entity type, disposes it, and never writes
+through it. Without `WithoutTenant`, the probe runs as before and the report has no
+NoTenantIsolation rows. A second call replaces the first factory.
+
+With it, the probe adds one check per probed entity type, once every tenant's row is seeded:
+
+| Check | Expectation |
+| --- | --- |
+| NoTenantIsolation | As the context with no tenant, `Set<E>()` returns none of the seeded tenants' keys, and `FindAsync` with each tenant's key returns null. |
+
+It catches a filter that opens up when there is no tenant, such as
+`CurrentTenantId == null || e.TenantId == CurrentTenantId`, which
+[TGM013](rules.md#tgm013-open-without-tenant) reports when the model shows it, also when the
+filter is built some other way: through a method the rules can't read, or a tenant accessor
+whose default matches every row. A failed row names every row it read:
+
+```text
+As no tenant, Set<Invoice>() returned acme's row (Id: 1) and globex's row (Id: 2).
+As no tenant, FindAsync(Id: 1) returned acme's row.
+```
+
+- A query that throws, as in an app that throws on purpose when there is no tenant,
+  returns no rows, so the row passes, and its detail names the exception. An exception from
+  the factory itself isn't caught: `RunAsync` throws it.
+- `Set<E>()` is checked against the rows their own tenant can read, and `FindAsync` against
+  the rows their own tenant can find: a row that another query filter, such as a soft delete,
+  hides from its own tenant proves nothing when no tenant doesn't see it either. When no
+  tenant's row is left to check, the row is skipped:
+  `No tenant could read or find its own Invoice row, so the check proves nothing.`
+- A type the probe skips for every check, such as a keyless one, is skipped here too, with
+  the same detail.
+- Under [`CrossTenantWhenNoTenant`](options.md#the-no-tenant-model-of-a-per-tenant-model),
+  when the no-tenant context's model is the cross-tenant one, it reads every tenant's rows on
+  purpose, so every NoTenantIsolation row is skipped, with the note
+  `The context with no tenant is declared cross-tenant by CrossTenantWhenNoTenant.`
+- With a model per tenant, the no-tenant context's model is found by entity type name, as
+  for each tenant's context.
+- The check doesn't load navigations. A context with no tenant has no row of its own to
+  `Include` from, and EF Core applies the target's query filter to an `Include`, which the
+  target type's own NoTenantIsolation row checks.
+
+NoTenantIsolation runs after the entity type's read checks and before NavigationLeak; its
+row is the entity type's last.
 
 ## The report
 
