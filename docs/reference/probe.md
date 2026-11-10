@@ -46,7 +46,7 @@ a parameterless constructor or else the constructor EF Core binds for the type, 
   the model's required relationships; a shared principal is seeded once;
 - required owned references created too, through the constructor EF Core binds when the
   owned type has no parameterless one. A value the constructor or a property initializer
-  sets is kept; only the constructor's required arguments and the values left null are
+  sets, on the owned type or on its owner, is kept; only the constructor's required arguments and the values left null are
   generated, and an optional constructor parameter gets its default.
 
 When a tenant property is also a foreign key to another entity type, as to a table of
