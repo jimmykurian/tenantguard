@@ -45,13 +45,15 @@ a parameterless constructor or else the constructor EF Core binds for the type, 
 - required foreign keys satisfied by seeding the principals first, in topological order over
   the model's required relationships; a shared principal is seeded once;
 - required owned references created too, through the constructor EF Core binds when the
-  owned type has no parameterless one.
+  owned type has no parameterless one. A value the constructor or a property initializer
+  sets is kept; only the constructor's arguments and the values left null are generated.
 
 When a tenant property is also a foreign key to another entity type, as to a table of
 tenants (`Role.TenantId` to `Tenant.Id`), the tenant value is what points at that type's
 row. So the probe seeds that type once per tenant, with the key the tenant property points
 at set to the tenant, whether the relationship is required or not and whether the type is
-tenant-scoped or not. A `Seed<T>` for that type fills its other values; the probe still sets
+tenant-scoped or not. The rest of a composite foreign key that holds the tenant property
+points at that row too, even when the relationship is optional. A `Seed<T>` for that type fills its other values; the probe still sets
 the key.
 
 `Seed<T>` replaces the default seeder for `T`. The probe always sets the tenant property, and
