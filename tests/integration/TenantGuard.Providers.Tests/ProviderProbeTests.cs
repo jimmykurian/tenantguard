@@ -46,10 +46,12 @@ public abstract class ProviderProbeTests : FeatureFixture
     // Options for a new database with the given name on the server.
     protected abstract DbContextOptionsBuilder UseDatabase(DbContextOptionsBuilder builder, string database);
 
+    // Note's key is natural on purpose, to seed a key EF doesn't generate, so its TGM010 is suppressed.
     private static Action<TenantGuardOptionsBuilder> Guard(Action<TenantGuardOptionsBuilder>? more = null)
         => tg =>
         {
-            tg.CurrentTenant(context => ((ShopBase)context).CurrentTenant);
+            tg.CurrentTenant(context => ((ShopBase)context).CurrentTenant)
+                .Suppress<Note>("TGM010", "the probe tests seed a key EF doesn't generate");
             more?.Invoke(tg);
         };
 
