@@ -179,7 +179,7 @@ public sealed class DeclarationTests : IDisposable
     }
 
     [Theory]
-    [InlineData("TGM011", "Unknown rule 'TGM011'. Pass a rule ID from TGM001 to TGM010. (Parameter 'ruleId')")]
+    [InlineData("TGM015", "Unknown rule 'TGM015'. Pass a rule ID from TGM001 to TGM014. (Parameter 'ruleId')")]
     [InlineData("TGM010", "TGM010 is an error, so it is suppressed one entity type at a time: Suppress<TEntity>(\"TGM010\", reason). (Parameter 'ruleId')")]
     public void Suppress_takes_only_a_known_warning_rule(string ruleId, string message)
         => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().Suppress(ruleId, Why))
@@ -188,7 +188,7 @@ public sealed class DeclarationTests : IDisposable
     [Theory]
     [InlineData("TGM001", "Declare Invoice unfiltered with Unfiltered<Invoice>(reason) rather than suppressing TGM001. (Parameter 'ruleId')")]
     [InlineData("TGM002", "Declare Invoice shared with Shared<Invoice>() rather than suppressing TGM002. (Parameter 'ruleId')")]
-    [InlineData("TGM012", "Unknown rule 'TGM012'. Pass a rule ID from TGM001 to TGM010. (Parameter 'ruleId')")]
+    [InlineData("TGM015", "Unknown rule 'TGM015'. Pass a rule ID from TGM001 to TGM014. (Parameter 'ruleId')")]
     public void Suppress_for_a_type_points_TGM001_and_TGM002_to_their_declarations(string ruleId, string message)
         => FluentActions.Invoking(() => new TenantGuardOptionsBuilder().Suppress<Invoice>(ruleId, Why))
             .Should().ThrowExactly<ArgumentException>().WithMessage(message);

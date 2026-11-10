@@ -101,7 +101,11 @@ Finbuckle's.
 | TGM007 | warning | TenantGuard can't tell where the filter's tenant value comes from |
 | TGM008 | warning | An owned type has its own tenant property, which is ignored |
 | TGM009 | warning | No index or key starts with the tenant property, so filtered queries scan every tenant's rows |
-| TGM010 | error | A unique index or alternate key leaves out the tenant property, so it's unique across tenants |
+| TGM010 | error | A unique index, alternate key or natural primary key leaves out the tenant property, so it's unique across tenants |
+| TGM011 | warning | A view, SQL query or function has no tenant property, so it returns every tenant's rows |
+| TGM012 | warning | The tenant filter is ORed with a switch that doesn't read the row, so it can be turned off |
+| TGM013 | warning | The tenant filter is ORed with a null check of the current tenant, so it opens up when there is none |
+| TGM014 | warning | A dependent of a tenant-scoped type has no tenant property and no filter that reaches one |
 
 [Rules reference](https://github.com/jimmykurian/tenantguard/blob/main/docs/reference/rules.md)
 
@@ -211,7 +215,7 @@ The full documentation is at **<https://tenantguard.is-cool.dev/>**, with search
 | | |
 | --- | --- |
 | [Guides](docs/guides/README.md) | [Why TenantGuard](docs/guides/why.md), [hand-rolled filters](docs/guides/hand-rolled.md), [Finbuckle](docs/guides/finbuckle.md), [testing with the probe](docs/guides/testing.md) and [migrating an existing app](docs/guides/migrating.md) |
-| [Reference](docs/reference/README.md) | [Rules](docs/reference/rules.md) TGM001 to TGM010, [analyzers](docs/reference/analyzers.md) TG001 to TG004, the [write guard](docs/reference/write-guard.md), the [isolation probe](docs/reference/probe.md), [options](docs/reference/options.md), [exceptions](docs/reference/exceptions.md) and [logging](docs/reference/logging.md), with every message, and what stays [compatible](docs/reference/compatibility.md) |
+| [Reference](docs/reference/README.md) | [Rules](docs/reference/rules.md) TGM001 to TGM014, [analyzers](docs/reference/analyzers.md) TG001 to TG004, the [write guard](docs/reference/write-guard.md), the [isolation probe](docs/reference/probe.md), [options](docs/reference/options.md), [exceptions](docs/reference/exceptions.md) and [logging](docs/reference/logging.md), with every message, and what stays [compatible](docs/reference/compatibility.md) |
 | [Architecture](docs/architecture/README.md) | The [packages](docs/architecture/packages.md), the [flows](docs/architecture/flows.md), and the [decision records](docs/architecture/decisions/README.md) behind them |
 | [Testing strategy](docs/testing/strategy.md) | How TenantGuard tests itself, and the EF Core behaviors it pins |
 | [Releases and CI](docs/deployment/releases-and-ci.md) | The workflows and how a release ships |
@@ -236,7 +240,7 @@ flowchart LR
         direction TB
         hosting["Hosting<br/>UseTenantGuard,<br/>startup validation"]
         guard["Interception<br/>SaveChanges write guard"]
-        rules["Model<br/>rules TGM001 to TGM010"]
+        rules["Model<br/>rules TGM001 to TGM014"]
         options["Options<br/>configuration"]
         hosting --> guard --> rules --> options
     end
@@ -310,10 +314,10 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 85 | 108 | 14 | 207 |
-| Lines of code | 4,382 | 7,100 | 228 | 11,710 |
-| Methods | 335 | 737 | 21 | 1,093 |
-| Average complexity | 3.3 | 1.1 | 1.2 | 1.8 |
+| Files | 87 | 113 | 14 | 214 |
+| Lines of code | 4,790 | 7,558 | 228 | 12,576 |
+| Methods | 367 | 797 | 21 | 1,185 |
+| Average complexity | 3.4 | 1.1 | 1.2 | 1.8 |
 | Max complexity | 32 | 5 | 4 | 32 |
 
 <details>
@@ -323,14 +327,14 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | --- | --- | --- |
 | `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 32 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
+| `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:118` | 20 |
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:119` | 20 |
-| `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:113` | 18 |
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:30` | 18 |
+| `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:33` | 17 |
 | `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:201` | 13 |
 | `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
 | `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:81` | 13 |
 | `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:36` | 13 |
-| `IgnoreQueryFiltersAnalyzer.ReachesTenantMember` | `src/TenantGuard.Analyzers/IgnoreQueryFiltersAnalyzer.cs:88` | 12 |
 
 </details>
 

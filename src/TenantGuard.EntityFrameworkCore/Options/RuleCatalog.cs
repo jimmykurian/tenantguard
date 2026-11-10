@@ -18,6 +18,6 @@ internal static class RuleCatalog
 
     public static readonly IReadOnlySet<string> Warnings = new HashSet<string>(StringComparer.Ordinal)
     {
-        "TGM005", "TGM007", "TGM008", "TGM009",
+        "TGM005", "TGM007", "TGM008", "TGM009", "TGM011", "TGM012", "TGM013", "TGM014",
     };
 }

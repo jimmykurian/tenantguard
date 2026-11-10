@@ -317,7 +317,7 @@ public sealed class TenantGuardOptionsBuilder
         ArgumentNullException.ThrowIfNull(ruleId);
         if (!RuleCatalog.Errors.Contains(ruleId) && !RuleCatalog.Warnings.Contains(ruleId))
         {
-            throw new ArgumentException($"Unknown rule '{ruleId}'. Pass a rule ID from TGM001 to TGM010.", nameof(ruleId));
+            throw new ArgumentException($"Unknown rule '{ruleId}'. Pass a rule ID from TGM001 to TGM014.", nameof(ruleId));
         }
     }
 }
