@@ -358,9 +358,14 @@ type.
 // TGM013
 modelBuilder.Entity<Booking>().HasQueryFilter(booking => CurrentTenantId == null || booking.ClubId == CurrentTenantId);
 
-// Passes: with no current tenant, no rows.
+// Passes: with no current tenant, no tenant's rows.
 modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.ClubId == CurrentTenantId);
 ```
+
+With no current tenant, the filter that passes returns no tenant's rows. When the tenant
+property is nullable, EF Core's null semantics make `booking.ClubId == CurrentTenantId`
+true for a row whose `ClubId` is null too, so it returns the rows that have no tenant:
+under `NullTenantIsHost()`, the host's rows, and otherwise rows TGM005 warns about.
 
 ### TGM014 unscoped-dependent
 
