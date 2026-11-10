@@ -49,6 +49,18 @@ public sealed class SeederTests
     }
 
     [Fact]
+    public async Task An_optional_owned_constructor_parameter_gets_its_default()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Vouchers(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.AssertAllPassed();
+        await using var acme = database.Create("acme");
+        (await acme.Set<Basket>().SingleAsync(Token)).Coupon.Discount.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Collections_and_JSON_are_seeded_empty()
     {
         await using var database = await DatabaseAsync((options, tenant) => new Settings(options, tenant));
@@ -102,6 +114,18 @@ public sealed class SeederTests
     }
 
     [Fact]
+    public async Task A_table_of_tenants_that_shares_its_key_with_another_table_gets_a_row_per_tenant_in_both()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Workspaces(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.AssertAllPassed();
+        await using var context = database.Create(tenant: null);
+        (await context.Set<Company>().Select(company => company.Id).OrderBy(id => id).ToListAsync(Token)).Should().Equal("acme", "globex");
+    }
+
+    [Fact]
     public async Task A_table_of_tenants_the_probe_cannot_seed_names_the_tenant_property()
     {
         await using var database = await DatabaseAsync((options, tenant) => new PricedRoles(options, tenant));
@@ -146,6 +170,34 @@ public sealed class SeederTests
                 shipment.Navigation(row => row.Insurance).IsRequired();
                 shipment.HasQueryFilter(row => row.TenantId == Tenant);
             });
+    }
+
+    // A basket owning a coupon bound through its constructor, whose optional discount is stored through
+    // a converter that rejects every generated value.
+    private sealed class Vouchers(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Basket>(basket =>
+            {
+                basket.OwnsOne(row => row.Coupon, coupon => coupon.Property(row => row.Discount).HasConversion(discount => discount!.ToString(), text => Money.Parse(text)));
+                basket.Navigation(row => row.Coupon).IsRequired();
+                basket.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+    }
+
+    // Seats whose tenant property is the foreign key to a workspace, whose primary key is in turn the
+    // foreign key to a company: a table of tenants that shares its key.
+    private sealed class Workspaces(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Workspace>().HasOne<Company>().WithOne().HasForeignKey<Workspace>(row => row.Id);
+            modelBuilder.Entity<Seat>(seat =>
+            {
+                seat.HasOne<Workspace>().WithMany().HasForeignKey(row => row.TenantId);
+                seat.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+        }
     }
 
     // Members whose optional foreign key to a branch is the nullable tenant property and a required
@@ -263,6 +315,45 @@ public sealed class SeederTests
     private sealed class Insurance
     {
         public Money Fee { get; private set; } = new(5m, "EUR");
+    }
+
+    private sealed class Basket
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public Coupon Coupon { get; set; } = null!;
+    }
+
+    private sealed class Coupon(string code, Money? discount)
+    {
+        public string Code { get; private set; } = code;
+
+        public Money? Discount { get; private set; } = discount;
+    }
+
+    private sealed class Company
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private sealed class Workspace
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private sealed class Seat
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public string Label { get; set; } = string.Empty;
     }
 
     private sealed class Branch
