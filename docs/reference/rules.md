@@ -32,15 +32,15 @@ An entity type with a tenant property is tenant-scoped. Only the root of an inhe
 hierarchy is examined, because EF Core allows query filters only on the root; derived
 types share it. Owned types are skipped: their rows belong to their owner (TGM008).
 Keyless entity types are examined like any other. `Shared<TEntity>()` declares an entity
-type tenant-free on purpose, which matters under `RequireAllEntitiesScoped` (TGM002). It
-applies only to a type with no tenant property: one that has a tenant property stays
-tenant-scoped, and TGM001 still applies to it.
+type tenant-free on purpose, which clears TGM011 and TGM014 for it, and TGM002 under
+`RequireAllEntitiesScoped`. It applies only to a type with no tenant property: one that has
+a tenant property stays tenant-scoped, and TGM001 still applies to it.
 
 Tenant data that is cross-tenant on purpose is declared, each with a reason
 ([cross-tenant data](options.md#cross-tenant-data)):
 
 - `Unfiltered<TEntity>` keeps a type tenant-scoped and leaves out the rules about its
-  filter: TGM001, TGM003, TGM004 and TGM007.
+  filter: TGM001, TGM003, TGM004, TGM007, TGM012 and TGM013.
 - `CrossTenant`, and `CrossTenantWhenNoTenant` for the model of a context with no current
   tenant, skip every rule for the model.
 - `NullTenantIsHost` leaves out TGM005.
@@ -64,7 +64,14 @@ TGM002 doesn't report it.
 | TGM007 | filter-not-parameterized | warning | The tenant filter's other operand can't be classified, or the filter never compares the tenant property |
 | TGM008 | owned-tenant | warning | An owned type has a tenant property |
 | TGM009 | unindexed-tenant | warning | No index or key of a tenant-scoped entity type starts with its tenant property |
-| TGM010 | tenant-free-unique | error | A unique index or alternate key of a tenant-scoped entity type doesn't include its tenant property |
+| TGM010 | tenant-free-unique | error | A unique index, alternate key or natural primary key of a tenant-scoped entity type doesn't include its tenant property |
+| TGM011 | tenant-free-view | warning | An entity type mapped to a view, SQL query or function has no tenant property and isn't declared shared |
+| TGM012 | switchable-filter | warning | The tenant filter is ORed with a condition that doesn't read the row, so it can be switched off |
+| TGM013 | open-without-tenant | warning | The tenant filter is ORed with a null check of the current tenant, so it returns every row when there is none |
+| TGM014 | unscoped-dependent | warning | An entity type with no tenant property and no filter that reaches one belongs to a tenant-scoped principal through a required foreign key |
+
+TGM011 and TGM014 aren't reported under `RequireAllEntitiesScoped`, where TGM002 reports the
+same types as errors.
 
 ### TGM001 unguarded-entity
 
@@ -218,15 +225,34 @@ modelBuilder.Entity<Invoice>(invoice =>
 {Entity}: the alternate key ({Columns}) doesn't include '{Property}', so a value one tenant has used is refused to every other tenant, which tells them it exists. Make it unique per tenant: HasAlternateKey(e => new { e.{Property}, {Members} }).
 ```
 
+```text
+{Entity}: the primary key ({Columns}) doesn't include '{Property}' and its values aren't generated, so a value one tenant has used is refused to every other tenant, which tells them it exists. Make it unique per tenant: HasKey(e => new { e.{Property}, {Members} }).
+```
+
 A unique index on `InvoiceNumber` alone is unique across all tenants: one tenant's insert
 fails because another tenant already used the number, and the failure tells the first
 tenant that the number exists. `{Columns}` lists the index's properties, comma-separated,
-and `{Members}` the same properties as `e.{Name}`. The primary key isn't checked: a
-generated key is unique across tenants by design. Nor is the unique index EF Core makes for
+and `{Members}` the same properties as `e.{Name}`.
+
+The primary key is checked when it is a natural key: none of its properties has values
+generated, by the database or by EF Core (`ValueGenerated.Never`), such as an external
+login's `(LoginProvider, ProviderKey)`. A second tenant then can't link an external account
+the first tenant already linked, and the refusal tells it the account exists. A generated
+key, such as an identity column or a `Guid` EF Core generates, is unique across tenants by
+design, and isn't checked. Nor is a key of a single `Guid` property the app assigns: a
+random `Guid` can't be reused by another tenant. A `Guid` that comes from outside, such as
+an identity provider's object ID, can; for that, make the key per tenant,
+`HasKey(e => new { e.TenantId, e.Id })`, or keep the external ID in a column of its own
+behind a generated key, with a unique index on `(TenantId, ExternalId)`. A unique index on
+`(TenantId, Id)` alone doesn't help: the key on `Id` is still unique across tenants.
+
+Nor is the unique index EF Core makes for
 a one-to-one foreign key, whose values are keys of the principal's rows, or a unique index
 or alternate key that includes every column of a foreign key to a tenant-scoped entity
-type, such as `(ProjectId, Name)` or a join table's `(ProjectId, LabelId)`: each principal
-row belongs to one tenant, so another tenant can't use the same values. A foreign key to an
+type, such as `(ProjectId, Name)` or a join table's `(ProjectId, LabelId)`, a primary key
+included: each principal row belongs to one tenant, so another tenant can't use the same
+values. That covers a dependent that shares its principal's key in a one-to-one
+relationship. A foreign key to an
 entity type with no tenant property, such as a shared `Country`, doesn't count. A unique
 index with a filter, set with `HasFilter`, is checked like any other.
 
@@ -236,6 +262,135 @@ modelBuilder.Entity<Invoice>().HasIndex(invoice => invoice.InvoiceNumber).IsUniq
 
 // Passes, and also satisfies TGM009.
 modelBuilder.Entity<Invoice>().HasIndex(invoice => new { invoice.TenantId, invoice.InvoiceNumber }).IsUnique();
+
+// TGM010: a natural key, unique across tenants.
+modelBuilder.Entity<ExternalLogin>().HasKey(login => new { login.LoginProvider, login.ProviderKey });
+
+// Passes: unique per tenant.
+modelBuilder.Entity<ExternalLogin>().HasKey(login => new { login.TenantId, login.LoginProvider, login.ProviderKey });
+```
+
+### TGM011 tenant-free-view
+
+```text
+{Entity} is mapped to {Source} and has no tenant property, so it returns every tenant's rows. Select '{Property}' in it and filter on it, or declare it with Shared<{Entity}>().
+```
+
+`{Source}` is `the view '{Name}'`, `a SQL query` or `the function '{Name}'`, from the
+relational mapping (`ToView`, `ToSqlQuery`, `ToFunction`), and `{Property}` is the first of
+`TenantPropertyNames`. A view that drops the tenant column reads the rows of every tenant
+in the tables it selects from, and it has no tenant property, so no other rule looks at it.
+TenantGuard can't see which tables a view reads, so it reports every view with no tenant
+property in a model that has a tenant-scoped entity type; a lookup view that every tenant
+reads is declared with `Shared<TEntity>()`. Keyless entity types and ones with a key are
+reported alike. Not reported when the provider isn't relational
+([which tables](#which-tables-tgm009-and-tgm010-check) says how TenantGuard tells).
+
+```csharp
+// TGM011
+modelBuilder.Entity<InvoiceTotal>().HasNoKey().ToView("invoice_totals");
+
+// Passes: the view selects the tenant column, and the type filters on it.
+modelBuilder.Entity<InvoiceTotal>(total =>
+{
+    total.HasNoKey().ToView("invoice_totals");
+    total.HasQueryFilter(row => row.TenantId == TenantId);
+});
+```
+
+### TGM012 switchable-filter
+
+```text
+{Entity}: the tenant filter can be switched off: it is ORed with a condition that doesn't read the row, and while that condition is true, every tenant's rows are returned. Confirm it is true only on purpose.
+```
+
+Reported when the tenant comparison sits under an `||` (or `|`), at any depth, whose other
+side doesn't read the filter's parameter, such as a flag on the context:
+`!IsTenantFilterEnabled || e.TenantId == TenantId`. That is how some frameworks, ABP among
+them, switch the filter off for a scope. The switch is read per query, so it may well be
+fine; the warning says the filter can be turned off, and where. A condition on the row,
+such as `e.IsPublic || e.TenantId == TenantId`, isn't reported: it shows the rows it
+selects, not every row. Under a framework that switches its filters this way, one
+`Suppress("TGM012", reason)` covers the model.
+
+TenantGuard first pushes each `!` inward, so an `||` counts only when it is still an `||`
+with no negation above it. `!(BlockAll || e.TenantId != TenantId)` is
+`!BlockAll && e.TenantId == TenantId`, which only ever narrows the rows, and isn't
+reported; `!(Enabled && e.TenantId != TenantId)` is `!Enabled || e.TenantId == TenantId`,
+and is.
+
+A chain of `||`, however it is grouped, is read as one list of conditions, so
+`(a || b) || e.TenantId == TenantId` and `a || (b || e.TenantId == TenantId)` are the same
+filter. Each condition in the list that doesn't read the row is a switch of its own. One
+that is a null check of the current tenant is TGM013, and every other one is TGM012, so a
+filter with both, such as `!IsTenantFilterEnabled || (CurrentTenantId == null || e.TenantId == CurrentTenantId)`,
+gets both, and suppressing one leaves the other. A switch isn't reported when an `&&` above
+it has, on its other side, the opposite of the switch's condition, which rules the switch
+out: `Enabled && (!Enabled || e.TenantId == TenantId)`, or
+`CurrentTenantId != null && (CurrentTenantId == null || e.TenantId == CurrentTenantId)`. The
+opposite is matched by its shape, the same member chain with the negation pushed in, `==`
+and `!=` swapped, `HasValue` and `!HasValue`, or `string.IsNullOrEmpty` and its negation.
+TenantGuard doesn't reason further about guards, so a switch ruled out some other way is
+still reported, and is suppressed with its reason.
+
+```csharp
+// TGM012
+modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => !IsTenantFilterEnabled || invoice.TenantId == TenantId);
+```
+
+### TGM013 open-without-tenant
+
+```text
+{Entity}: the tenant filter returns every tenant's rows when there is no current tenant: it is ORed with a null check of the value '{Property}' is compared with. Compare '{Property}' with the current tenant alone, so a context with no tenant sees no tenant's rows.
+```
+
+Reported for a switch, found as TGM012 finds one, whose other side is a null check of the
+expression the tenant property is compared with, so
+`!(CurrentTenantId == null || e.TenantId != CurrentTenantId)`, which shows no rows when there
+is no tenant, isn't reported. The null checks are `== null`, `!HasValue`, `string.IsNullOrEmpty` or
+`string.IsNullOrWhiteSpace`. `CurrentTenantId == null || e.TenantId == CurrentTenantId`
+returns every row whenever the current tenant is null: in background jobs, on routes
+outside a tenant, in a context created without one. Under `NullTenantIsHost()`, the host is
+the context with no current tenant, and the same filter shows the host every tenant's rows
+rather than its own. When seeing every tenant with no current tenant is meant, as for an
+admin context, say so with `Suppress("TGM013", reason)`, or `Suppress<TEntity>` for one
+type.
+
+```csharp
+// TGM013
+modelBuilder.Entity<Booking>().HasQueryFilter(booking => CurrentTenantId == null || booking.ClubId == CurrentTenantId);
+
+// Passes: with no current tenant, no tenant's rows.
+modelBuilder.Entity<Booking>().HasQueryFilter(booking => booking.ClubId == CurrentTenantId);
+```
+
+With no current tenant, the filter that passes returns no tenant's rows. When the tenant
+property is nullable, EF Core's null semantics make `booking.ClubId == CurrentTenantId`
+true for a row whose `ClubId` is null too, so it returns the rows that have no tenant:
+under `NullTenantIsHost()`, the host's rows, and otherwise rows TGM005 warns about.
+
+### TGM014 unscoped-dependent
+
+```text
+{Entity} has no tenant property and no query filter that reaches one, but its rows belong to tenant-scoped {Principal} through the required foreign key ({Columns}), so Set<{Entity}>() returns every tenant's rows. Filter it through {Principal}, give it '{Property}' and a filter, or declare it with Shared<{Entity}>().
+```
+
+A line item or a registration reached only through its tenant-scoped principal is still
+an entity type: `Set<OrderLine>()`, a `DbSet` or a raw query returns every tenant's rows.
+Reported for an entity type that isn't owned, isn't tenant-scoped and isn't declared
+shared, when it has a required foreign key to a tenant-scoped entity type and no query
+filter on its root reaches a tenant property through a navigation. A filter through the
+principal counts, as it does for TGM001: `line => line.Order.TenantId == TenantId`. The
+join entity type EF Core creates for a many-to-many relationship isn't reported: it has no
+CLR type of its own. When more than one foreign key qualifies, the message names the first,
+by principal name.
+
+```csharp
+// TGM014
+modelBuilder.Entity<OrderLine>().HasOne(line => line.Order).WithMany(order => order.Lines).IsRequired();
+
+// Passes: filtered through its order.
+modelBuilder.Entity<OrderLine>().HasQueryFilter(line => line.Order.TenantId == TenantId);
 ```
 
 ### Which tables TGM009 and TGM010 check
@@ -248,7 +403,8 @@ builds the model, TenantGuard tells a relational provider by its options extensi
 derives from `RelationalOptionsExtension`; `TenantGuardModel.Validate` tells by the
 `Relational:` annotations a relational provider puts on each entity type of the model
 `context.Model` returns. Both are matched by name, so the runtime package needs no
-relational reference.
+relational reference. TGM011 checks the types these rules skip, the ones mapped to a view,
+a SQL query or a function, and tells the provider the same way.
 
 ## How the operand is classified
 
@@ -281,3 +437,8 @@ are fixed when the model is built: `true || x` is `true`, and `false || x` and `
 are `x`. So `false || e.TenantId == "acme"` is TGM004, and `true || e.TenantId == null`
 filters nothing and references no tenant property, so it is TGM001. `false && x` is left
 as it is: it hides every row, and leaks none.
+
+TGM012 and TGM013 look at the folded filter too, so a switch that is a constant when the
+model is built, such as `Expression.Constant(false) || x`, is no switch. TGM013's null check
+matches when it reads the same member chain as the operand the tenant property is compared
+with, such as `CurrentTenantId` on the context in both.

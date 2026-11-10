@@ -5,7 +5,7 @@ and log event, with the messages word for word. They are the contract: a change 
 ID, a message, an option name or an exception type is a breaking change
 ([Compatibility](compatibility.md)).
 
-- [Model rules](rules.md): TGM001 to TGM010, checked when EF Core builds the model
+- [Model rules](rules.md): TGM001 to TGM014, checked when EF Core builds the model
 - [Analyzers](analyzers.md): TG001 to TG004, checked at compile time
 - [Write guard](write-guard.md): what `SaveChanges` checks for each Added, Modified and
   Deleted entry

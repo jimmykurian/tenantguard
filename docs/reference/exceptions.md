@@ -103,7 +103,7 @@ message of an argument exception ends with the parameter's name, as in
 | `SaveChanges` that writes a tenant-scoped row, with no `CurrentTenant` configured | `InvalidOperationException`: `TenantGuard checks the writes of {Context} against its current tenant, but no CurrentTenant is configured. Add CurrentTenant(ctx => ...) to UseTenantGuard.` |
 | `SaveChanges`, when `CurrentTenant` returns another type | `InvalidOperationException`: `CurrentTenant returned a {ReturnedType}, but {Entity}.{Property} is a {PropertyType}. Return a value of the tenant property's type.` |
 | `Unfiltered<TEntity>`, `CrossTenant`, `CrossTenantWhenNoTenant`, `Suppress` or `Suppress<TEntity>`, with a null, empty or whitespace reason | `ArgumentNullException` for null, `ArgumentException` otherwise |
-| `Suppress` or `Suppress<TEntity>`, with an unknown rule ID | `ArgumentException`: `Unknown rule '{RuleId}'. Pass a rule ID from TGM001 to TGM010.` |
+| `Suppress` or `Suppress<TEntity>`, with an unknown rule ID | `ArgumentException`: `Unknown rule '{RuleId}'. Pass a rule ID from TGM001 to TGM014.` |
 | `Suppress`, with an error rule | `ArgumentException`: `{RuleId} is an error, so it is suppressed one entity type at a time: Suppress<TEntity>("{RuleId}", reason).` |
 | `Suppress<TEntity>("TGM001", ...)` | `ArgumentException`: `Declare {Entity} unfiltered with Unfiltered<{Entity}>(reason) rather than suppressing TGM001.` |
 | `Suppress<TEntity>("TGM002", ...)` | `ArgumentException`: `Declare {Entity} shared with Shared<{Entity}>() rather than suppressing TGM002.` |
