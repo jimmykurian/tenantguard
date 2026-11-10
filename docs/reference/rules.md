@@ -313,8 +313,11 @@ such as `e.IsPublic || e.TenantId == TenantId`, isn't reported: it shows the row
 selects, not every row. Under a framework that switches its filters this way, one
 `Suppress("TGM012", reason)` covers the model.
 
-TenantGuard first pushes each `!` inward, so an `||` counts only when it is still an `||`
-with no negation above it. `!(BlockAll || e.TenantId != TenantId)` is
+TenantGuard first pushes each `!` inward, reads a bool `|` or `&` as `||` or `&&`, and reads
+a comparison with a bool constant as the condition or its negation (`x == true` is `x`,
+`x == false` is `!x`), so an `||` counts only when it is still an `||` with no negation
+above it. A constant `false` beside the tenant comparison, as `false | x` leaves, is no
+switch. `!(BlockAll || e.TenantId != TenantId)` is
 `!BlockAll && e.TenantId == TenantId`, which only ever narrows the rows, and isn't
 reported; `!(Enabled && e.TenantId != TenantId)` is `!Enabled || e.TenantId == TenantId`,
 and is.
@@ -380,7 +383,10 @@ an entity type: `Set<OrderLine>()`, a `DbSet` or a raw query returns every tenan
 Reported for an entity type that isn't owned, isn't tenant-scoped and isn't declared
 shared, when it has a required foreign key to a tenant-scoped entity type and no query
 filter on its root reaches a tenant property through a navigation. A filter through the
-principal counts, as it does for TGM001: `line => line.Order.TenantId == TenantId`. The
+principal counts, as it does for TGM001: `line => line.Order.TenantId == TenantId`, or with
+`EF.Property<string>(line.Order, "TenantId")`, which a shadow tenant property needs. The
+filter is folded first, so one built as `true || line.Order.TenantId == TenantId`, which
+admits every row, doesn't count. The
 join entity type EF Core creates for a many-to-many relationship isn't reported: it has no
 CLR type of its own. When more than one foreign key qualifies, the message names the first,
 by principal name.
