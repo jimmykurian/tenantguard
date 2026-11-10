@@ -14,7 +14,7 @@ about testing your app with the probe.
 | `tests/integration/` | `TenantGuard.Providers.Tests` | SQL Server and PostgreSQL in Testcontainers; needs Docker | `task test:providers` |
 | `tests/e2e/` | `HandRolled.Api.Tests`, `Finbuckle.Api.Tests` | Each sample app through its host | `task test:e2e` |
 | `tests/e2e/` | `ValidateTool.Tests` | The built `dotnet tenantguard validate`, on `ValidateTool.Fixture` and `ValidateTool.UnreferencedFixture`, an app that doesn't reference TenantGuard (net10.0 and net11.0), and both sample apps | `task test:e2e` |
-| `tests/e2e/` | `ProbeAdapters.Tests` | The xUnit v3 and TUnit fixtures, run as processes, with their reports read: each probe row of `ProbeAdapters.Store` is a test | `task test:e2e` |
+| `tests/e2e/` | `ProbeAdapters.Tests` | The xUnit v3 and TUnit fixtures, run as processes once a session, with their reports read: each probe row of `ProbeAdapters.Store` is a test. A fixture whose process crashes and reports nothing runs again, up to three times, since the TUnit fixture on the .NET 10 runtime crashes in the runtime now and then on macOS | `task test:e2e` |
 
 `task test` runs every group but the provider tests, which `providers.yml` runs on demand,
 nightly, and on pull requests that change the runtime or test kit packages, the shared probe
