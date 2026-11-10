@@ -241,8 +241,10 @@ the first tenant already linked, and the refusal tells it the account exists. A 
 key, such as an identity column or a `Guid` EF Core generates, is unique across tenants by
 design, and isn't checked. Nor is a key of a single `Guid` property the app assigns: a
 random `Guid` can't be reused by another tenant. A `Guid` that comes from outside, such as
-an identity provider's object ID, can; for that, make the key per tenant or add a unique
-index on `(TenantId, Id)`, which TGM010 then checks.
+an identity provider's object ID, can; for that, make the key per tenant,
+`HasKey(e => new { e.TenantId, e.Id })`, or keep the external ID in a column of its own
+behind a generated key, with a unique index on `(TenantId, ExternalId)`. A unique index on
+`(TenantId, Id)` alone doesn't help: the key on `Id` is still unique across tenants.
 
 Nor is the unique index EF Core makes for
 a one-to-one foreign key, whose values are keys of the principal's rows, or a unique index
@@ -312,6 +314,12 @@ selects, not every row. Under a framework that switches its filters this way, on
 `Suppress("TGM012", reason)` covers the model. TGM013 is reported instead when the other
 side is a null check of the current tenant.
 
+TenantGuard first pushes each `!` inward, so an `||` counts only when it is still an `||`
+with no negation above it. `!(BlockAll || e.TenantId != TenantId)` is
+`!BlockAll && e.TenantId == TenantId`, which only ever narrows the rows, and isn't
+reported; `!(Enabled && e.TenantId != TenantId)` is `!Enabled || e.TenantId == TenantId`,
+and is.
+
 ```csharp
 // TGM012
 modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => !IsTenantFilterEnabled || invoice.TenantId == TenantId);
@@ -323,8 +331,10 @@ modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => !IsTenantFilterEnabled 
 {Entity}: the tenant filter returns every tenant's rows when there is no current tenant: it is ORed with a null check of the value '{Property}' is compared with. Compare '{Property}' with the current tenant alone, so a context with no tenant sees no tenant's rows.
 ```
 
-Reported when the other side of the `||` is a null check of the expression the tenant
-property is compared with: `== null`, `!HasValue`, `string.IsNullOrEmpty` or
+Reported when the other side of the `||`, with negations pushed inward as for TGM012, is a
+null check of the expression the tenant property is compared with, so
+`!(CurrentTenantId == null || e.TenantId != CurrentTenantId)`, which shows no rows when there
+is no tenant, isn't reported. The null checks are `== null`, `!HasValue`, `string.IsNullOrEmpty` or
 `string.IsNullOrWhiteSpace`. `CurrentTenantId == null || e.TenantId == CurrentTenantId`
 returns every row whenever the current tenant is null: in background jobs, on routes
 outside a tenant, in a context created without one. Under `NullTenantIsHost()`, the host is

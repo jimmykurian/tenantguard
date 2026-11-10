@@ -43,8 +43,11 @@ The rule IDs, their scope and their default severities are the contract
     `Shared<TEntity>()` declares a lookup view.
   - TGM012 switchable-filter: the tenant comparison sits under an `||` whose other side
     doesn't read the row. A condition on the row, such as `e.IsPublic`, isn't reported.
-  - TGM013 open-without-tenant: the other side of that `||` is a null check of the value
-    the tenant property is compared with. It replaces TGM012 for that filter.
+    Negations are pushed inward first, so an `||` under a `!`, which only narrows the rows,
+    as in `!(BlockAll || e.TenantId != TenantId)`, isn't reported either.
+  - TGM013 open-without-tenant: the other side of that `||`, after the same rewrite, is a
+    null check of the value the tenant property is compared with. It replaces TGM012 for
+    that filter.
   - TGM014 unscoped-dependent: an entity type that isn't owned, tenant-scoped or declared
     shared, with a required foreign key to a tenant-scoped entity type and no query filter
     that reaches a tenant property through a navigation. EF Core's implicit many-to-many
@@ -68,4 +71,5 @@ view of a tenant-scoped one, so a lookup view needs `Shared<TEntity>()`.
 
 The single `Guid` exemption trades a rare miss for less noise: a `Guid` key that comes from
 outside, such as an identity provider's object ID, is still unique across tenants and isn't
-reported. The rules reference says so and how to make it per tenant.
+reported. The rules reference says so, and how to make it per tenant: the tenant in the
+key, or the external ID behind a generated key with a per-tenant unique index.
