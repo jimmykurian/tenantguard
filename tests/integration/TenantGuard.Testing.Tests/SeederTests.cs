@@ -36,6 +36,19 @@ public sealed class SeederTests
     }
 
     [Fact]
+    public async Task An_owned_value_the_constructor_or_an_initializer_sets_is_kept()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Shipping(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.AssertAllPassed();
+        await using var acme = database.Create("acme");
+        var shipment = await acme.Set<Shipment>().SingleAsync(Token);
+        (shipment.Destination.City.Length > 0, shipment.Destination.Fee.ToString(), shipment.Insurance.Fee.ToString()).Should().Be((true, "0 USD", "5 EUR"));
+    }
+
+    [Fact]
     public async Task Collections_and_JSON_are_seeded_empty()
     {
         await using var database = await DatabaseAsync((options, tenant) => new Settings(options, tenant));
@@ -75,6 +88,20 @@ public sealed class SeederTests
     }
 
     [Fact]
+    public async Task An_optional_composite_foreign_key_that_holds_the_tenant_points_at_the_tenants_row()
+    {
+        await using var database = await DatabaseAsync((options, tenant) => new Memberships(options, tenant));
+
+        var report = await database.Probe().RunAsync(Token);
+
+        report.AssertAllPassed();
+        await using var acme = database.Create("acme");
+        var member = await acme.Set<Member>().SingleAsync(Token);
+        await using var context = database.Create(tenant: null);
+        (await context.Set<Branch>().SingleAsync(branch => branch.Id == "acme", Token)).Number.Should().Be(member.BranchNumber);
+    }
+
+    [Fact]
     public async Task A_table_of_tenants_the_probe_cannot_seed_names_the_tenant_property()
     {
         await using var database = await DatabaseAsync((options, tenant) => new PricedRoles(options, tenant));
@@ -103,6 +130,35 @@ public sealed class SeederTests
             {
                 invoice.OwnsOne(row => row.Total);
                 invoice.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+    }
+
+    // A shipment owning a destination bound through its constructor and an insurance with a
+    // parameterless one; each sets a fee, stored through a converter that rejects every generated value.
+    private sealed class Shipping(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Shipment>(shipment =>
+            {
+                shipment.OwnsOne(row => row.Destination, destination => destination.Property(row => row.Fee).HasConversion(fee => fee.ToString(), text => Money.Parse(text)));
+                shipment.OwnsOne(row => row.Insurance, insurance => insurance.Property(row => row.Fee).HasConversion(fee => fee.ToString(), text => Money.Parse(text)));
+                shipment.Navigation(row => row.Destination).IsRequired();
+                shipment.Navigation(row => row.Insurance).IsRequired();
+                shipment.HasQueryFilter(row => row.TenantId == Tenant);
+            });
+    }
+
+    // Members whose optional foreign key to a branch is the nullable tenant property and a required
+    // branch number, pointing at the branch's alternate key.
+    private sealed class Memberships(DbContextOptions options, string? tenant) : TenantContext(options, tenant)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Member>(member =>
+            {
+                member.HasOne<Branch>().WithMany()
+                    .HasForeignKey(row => new { row.TenantId, row.BranchNumber })
+                    .HasPrincipalKey(branch => new { branch.Id, branch.Number });
+                member.HasQueryFilter(row => row.TenantId == Tenant);
             });
     }
 
@@ -184,6 +240,45 @@ public sealed class SeederTests
                 : throw new FormatException($"\"{text}\" is not an amount and a currency.");
 
         public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Amount} {Currency}");
+    }
+
+    private sealed class Shipment
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public Destination Destination { get; set; } = null!;
+
+        public Insurance Insurance { get; set; } = null!;
+    }
+
+    private sealed class Destination(string city)
+    {
+        public string City { get; private set; } = city;
+
+        public Money Fee { get; private set; } = new(0m, "USD");
+    }
+
+    private sealed class Insurance
+    {
+        public Money Fee { get; private set; } = new(5m, "EUR");
+    }
+
+    private sealed class Branch
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public int Number { get; set; }
+    }
+
+    private sealed class Member
+    {
+        public int Id { get; set; }
+
+        public string? TenantId { get; set; }
+
+        public int BranchNumber { get; set; }
     }
 
     private sealed class Profile
