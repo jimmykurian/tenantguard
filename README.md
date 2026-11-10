@@ -311,8 +311,8 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 85 | 108 | 14 | 207 |
-| Lines of code | 4,375 | 7,030 | 228 | 11,633 |
-| Methods | 335 | 733 | 21 | 1,089 |
+| Lines of code | 4,382 | 7,100 | 228 | 11,710 |
+| Methods | 335 | 737 | 21 | 1,093 |
 | Average complexity | 3.3 | 1.1 | 1.2 | 1.8 |
 | Max complexity | 32 | 5 | 4 | 32 |
 
