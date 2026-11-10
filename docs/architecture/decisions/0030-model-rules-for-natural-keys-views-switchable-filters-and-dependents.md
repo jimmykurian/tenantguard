@@ -47,7 +47,13 @@ The rule IDs, their scope and their default severities are the contract
     as in `!(BlockAll || e.TenantId != TenantId)`, isn't reported either.
   - TGM013 open-without-tenant: the other side of that `||`, after the same rewrite, is a
     null check of the value the tenant property is compared with. It replaces TGM012 for
-    that filter.
+    that `||` only: each `||` above the tenant comparison is a switch of its own, so a
+    filter with an independent switch as well gets both, and suppressing TGM013 for a
+    no-tenant admin context leaves TGM012 in place.
+  - Neither reports a switch that an enclosing `&&` rules out with the switch's opposite,
+    as in `CurrentTenantId != null && (CurrentTenantId == null || ...)`. The opposite is
+    matched by shape; TenantGuard doesn't reason further, so a switch ruled out some other
+    way is still reported, and is suppressed with its reason.
   - TGM014 unscoped-dependent: an entity type that isn't owned, tenant-scoped or declared
     shared, with a required foreign key to a tenant-scoped entity type and no query filter
     that reaches a tenant property through a navigation. EF Core's implicit many-to-many

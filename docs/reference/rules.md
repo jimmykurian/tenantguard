@@ -311,14 +311,25 @@ them, switch the filter off for a scope. The switch is read per query, so it may
 fine; the warning says the filter can be turned off, and where. A condition on the row,
 such as `e.IsPublic || e.TenantId == TenantId`, isn't reported: it shows the rows it
 selects, not every row. Under a framework that switches its filters this way, one
-`Suppress("TGM012", reason)` covers the model. TGM013 is reported instead when the other
-side is a null check of the current tenant.
+`Suppress("TGM012", reason)` covers the model.
 
 TenantGuard first pushes each `!` inward, so an `||` counts only when it is still an `||`
 with no negation above it. `!(BlockAll || e.TenantId != TenantId)` is
 `!BlockAll && e.TenantId == TenantId`, which only ever narrows the rows, and isn't
 reported; `!(Enabled && e.TenantId != TenantId)` is `!Enabled || e.TenantId == TenantId`,
 and is.
+
+Each such `||` above the tenant comparison is a switch of its own. One whose other side is
+a null check of the current tenant is TGM013, and every other one is TGM012, so a filter
+with both, such as `!IsTenantFilterEnabled || (CurrentTenantId == null || e.TenantId == CurrentTenantId)`,
+gets both, and suppressing one leaves the other. A switch isn't reported when an `&&` above
+it has, on its other side, the opposite of the switch's condition, which rules the switch
+out: `Enabled && (!Enabled || e.TenantId == TenantId)`, or
+`CurrentTenantId != null && (CurrentTenantId == null || e.TenantId == CurrentTenantId)`. The
+opposite is matched by its shape, the same member chain with the negation pushed in, `==`
+and `!=` swapped, `HasValue` and `!HasValue`, or `string.IsNullOrEmpty` and its negation.
+TenantGuard doesn't reason further about guards, so a switch ruled out some other way is
+still reported, and is suppressed with its reason.
 
 ```csharp
 // TGM012
@@ -331,8 +342,8 @@ modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => !IsTenantFilterEnabled 
 {Entity}: the tenant filter returns every tenant's rows when there is no current tenant: it is ORed with a null check of the value '{Property}' is compared with. Compare '{Property}' with the current tenant alone, so a context with no tenant sees no tenant's rows.
 ```
 
-Reported when the other side of the `||`, with negations pushed inward as for TGM012, is a
-null check of the expression the tenant property is compared with, so
+Reported for a switch, found as TGM012 finds one, whose other side is a null check of the
+expression the tenant property is compared with, so
 `!(CurrentTenantId == null || e.TenantId != CurrentTenantId)`, which shows no rows when there
 is no tenant, isn't reported. The null checks are `== null`, `!HasValue`, `string.IsNullOrEmpty` or
 `string.IsNullOrWhiteSpace`. `CurrentTenantId == null || e.TenantId == CurrentTenantId`
