@@ -253,21 +253,18 @@ Publishing needs a trusted publishing policy on nuget.org for this repository an
 `release.yml`, and the repository variable `NUGET_USER` set to the nuget.org account that
 owns it.
 
-Until EF Core 11 is generally available, releases are previews:
-`release-please-config.json` sets `versioning` to `prerelease` with `prerelease-type`
-`preview`, so each release PR bumps the preview number (`0.1.0-preview.2`, then
-`0.1.0-preview.3`), and `prerelease` to true, so the GitHub Release is marked as a
-prerelease.
+The releases before 0.1.0 were previews (`0.1.0-preview.N`), until EF Core 11 was
+generally available ([0016](docs/architecture/decisions/0016-first-release-is-a-preview.md)).
+`release-please-config.json` sets `"release-as": "0.1.0"` for the first stable release.
 
-Before the first stable release:
+Once 0.1.0 is out:
 
-- In `.github/release-please-config.json`, replace `versioning`, `prerelease-type` and
-  `prerelease` with `"release-as": "0.1.0"`, and remove `release-as` again once 0.1.0 is
-  out. Release Please opens a release PR for the same version while `release-as` names it,
-  and merging that PR fails because the tag already exists.
-- Remove the preview note at the top of `README.md` and of `assets/nuget-readme.md`, the
-  README nuget.org shows, and the `--prerelease` flags from the install commands in both and
-  in `docs/guides/`.
+- Remove `release-as` from `.github/release-please-config.json`. Release Please opens a
+  release PR for the same version while `release-as` names it, and merging that PR fails
+  because the tag already exists.
+- Install 0.1.0 from nuget.org into a fresh console app, without `--prerelease`, and check
+  that `IgnoreQueryFilters()` is TG001 and that an unguarded entity fails startup with
+  TGM001.
 
 ## License
 
