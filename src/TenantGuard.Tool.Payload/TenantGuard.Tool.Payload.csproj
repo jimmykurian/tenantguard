@@ -18,9 +18,15 @@
   <ItemGroup>
     <ProjectReference Include="../TenantGuard.EntityFrameworkCore/TenantGuard.EntityFrameworkCore.csproj" />
     <!-- Compiled against the floor, so it loads under an app on any EF Core 10 patch (ADR 0033). -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" VersionOverride="$(TenantGuardEfCoreFloor)" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="'$(TargetFramework)' == 'net10.0'" />
-    <PackageReference Include="System.Security.Cryptography.Xml" Condition="'$(TargetFramework)' == 'net10.0'" />
+    <!-- Private: the tool only starts the payload, so Design and its pins don't flow into it. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" VersionOverride="$(TenantGuardEfCoreFloor)" PrivateAssets="all" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="'$(TargetFramework)' == 'net10.0'" PrivateAssets="all" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Condition="'$(TargetFramework)' == 'net10.0'" PrivateAssets="all" />
+    <!--
+      Design 10.0.0 brings this at 4.14.0, which ships a BuildHost-net472 folder as content files; it
+      would be copied into the tool. The payload never uses MSBuild workspaces, so its content is left out.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Condition="'$(TargetFramework)' == 'net10.0'" ExcludeAssets="contentFiles" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
