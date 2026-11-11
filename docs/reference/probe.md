@@ -180,8 +180,20 @@ When the relationship's foreign key includes the tenant property, the database c
 a link across tenants, so the row passes without seeding one. A skip navigation whose join
 entity type is tenant-scoped isn't checked as a skip navigation: the join type's own
 navigations are. The row is skipped, naming the reason, when the type of the new dependent
-couldn't be seeded or can't be probed, or when saving the link fails, as it does for a
-one-to-one relationship whose row already has its dependent. A row that passed is skipped
+couldn't be seeded or can't be probed, or when saving the link fails. When the foreign key
+is unique, as for a one-to-one relationship or a unique index on its columns, and the
+principal row the link would point at already has a seeded dependent through it, the probe
+doesn't try, since a second dependent would break the unique index, and the row is skipped
+with
+
+```text
+Profile's foreign key (UserId) is unique, and acme's User row (Id: 1) already has a Profile, so a second one to link it across tenants would break the unique index.
+```
+
+A unique foreign key whose seeded dependents leave it null, as an optional one-to-one does,
+has room for the link, so it's checked as any other.
+
+A row that passed is skipped
 too when B can't find its own row with `FindAsync`, or A can't find the row the link
 reaches (A's principal, A's new dependent or A's target row), because another query filter
 hides it.
@@ -258,6 +270,9 @@ row is the entity type's last.
 
 `ProbeReport.Rows` is `(Entity, Check, Outcome, Detail)`, with outcomes `Passed`, `Failed`
 and `Skipped`. `AssertAllPassed()` throws `TenantIsolationProbeException`, whose message is
-a fixed-width table of the rows that didn't pass ([Exceptions](exceptions.md)). A passed
+a fixed-width table of the rows that didn't pass ([Exceptions](exceptions.md)).
+`ProbeReport.ToString()` returns the same table with every row, passed ones included,
+under a summary: `TenantGuard isolation probe: 3 of 12 checks did not pass.`, or
+`TenantGuard isolation probe: all 12 checks passed.`, so a test can print the report. A passed
 row's detail is empty, except a guard check the app's own `SaveChanges` blocked, which names
 its exception, or an insert the app stamped with B. Details name tenants and key values, never other entity values.

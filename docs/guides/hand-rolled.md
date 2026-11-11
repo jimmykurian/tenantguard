@@ -62,6 +62,18 @@ has another name, say so, or mark the property with `[TenantKey]`:
     .CurrentTenant(context => ((AppDbContext)context).TenantId))
 ```
 
+`CurrentTenant` is what the write guard checks each row against, so a running app needs it:
+without it, every tenant-scoped write throws `InvalidOperationException`, even under
+`Enforcement.Log` ([write guard](../reference/write-guard.md#the-current-tenant)).
+
+If the tenant property isn't named `TenantId`, as with `TenantPropertyNames("CompanyId")`,
+name it for the analyzers as well, or every raw SQL statement is TG002:
+
+```ini
+[*.cs]
+tenantguard.tenant_column = CompanyId
+```
+
 ## What startup catches
 
 `TenantGuardModelException` lists every error the model has. The two that matter most:

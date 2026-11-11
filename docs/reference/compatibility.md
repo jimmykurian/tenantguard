@@ -27,7 +27,13 @@ change between releases.
 ## Supported versions
 
 The net10.0 build runs on EF Core 10, the net11.0 build on EF Core 11, with any provider
-([0010](../architecture/decisions/0010-target-net10-and-net11.md)). The analyzers load in any
+([0010](../architecture/decisions/0010-target-net10-and-net11.md)). The packages depend on
+EF Core 10.0.0 or later for net10.0, so an app on any 10.0.x patch restores without being
+moved up, and on the EF Core 11 release the net11.0 build is built with while it's a
+preview, then 11.0.0
+([0033](../architecture/decisions/0033-field-trial-messages-and-an-ef-core-10-0-0-floor.md)).
+CI builds and tests on the latest patch, and runs the unit and integration tests on
+10.0.0 too. The analyzers load in any
 compiler on Roslyn 4.8.0 or later, Visual Studio 2022 included.
 
 ## Compiled models and Native AOT

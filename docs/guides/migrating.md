@@ -26,7 +26,8 @@ dotnet_diagnostic.TG005.severity = suggestion
 ```
 
 Fix each call, or justify it with `[AllowCrossTenantAccess("why")]`, then delete these
-lines.
+lines. If your tenant column isn't `TenantId`, set `tenantguard.tenant_column` first, or
+every raw SQL statement is TG002.
 
 ## 2. Model rules in Log mode
 
@@ -48,6 +49,9 @@ Assert.Empty(report.Errors);
 ```
 
 The [common findings](#common-findings) below say what each one usually means.
+
+`Log` covers the model rules only. Keep `CurrentTenant` in the options even now: without
+it, every tenant-scoped write throws `InvalidOperationException`, whatever the enforcement.
 
 ## 3. Writes
 

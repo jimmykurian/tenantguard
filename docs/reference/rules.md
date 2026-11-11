@@ -150,13 +150,24 @@ rows to everyone. `{Value}` is the constant, with strings quoted.
 ### TGM005 nullable-tenant
 
 ```text
-{Entity}.{Property} is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.
+{Entity}.{Property} is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make '{Property}' required, or declare host rows with NullTenantIsHost().
 ```
 
-A row whose tenant is null matches no tenant's filter, and the write guard has no tenant
-to compare it with. Make the property required unless rows without a tenant are meant.
-When a null tenant means host data, `NullTenantIsHost()` says so, and TGM005 isn't
-reported ([host rows](options.md#host-rows)).
+When the tenant filter ORs the tenant comparison with a null check of the tenant property,
+as `e => e.TenantId == TenantId || e.TenantId == null` does, the message says that instead:
+
+```text
+{Entity}.{Property} is nullable, and the tenant filter lets a row with no tenant through, so every tenant reads it. Confirm rows with no tenant are meant to be shared, or make '{Property}' required.
+```
+
+A row whose tenant is null matches no tenant's filter, but a filter such as
+`e => e.TenantId == TenantId` matches it when the current tenant is null too, as EF Core
+compares nulls the way C# does, so a context with no current tenant reads it. A filter
+with an `e.TenantId == null` disjunct shows it to every tenant. The write guard refuses
+to write it from a context with a current tenant; with none, `WhenNoCurrentTenant`
+decides ([write guard](write-guard.md#the-current-tenant)). Make the property required
+unless rows without a tenant are meant. When a null tenant means host data,
+`NullTenantIsHost()` says so, and TGM005 isn't reported ([host rows](options.md#host-rows)).
 
 ### TGM006 tenant-on-derived
 
@@ -169,15 +180,36 @@ derived type can't be filtered.
 
 ### TGM007 filter-not-parameterized
 
+The filter references the tenant property, but TenantGuard can't tell what it is compared
+with. The message says which of four ways:
+
 ```text
-{Entity}: the tenant filter's operand could not be classified; confirm it is evaluated per query.
+{Entity}: TenantGuard can't tell where the value '{Property}' is compared with comes from. Confirm it is read per query, from the context or a static member, not when the model was built.
 ```
 
-The filter references the tenant property, but TenantGuard can't tell where the value it
-is compared with comes from. Check that it is read per query, from the context or a static
-member, and not frozen when the model was built. It is also reported when the filter
-reads the tenant property without comparing it with anything but `null`, as
-`e => e.TenantId != null` alone does.
+for a comparison whose other operand [can't be classified](#how-the-operand-is-classified);
+
+```text
+{Entity}: the tenant filter passes '{Property}' to {Method} instead of comparing it, so TenantGuard can't check what it is compared with. Confirm {Method} compares it with the current tenant, read per query.
+```
+
+when the filter has no such comparison and passes the tenant property to a method, as a
+`DbFunction` such as `MultiTenantFilter(e.TenantId, CurrentTenantId, true)` does. `{Method}`
+is the method's type and name, such as `AppDbContext.MultiTenantFilter`;
+
+```text
+{Entity}: the tenant filter compares '{Property}' only with null, so it doesn't scope rows to a tenant. Compare '{Property}' with the current tenant.
+```
+
+when it compares the tenant property with nothing but `null`, as `e => e.TenantId != null`
+alone does; and
+
+```text
+{Entity}: the tenant filter reads '{Property}' without comparing it with a value TenantGuard can check. Compare '{Property}' with the current tenant.
+```
+
+when it reads the tenant property in some other way, as `e => e.TenantId.Length > 0`
+does.
 
 ### TGM008 owned-tenant
 
@@ -195,11 +227,13 @@ of another tenant's row isn't blocked yet.
 ### TGM009 unindexed-tenant
 
 ```text
-{Entity} has no index or key that starts with '{Property}', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.{Property}), or put '{Property}' first in an existing index or key.
+{Entity} has no index or key that starts with '{Property}', so a query that only its tenant filter narrows, such as a list of a tenant's rows, scans every tenant's rows. Add HasIndex(e => e.{Property}), or put '{Property}' first in an existing index or key; a table read only by its key doesn't need one.
 ```
 
-Every query of a tenant-scoped table filters on the tenant column, so without an index
-that starts with it the database scans every tenant's rows. The primary key, alternate
+Every query of a tenant-scoped table filters on the tenant column. A lookup by key, or by
+another indexed column, finds its rows through that index, but a query that nothing else
+narrows, such as a list of the tenant's invoices, scans every tenant's rows without an
+index that starts with the tenant column. The primary key, alternate
 keys and indexes all count, including the ones EF Core adds for foreign keys, such as the
 index a foreign key of `(TenantId, OrderId)` gets.
 

@@ -59,6 +59,8 @@ dotnet add package TenantGuard.EntityFrameworkCore --prerelease
 dotnet add package TenantGuard.Testing --prerelease   # in the test project
 ```
 
+It needs EF Core 10.0.0 or later on net10.0, so it doesn't move an app's EF Core up a patch.
+
 ## Quick start
 
 ```csharp
@@ -77,9 +79,13 @@ From then on:
   database, when it would write, move or delete a row of a tenant other than the
   context's current one.
 - The build warns on each `IgnoreQueryFilters()` and each raw SQL statement that doesn't
-  mention `TenantId`.
+  compare `TenantId` with a value.
 
-`CurrentTenant` returns the tenant the context runs as, of the tenant property's type. The
+`CurrentTenant` returns the tenant the context runs as, of the tenant property's type. A
+running app needs it: without it, every tenant-scoped write throws
+`InvalidOperationException`, even under `Enforcement.Log`. When the tenant property has
+another name, given to `TenantPropertyNames` or `TenantProperty<TEntity>`, tell the
+analyzers too, with `tenantguard.tenant_column` in `.editorconfig`. The
 [hand-rolled](https://github.com/jimmykurian/tenantguard/blob/main/docs/guides/hand-rolled.md)
 and [Finbuckle](https://github.com/jimmykurian/tenantguard/blob/main/docs/guides/finbuckle.md)
 guides show it for each setup.

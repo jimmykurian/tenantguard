@@ -172,6 +172,14 @@ when the compiler [can read it](#which-sql-the-compiler-can-read) and it compare
 `tenantguard.tenant_column` with a value. With several columns, `{Column}` lists them:
 `does not compare 'TenantId' or 'OrgId' with a value`.
 
+When `tenantguard.tenant_column` isn't set, so the column is the default `TenantId`, the
+message ends with a hint, since an app whose tenant property has another name, set with
+`TenantPropertyNames` or `TenantProperty<TEntity>`, has to name it here too:
+
+```text
+Raw SQL bypasses query filters and does not compare 'TenantId' with a value. Add a tenant predicate, or [AllowCrossTenantAccess("why")]. If the tenant column has another name, set tenantguard.tenant_column.
+```
+
 The column counts as a whole identifier, matched ignoring case: bare, quoted as
 `"TenantId"`, `[TenantId]` or `` `TenantId` ``, and qualified or not, as `i.TenantId` or
 `[dbo].[Invoices].[TenantId]`. A name it is only part of, such as `OwningTenantId` or

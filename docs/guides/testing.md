@@ -106,7 +106,8 @@ row from `Seed<T>`. A type it can't seed, such as one with a required property o
 generator doesn't know, is reported as skipped with the reason.
 
 To look at the rows yourself, read `report.Rows`: each `ProbeRow` has the `Entity`, the
-`Check`, an `Outcome` (`Passed`, `Failed` or `Skipped`) and a `Detail`.
+`Check`, an `Outcome` (`Passed`, `Failed` or `Skipped`) and a `Detail`. Printing the
+report, as `report.ToString()` does, gives the table of every row.
 
 ## One test per row
 
@@ -168,7 +169,8 @@ dotnet tenantguard validate --assembly src/App/bin/Release/net10.0/App.dll --war
 ```
 
 It creates the context the way `dotnet ef` does, so the app references
-`Microsoft.EntityFrameworkCore.Design`, and it exits 1 when the model breaks a rule. The
+`Microsoft.EntityFrameworkCore.Design`, and it exits 1 when the model breaks a rule. Under
+package source mapping, install it with `--configfile` rather than `--add-source`. The
 [validate tool](../reference/validate-tool.md) page has its options and exit codes.
 
 ## xUnit, NUnit, MSTest and TUnit
