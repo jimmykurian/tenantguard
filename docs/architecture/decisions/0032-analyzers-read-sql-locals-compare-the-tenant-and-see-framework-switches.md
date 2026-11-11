@@ -36,8 +36,9 @@ contract ([0006](0006-the-public-contract.md)), so this needs a decision.
 - **TG002 requires a comparison with a value.** The tenant column has to appear as a whole
   identifier, bare, quoted or qualified, and be compared with a value: with `=` or
   `= ANY (...)`, on either side, or followed by `IN` and a value or a list whose first item
-  is a value. A value is a parameter, a hole that isn't a constant, a string literal or a
-  number. A column in an `INSERT`'s column list counts too, because the insert stamps the
+  is a value. A value is a parameter (`@name`, `:name`, `$name`, `$1` or `?`), a
+  composite-format placeholder such as `{0}`, a hole that isn't a constant, a string literal
+  or a number. A column in an `INSERT`'s column list counts too, because the insert stamps the
   row. The message says "does not compare '{Column}' with a value". It is still a text check:
   a comparison anywhere in the text passes.
 - **Under `tenantguard.tenant_members_only = true`,** TG002 and TG004 check `FromSql`,

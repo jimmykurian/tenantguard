@@ -129,9 +129,10 @@ IgnoreQueryFilters disables the tenant filter. Add [AllowCrossTenantAccess("why"
 ```
 
 Reported on `IgnoreQueryFilters()`. The overload that takes filter names, from EF Core 10,
-is reported too, unless `tenantguard.tenant_filter_unnamed = true`, or
-`tenantguard.tenant_filter_names` is set and the names are constants that leave every
-tenant filter on. Constant names are an array, a collection
+is reported too, unless `tenantguard.tenant_filter_names` is set and the names are
+constants that leave every tenant filter on. With only `tenantguard.tenant_filter_unnamed =
+true` and no names set, that overload isn't reported, whatever the names; with both keys
+set, the names are checked as for `tenantguard.tenant_filter_names` alone. Constant names are an array, a collection
 initializer, or a collection expression without a spread, of string constants.
 
 With `tenantguard.tenant_members_only = true`, it isn't reported when the query's entity
@@ -179,8 +180,9 @@ parameter named like it, such as `@TenantId`, isn't the column. It passes when i
 - followed by `IN`, then a value or a parenthesized list whose first item is a value;
 - in the column list of an `INSERT INTO ... (...)`.
 
-A value is a parameter (`@name`, `:name`, `?` or `$1`), an interpolated hole that isn't a
-constant, a string literal or a number. A column on the other side, as in a join's
+A value is a parameter (`@name`, `:name`, `$name`, `$1` or `?`), a composite-format
+placeholder such as `{0}`, which `ExecuteSqlRaw` and `SqlQueryRaw` turn into parameters, an
+interpolated hole that isn't a constant, a string literal or a number. A column on the other side, as in a join's
 `a.TenantId = b.TenantId`, or a subquery, isn't a value, and neither `<>`, `!=`, `<=` nor
 `>=` is a comparison that scopes the rows.
 
