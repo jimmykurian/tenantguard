@@ -51,6 +51,32 @@ internal static class Tgm005Models
         }
     }
 
+    // Negative, with the first message: the enclosing && rules out the null check.
+    internal sealed class NullCheckRuledOut(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Receipt>().HasQueryFilter(receipt => receipt.TenantId != null && (receipt.TenantId == CurrentTenant || receipt.TenantId == null));
+            modelBuilder.Entity<Receipt>().HasIndex(receipt => receipt.TenantId);
+        }
+    }
+
+    // Negative, with the first message: another named filter rules out the null check.
+    internal sealed class NullCheckRuledOutByAnotherFilter(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Receipt>()
+                .HasQueryFilter("Tenant", receipt => receipt.TenantId == CurrentTenant || receipt.TenantId == null)
+                .HasQueryFilter("Assigned", receipt => receipt.TenantId != null);
+            modelBuilder.Entity<Receipt>().HasIndex(receipt => receipt.TenantId);
+        }
+    }
+
     internal sealed class Invoice
     {
         public int Id { get; set; }

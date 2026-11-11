@@ -37,6 +37,20 @@ public sealed class ValidationErrorTests : IDisposable
             .Should().Be("Couldn't load Acme.Data, which creating AppDbContext needs: The located assembly's manifest definition does not match.");
 
     [Fact]
+    public void A_load_failure_wrapped_by_a_factory_is_found()
+    {
+        var notFound = new FileNotFoundException("Could not load file or assembly.", Design);
+
+        Validation.LoadFailure(new System.Reflection.TargetInvocationException(new InvalidOperationException("The factory failed.", notFound))).Should().BeSameAs(notFound);
+        Validation.LoadFailure(new InvalidOperationException("No connection string.")).Should().BeNull();
+    }
+
+    [Fact]
+    public void The_startup_assemblys_factory_comes_before_the_contexts_assemblys()
+        => Validation.CreateError(new InvalidOperationException("No connection string."), typeof(AppDbContext), "App", [.. Factories((typeof(AppDbContext), typeof(FirstFactory))), .. Factories((typeof(AppDbContext), typeof(SecondFactory)))])
+            .Should().Be("Couldn't create AppDbContext through FirstFactory: No connection string.");
+
+    [Fact]
     public void Two_factories_for_a_context_are_named()
         => Validation.CreateError(new ArgumentException("An item with the same key has already been added."), typeof(AuditDbContext), "App", Factories((typeof(AppDbContext), typeof(FirstFactory)), (typeof(AppDbContext), typeof(SecondFactory))))
             .Should().Be("App has 2 IDesignTimeDbContextFactory<AppDbContext> types: FirstFactory, SecondFactory. Keep one, so the tool can create the context the way dotnet ef does.");

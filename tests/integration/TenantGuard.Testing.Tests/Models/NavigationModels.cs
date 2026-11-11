@@ -108,6 +108,23 @@ internal static class NavigationModels
         }
     }
 
+    // The same one to one, keyed by byte[]: a key TGM010 reports, so the context runs under Log.
+    internal sealed class BinaryMembers(DbContextOptions options, string? tenant) : DbContext(options)
+    {
+        public string? CurrentTenant { get; } = tenant;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BinaryAccount>(account =>
+            {
+                account.Property(row => row.Id).ValueGeneratedNever();
+                account.HasOne(row => row.Profile).WithOne(profile => profile.Account).HasForeignKey<BinaryProfile>(profile => profile.AccountId);
+                account.HasQueryFilter(row => row.TenantId == CurrentTenant);
+            });
+            modelBuilder.Entity<BinaryProfile>().HasQueryFilter(row => row.TenantId == CurrentTenant);
+        }
+    }
+
     internal sealed class Region
     {
         public int Id { get; set; }
@@ -177,6 +194,26 @@ internal static class NavigationModels
         public string TenantId { get; set; } = string.Empty;
 
         public Profile? Profile { get; set; }
+    }
+
+    internal sealed class BinaryAccount
+    {
+        public byte[] Id { get; set; } = [];
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public BinaryProfile? Profile { get; set; }
+    }
+
+    internal sealed class BinaryProfile
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public byte[] AccountId { get; set; } = [];
+
+        public BinaryAccount Account { get; set; } = null!;
     }
 
     internal sealed class OptionalAccount

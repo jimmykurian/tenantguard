@@ -167,6 +167,13 @@ public sealed class ModelRuleTests
                 "Receipt.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost()."));
 
     [Theory]
+    [InlineData(typeof(Tgm005Models.NullCheckRuledOut))]
+    [InlineData(typeof(Tgm005Models.NullCheckRuledOutByAnotherFilter))]
+    public void Nullable_tenant_whose_null_check_is_ruled_out_is_TGM005_with_the_first_message(Type context)
+        => Validate(context).Findings.Should().ContainSingle().Subject.Message.Should().Be(
+            "Receipt.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost().");
+
+    [Theory]
     [InlineData(typeof(Tgm005Models.SharedWithEveryTenant))]
     [InlineData(typeof(Tgm005Models.SharedWithEveryTenantNegated))]
     public void Nullable_tenant_the_filter_lets_through_is_TGM005_saying_every_tenant_reads_it(Type context)
