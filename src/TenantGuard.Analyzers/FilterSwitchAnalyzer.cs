@@ -44,7 +44,7 @@ internal sealed class FilterSwitchAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (IInvocationOperation)context.Operation;
         var configured = AnalyzerSettings.FilterSwitchMethods(context.Options, invocation.Syntax.SyntaxTree).Select(SwitchMethod.Parse).OfType<SwitchMethod>();
-        var candidates = Candidates(invocation.TargetMethod).ToList();
+        var candidates = Candidates(invocation.TargetMethod, invocation.Instance?.Type as INamedTypeSymbol).ToList();
         if (_builtIn.Concat(configured).FirstOrDefault(entry => candidates.Any(entry.Matches)) is { } matched
             && !CrossTenantAccess.IsAllowed(invocation, context.ContainingSymbol))
         {
@@ -53,18 +53,21 @@ internal sealed class FilterSwitchAnalyzer : DiagnosticAnalyzer
     }
 
     // The method as called, then each interface method it implements, with the type its type
-    // argument comes from when the method has none of its own.
-    private static IEnumerable<(INamedTypeSymbol Type, IMethodSymbol Method)> Candidates(IMethodSymbol method)
+    // argument comes from when the method has none of its own. The interfaces come from the receiver's
+    // type too, which may declare an interface that a base class's method implements.
+    private static IEnumerable<(INamedTypeSymbol Type, IMethodSymbol Method)> Candidates(IMethodSymbol method, INamedTypeSymbol? receiver)
     {
-        var type = method.ContainingType;
-        yield return (type, method);
-        foreach (var @interface in type.AllInterfaces)
+        yield return (method.ContainingType, method);
+        foreach (var implementer in new[] { receiver, method.ContainingType }.OfType<INamedTypeSymbol>().Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
         {
-            foreach (var member in @interface.GetMembers(method.Name).OfType<IMethodSymbol>())
+            foreach (var @interface in implementer.AllInterfaces)
             {
-                if (SymbolEqualityComparer.Default.Equals(type.FindImplementationForInterfaceMember(member)?.OriginalDefinition, method.OriginalDefinition))
+                foreach (var member in @interface.GetMembers(method.Name).OfType<IMethodSymbol>())
                 {
-                    yield return (@interface, method);
+                    if (SymbolEqualityComparer.Default.Equals(implementer.FindImplementationForInterfaceMember(member)?.OriginalDefinition, method.OriginalDefinition))
+                    {
+                        yield return (@interface, method);
+                    }
                 }
             }
         }

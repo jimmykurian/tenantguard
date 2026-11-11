@@ -144,12 +144,15 @@ internal static class RawSqlCall
             return invocation.Arguments.FirstOrDefault(argument => argument.Parameter?.Name == "sql")?.Value;
         }
 
-        // EF Core applies the query filters over FromSql, so it matters only on a type with no tenant filter.
-        if (type == EfCoreQueryableExtensions && _fromSqlMethods.Contains(method.Name))
+        // EF Core applies the query filters over FromSql, so it matters only on a type with no tenant
+        // filter; otherwise it is checked only when tenantguard.raw_sql_methods lists it.
+        if (type == EfCoreQueryableExtensions
+            && _fromSqlMethods.Contains(method.Name)
+            && !TenantMembers.MayHaveTenantFilter(invocation, options)
+            && method.Parameters.Length > 1
+            && IsSqlParameter(method.Parameters[1]))
         {
-            return !TenantMembers.MayHaveTenantFilter(invocation, options) && method.Parameters.Length > 1 && IsSqlParameter(method.Parameters[1])
-                ? Argument(invocation.Arguments, method.Parameters[1])
-                : null;
+            return Argument(invocation.Arguments, method.Parameters[1]);
         }
 
         var configured = AnalyzerSettings.RawSqlMethods(options, invocation.Syntax.SyntaxTree);
@@ -191,13 +194,15 @@ internal static class RawSqlCall
     }
 
     // An assignment's target, ++ or --, a ref or out argument, a ref expression, or a part of a tuple
-    // that is assigned.
+    // that is assigned, through parentheses and the null-forgiving !.
     private static bool IsWritten(ExpressionSyntax name)
     {
+        // (sql) and sql! are still sql.
         SyntaxNode node = name;
-        while (node.Parent is ParenthesizedExpressionSyntax parenthesized)
+        while (node.Parent is ParenthesizedExpressionSyntax
+            || (node.Parent is PostfixUnaryExpressionSyntax suppression && suppression.IsKind(SyntaxKind.SuppressNullableWarningExpression)))
         {
-            node = parenthesized;
+            node = node.Parent;
         }
 
         switch (node.Parent)
@@ -206,7 +211,8 @@ internal static class RawSqlCall
                 return assignment.Left == node;
             case PrefixUnaryExpressionSyntax prefix:
                 return prefix.IsKind(SyntaxKind.PreIncrementExpression) || prefix.IsKind(SyntaxKind.PreDecrementExpression);
-            case PostfixUnaryExpressionSyntax:
+            case PostfixUnaryExpressionSyntax postfix:
+                return postfix.IsKind(SyntaxKind.PostIncrementExpression) || postfix.IsKind(SyntaxKind.PostDecrementExpression);
             case RefExpressionSyntax:
                 return true;
             case ArgumentSyntax argument when argument.Parent is TupleExpressionSyntax tuple:
@@ -260,9 +266,10 @@ internal static class RawSqlCall
         {
             foreach (var part in parts.Parts)
             {
-                if (PartValue(part) is { HasValue: true, Value: string piece })
+                if (PartValue(part) is { HasValue: true } constant)
                 {
-                    text.Append(piece);
+                    // A constant is text, whatever its type: {'T'}enantId is TenantId.
+                    text.Append(System.Convert.ToString(constant.Value, System.Globalization.CultureInfo.InvariantCulture));
                 }
                 else
                 {

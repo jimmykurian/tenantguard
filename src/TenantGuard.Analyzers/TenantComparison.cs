@@ -137,6 +137,19 @@ internal static class TenantComparison
                 continue;
             }
 
+            // A comment is neither a predicate nor a break in one: -- to the end of the line, /* to */.
+            if (c == '-' && At(sql, index + 1) == '-')
+            {
+                index = sql.IndexOf('\n', index) is var lineEnd and >= 0 ? lineEnd + 1 : sql.Length;
+                continue;
+            }
+
+            if (c == '/' && At(sql, index + 1) == '*')
+            {
+                index = sql.IndexOf("*/", index + 2, StringComparison.Ordinal) is var commentEnd and >= 0 ? commentEnd + 2 : sql.Length;
+                continue;
+            }
+
             if (c == Hole || c == '?')
             {
                 index++;
@@ -159,8 +172,10 @@ internal static class TenantComparison
                 index = NameEnd(sql, index);
                 tokens.Add(new Token(Kind.Name, sql.Substring(start, index - start)));
             }
-            else if (char.IsDigit(c))
+            else if (char.IsDigit(c) || (c is '-' or '+' && char.IsDigit(At(sql, index + 1)) && IsUnary(tokens)))
             {
+                // A number, signed where a value can start: = -1, IN (-1, +2).
+                index++;
                 while (index < sql.Length && (char.IsDigit(sql[index]) || sql[index] == '.'))
                 {
                     index++;
@@ -198,6 +213,12 @@ internal static class TenantComparison
 
         return tokens;
     }
+
+    // A sign here starts a number: at the start, or after =, (, a comma or another operator, or IN.
+    private static bool IsUnary(List<Token> tokens)
+        => tokens.Count == 0
+            || tokens[tokens.Count - 1].Kind is Kind.Equal or Kind.Open or Kind.Other
+            || IsWord(tokens, tokens.Count - 1, "IN");
 
     // The rest of an operator that starts with c, so <=, >=, <>, !=, ==, := and :: aren't read as =.
     private static string Operator(string sql, ref int index, char c)
