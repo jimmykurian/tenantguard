@@ -100,7 +100,7 @@ public sealed class RawSqlWithoutTenantTests
             """,
             "tenantguard.tenant_column = OrgId");
         test.ExpectedDiagnostics.Add(new DiagnosticResult(RawSqlWithoutTenantAnalyzer.Rule).WithLocation(0).WithMessage(
-            "Raw SQL bypasses query filters and does not mention 'OrgId'. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")]."));
+            "Raw SQL bypasses query filters and does not compare 'OrgId' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")]."));
 
         return test.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -119,7 +119,7 @@ public sealed class RawSqlWithoutTenantTests
             """,
             "tenantguard.tenant_column = TenantId, OrgId");
         test.ExpectedDiagnostics.Add(new DiagnosticResult(RawSqlWithoutTenantAnalyzer.Rule).WithLocation(0).WithMessage(
-            "Raw SQL bypasses query filters and does not mention 'TenantId' or 'OrgId'. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")]."));
+            "Raw SQL bypasses query filters and does not compare 'TenantId' or 'OrgId' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")]."));
 
         return test.RunAsync(TestContext.Current.CancellationToken);
     }
@@ -154,6 +154,114 @@ public sealed class RawSqlWithoutTenantTests
             }
             """);
 
+    [Theory]
+    [InlineData("SELECT * FROM Invoices WHERE OwningTenantId = @tenant")]
+    [InlineData("SELECT * FROM Invoices WHERE Id = @TenantId")]
+    [InlineData("SELECT TenantId, COUNT(*) FROM Invoices GROUP BY TenantId")]
+    [InlineData("SELECT l.* FROM Lines l JOIN Invoices i ON i.TenantId = l.TenantId")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId <> @tenant")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId != @tenant")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId >= 1")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId IS NULL")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId IN (SELECT TenantId FROM Tenants)")]
+    [InlineData("SELECT * FROM Invoices WHERE Note = 'TenantId = 1'")]
+    public Task SQL_that_names_the_column_without_comparing_it_with_a_value_is_reported(string sql)
+        => Verify.VerifyAsync($$"""
+            public static class Jobs
+            {
+                public static int Run(AppDb db) => db.Database.ExecuteSqlRaw({|TG002:"{{sql}}"|});
+            }
+            """);
+
+    [Theory]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId = @tenant")]
+    [InlineData("SELECT * FROM Invoices WHERE \"TenantId\" = :tenant")]
+    [InlineData("SELECT * FROM Invoices WHERE [TenantId] = $tenant")]
+    [InlineData("SELECT * FROM Invoices WHERE `TenantId` = ?")]
+    [InlineData("SELECT * FROM Invoices i WHERE i.TenantId = $1")]
+    [InlineData("SELECT * FROM [dbo].[Invoices] WHERE [dbo].[Invoices].[TenantId] = {0}")]
+    [InlineData("SELECT * FROM \"Invoices\" i WHERE \"i\".\"tenantid\" = @tenant")]
+    [InlineData("SELECT * FROM Invoices i WHERE @tenant = i.TenantId")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId IN @tenants")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId IN (@acme, @globex)")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId = ANY (@tenants)")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId = 'acme'")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId = N'acme'")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId=42")]
+    [InlineData("INSERT INTO Invoices (Number, TenantId) VALUES (@number, @tenant)")]
+    [InlineData("INSERT INTO [dbo].[Invoices] ([TenantId], [Number]) SELECT @tenant, @number")]
+    public Task SQL_that_compares_the_column_with_a_value_is_not_reported(string sql)
+        => Verify.VerifyAsync($$""""
+            public static class Jobs
+            {
+                public static int Run(AppDb db) => db.Database.ExecuteSqlRaw("""{{sql}}""");
+            }
+            """");
+
+    [Fact]
+    public Task An_interpolated_hole_is_a_value_and_a_constant_hole_is_text()
+        => Verify.VerifyAsync("""
+            public static class Jobs
+            {
+                public static int Mine(AppDb db, string tenant) => db.Database.ExecuteSql($"DELETE FROM Invoices WHERE {nameof(Invoice.TenantId)} = {tenant}");
+
+                public static int Join(AppDb db) => db.Database.ExecuteSql({|TG002:$"DELETE FROM Invoices WHERE TenantId = {nameof(Invoice.TenantId)}"|});
+            }
+            """);
+
+    [Fact]
+    public Task SQL_in_a_local_set_once_is_read()
+        => Verify.VerifyAsync(""""
+            public static class Jobs
+            {
+                public static int DeleteAll(AppDb db)
+                {
+                    var sql = """
+                        DELETE FROM Invoices
+                        """;
+                    return db.Database.ExecuteSqlRaw({|TG002:sql|});
+                }
+
+                public static int DeleteMine(AppDb db, string tenant)
+                {
+                    var sql = "DELETE FROM Invoices " + "WHERE TenantId = {0}";
+                    return db.Database.ExecuteSqlRaw(sql, tenant);
+                }
+
+                public static int DeleteOne(AppDb db, int id)
+                {
+                    FormattableString sql = $"DELETE FROM Invoices WHERE Id = {id}";
+                    var again = sql;
+                    return db.Database.ExecuteSql({|TG002:again|});
+                }
+            }
+            """");
+
+    [Fact]
+    public Task FromSql_on_a_type_without_a_tenant_member_is_checked_under_tenant_members_only()
+        => Verify.VerifyAsync(
+            """
+            public sealed class Country
+            {
+                public int Id { get; set; }
+            }
+
+            public sealed class Lookups : DbContext
+            {
+                public DbSet<Country> Countries => Set<Country>();
+
+                public DbSet<Invoice> Invoices => Set<Invoice>();
+            }
+
+            public static class Reports
+            {
+                public static int Countries(Lookups db) => db.Countries.FromSqlRaw({|TG002:"SELECT * FROM Countries"|}).Count();
+
+                public static int Invoices(Lookups db) => db.Invoices.FromSqlRaw("SELECT * FROM Invoices").Count();
+            }
+            """,
+            "tenantguard.tenant_members_only = true");
+
     [Fact]
     public Task FromSql_is_not_reported()
         => Verify.VerifyAsync("""
@@ -171,6 +279,6 @@ public sealed class RawSqlWithoutTenantTests
         var rule = RawSqlWithoutTenantAnalyzer.Rule;
 
         (rule.Id, rule.DefaultSeverity).Should().Be(("TG002", DiagnosticSeverity.Warning));
-        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("Raw SQL bypasses query filters and does not mention '{0}'. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].");
+        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("Raw SQL bypasses query filters and does not compare '{0}' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].");
     }
 }
