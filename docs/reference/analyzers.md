@@ -42,7 +42,7 @@ tenantguard.tenant_members_only = true         # optional: no shadow tenant prop
 - `tenantguard.tenant_filter_unnamed`: `true` says your tenant filters have no name, as
   `HasQueryFilter(expression)` without one gives. EF Core doesn't put an unnamed filter
   beside named ones on an entity type, and `IgnoreQueryFilters` with names never turns an
-  unnamed filter off, so TG001 doesn't report that overload. Matched ignoring case; the
+  unnamed filter off (behavior pin 10), so TG001 doesn't report that overload. Matched ignoring case; the
   default is `false`. With `tenantguard.tenant_filter_names` set too, the names are checked
   as before, for the entity types whose tenant filter is named.
 - `tenantguard.raw_sql_methods`: more methods that take raw SQL, checked by TG002 and
