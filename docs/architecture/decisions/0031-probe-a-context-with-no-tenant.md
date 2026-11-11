@@ -35,8 +35,11 @@ are the contract ([0006](0006-the-public-contract.md)), so it needs a decision.
   with no tenant is the host, and the check is the same.
 - It doesn't load navigations: a context with no tenant has no row of its own to `Include`
   from, and EF Core applies the target's query filter to an `Include`, which the target
-  type's own row checks. It doesn't write: with no current tenant, the write guard's
-  `WhenNoCurrentTenant` already decides, and its default rejects every tenant-scoped write.
+  type's own row checks. It doesn't write, because the write guard already covers a context
+  with no tenant. By default, `WhenNoCurrentTenant`'s `Reject` blocks every
+  tenant-scoped write it makes. Under `NullTenantIsHost`, that policy doesn't apply: the host writes
+  rows whose tenant is null, and the write guard's host checks stop it writing a tenant's
+  row ([write guard](../../reference/write-guard.md#host-rows)).
 
 ## Alternatives considered
 
