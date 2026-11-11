@@ -67,6 +67,7 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
 | `task test:architecture` | `tests/architecture/`: the dependency and public-surface rules over the shipped assemblies |
 | `task test:integration` | `tests/integration/`: the EF Core behavior pins and the test kit's own tests |
 | `task test:e2e` | `tests/e2e/`: the isolation probe against each sample app |
+| `task test:floor` | The unit and integration tests again, on net10.0 with EF Core 10.0.0, the packages' floor; `task ci` runs it last |
 | `task test:providers` | the isolation probe on SQL Server and PostgreSQL in Testcontainers; needs Docker, and isn't part of `task test` |
 | `task lint` | `lint:format`, `lint:api`, `lint:headers`, `lint:scenarios` and `metrics:check` |
 | `task lint:format` | `dotnet format --verify-no-changes` on the solution, the samples, the end-to-end tests and `tools/` |

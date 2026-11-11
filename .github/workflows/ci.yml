@@ -44,6 +44,7 @@ jobs:
       scrub: ${{ steps.scrub.outcome }}
       site_install: ${{ steps.site_install.outcome }}
       site: ${{ steps.site.outcome }}
+      floor: ${{ steps.floor.outcome }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -127,6 +128,11 @@ jobs:
         id: site
         if: ${{ !cancelled() }}
         run: task site:check
+      # Last: it restores the same obj folders on EF Core 10.0.0, the packages' floor.
+      - name: EF Core floor tests
+        id: floor
+        if: ${{ !cancelled() }}
+        run: task test:floor
 
   ci-parity:
     runs-on: ubuntu-latest
@@ -188,6 +194,7 @@ jobs:
                   ['Architecture tests (NetArchTest)', '`task test:architecture`', 'architecture'],
                   ['Integration tests (behavior pins, LightBDD)', '`task test:integration`', 'integration'],
                   ['End-to-end tests (the sample apps)', '`task test:e2e`', 'e2e'],
+                  ['Unit and integration tests on EF Core 10.0.0, the floor', '`task test:floor`', 'floor'],
                 ],
               },
               {

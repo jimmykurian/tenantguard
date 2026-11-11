@@ -8,6 +8,8 @@ vars:
   SAMPLES: HandRolled.Api Finbuckle.Api
   # The end-to-end tests in tests/e2e: one per sample app, the validate tool's and the probe adapters'.
   E2E_TESTS: HandRolled.Api.Tests Finbuckle.Api.Tests ValidateTool.Tests ProbeAdapters.Tests
+  # The unit and integration tests task test:floor runs on EF Core 10.0.0.
+  FLOOR_TESTS: unit/TenantGuard.Analyzers.Tests unit/TenantGuard.EntityFrameworkCore.Tests unit/TenantGuard.Tool.Tests integration/TenantGuard.BehaviorPins integration/TenantGuard.Testing.Tests
   # Absolute: `dotnet test` in the .NET 11 RC SDK resolves a relative --project against the
   # project's own directory.
   TESTS: "{{.ROOT_DIR}}/tests"
@@ -47,6 +49,14 @@ tasks:
     cmds:
       - dotnet test --project "{{.TESTS}}/integration/TenantGuard.BehaviorPins" -c {{.CONFIGURATION}}
       - dotnet test --project "{{.TESTS}}/integration/TenantGuard.Testing.Tests" -c {{.CONFIGURATION}}
+
+  # The packages depend on EF Core 10.0.0, so the unit and integration tests run on it too (ADR 0033).
+  # It restores into the same obj folders, so the next build restores again with the defaults.
+  test:floor:
+    desc: Run the unit and integration tests on net10.0 with EF Core 10.0.0, the packages' floor
+    cmds:
+      - for: { var: FLOOR_TESTS, split: " " }
+        cmd: dotnet test --project "{{.TESTS}}/{{.ITEM}}" -c {{.CONFIGURATION}} -f net10.0 -p:EfCore10Version=10.0.0
 
   test:e2e:
     desc: Run the end-to-end tests (tests/e2e) against the sample apps
@@ -290,3 +300,4 @@ tasks:
       - task: scrub
       - task: site:install
       - task: site:check
+      - task: test:floor
