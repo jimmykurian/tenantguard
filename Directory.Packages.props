@@ -13,10 +13,10 @@
   <PropertyGroup>
     <EfCore10Version Condition="'$(EfCore10Version)' == ''">10.0.14</EfCore10Version>
     <TenantGuardEfCoreFloor Condition="'$(TargetFramework)' != 'net11.0'">10.0.0</TenantGuardEfCoreFloor>
-    <TenantGuardEfCoreFloor Condition="'$(TargetFramework)' == 'net11.0'">11.0.0-rc.3.26522.148</TenantGuardEfCoreFloor>
+    <TenantGuardEfCoreFloor Condition="'$(TargetFramework)' == 'net11.0'">11.0.0</TenantGuardEfCoreFloor>
   </PropertyGroup>
 
-  <!-- The net10.0 build references EF Core 10; net11.0 references EF Core 11 (a release candidate until .NET 11 ships). -->
+  <!-- The net10.0 build references EF Core 10; net11.0 references EF Core 11. -->
   <ItemGroup Condition="'$(TargetFramework)' != 'net11.0'">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EfCore10Version)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCore10Version)" />
@@ -24,9 +24,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.0.0-rc.3.26522.148" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.0.0-rc.3.26522.148" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="11.0.0" />
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
