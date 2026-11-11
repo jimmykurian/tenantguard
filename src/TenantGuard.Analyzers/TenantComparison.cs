@@ -92,7 +92,9 @@ internal static class TenantComparison
                 continue;
             }
 
-            var next = IsWord(tokens, index + 1, "INTO") ? index + 2 : index + 1;
+            // SQLite's INSERT OR IGNORE, OR REPLACE and the other conflict actions.
+            var next = IsWord(tokens, index + 1, "OR") ? index + 3 : index + 1;
+            next = IsWord(tokens, next, "INTO") ? next + 1 : next;
             if (!Is(tokens, next, Kind.Name))
             {
                 continue;
@@ -173,6 +175,12 @@ internal static class TenantComparison
             {
                 index = NameEnd(sql, index);
                 tokens.Add(new Token(Kind.Name, sql.Substring(start, index - start)));
+            }
+            else if (c == '$' && DollarQuoteEnd(sql, index) is var dollarEnd and > 0)
+            {
+                // A PostgreSQL dollar-quoted string, $$...$$ or $tag$...$tag$: a value.
+                index = dollarEnd;
+                tokens.Add(new Token(Kind.Value, string.Empty));
             }
             else if (char.IsDigit(c) || (c is '-' or '+' && char.IsDigit(At(sql, index + 1)) && IsUnary(tokens)))
             {
@@ -287,6 +295,32 @@ internal static class TenantComparison
         }
 
         return index;
+    }
+
+    // Past the closing delimiter of a dollar-quoted string that opens at open, $$ or $tag$ where the tag
+    // is a name that doesn't start with a digit; the end of the text if it isn't closed; 0 when the $
+    // doesn't open one, as in the parameters $1 and $name.
+    private static int DollarQuoteEnd(string sql, int open)
+    {
+        var index = open + 1;
+        if (index < sql.Length && sql[index] != '$' && !IsNameStart(sql[index]))
+        {
+            return 0;
+        }
+
+        while (index < sql.Length && (char.IsLetterOrDigit(sql[index]) || sql[index] == '_'))
+        {
+            index++;
+        }
+
+        if (At(sql, index) != '$')
+        {
+            return 0;
+        }
+
+        var delimiter = sql.Substring(open, index + 1 - open);
+        var close = sql.IndexOf(delimiter, index + 1, StringComparison.Ordinal);
+        return close < 0 ? sql.Length : close + delimiter.Length;
     }
 
     // Past {digits}, or 0 when the brace doesn't start one.
