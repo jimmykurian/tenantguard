@@ -37,8 +37,8 @@ Messages, the public API's behavior and the supported versions are the contract
 
 - **TGM005, TGM007 and TGM009 get new messages,** as rules.md gives them:
   - TGM005 has a second message for a filter with a null disjunct.
-  - TGM007 has three messages: an operand that can't be classified, the tenant property
-    passed to a method, and a comparison only with null.
+  - TGM007 has four messages: an operand that can't be classified, the tenant property
+    passed to a method, a comparison only with null, and any other read.
   - The rule IDs, names and severities don't change.
 - **TG002's message ends with a hint** to set `tenantguard.tenant_column` when the key isn't
   set.
@@ -53,7 +53,9 @@ Messages, the public API's behavior and the supported versions are the contract
   internal switch while it runs, under which TenantGuard doesn't log the model findings, so
   each prints once.
 - **`ProbeReport.ToString()`** returns the table of every row, under a summary.
-- **NavigationLeak skips a unique foreign key** before trying, with a message that says why.
+- **NavigationLeak skips a unique foreign key** before trying, when the principal row the
+  link points at already has a seeded dependent, with a message that says why. A unique
+  foreign key with room for the link is checked as before.
 
 ## Alternatives considered
 

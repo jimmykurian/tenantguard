@@ -181,7 +181,7 @@ derived type can't be filtered.
 ### TGM007 filter-not-parameterized
 
 The filter references the tenant property, but TenantGuard can't tell what it is compared
-with. The message says which of three ways:
+with. The message says which of four ways:
 
 ```text
 {Entity}: TenantGuard can't tell where the value '{Property}' is compared with comes from. Confirm it is read per query, from the context or a static member, not when the model was built.
@@ -202,7 +202,14 @@ is the method's type and name, such as `AppDbContext.MultiTenantFilter`;
 ```
 
 when it compares the tenant property with nothing but `null`, as `e => e.TenantId != null`
-alone does, or reads it in some other way.
+alone does; and
+
+```text
+{Entity}: the tenant filter reads '{Property}' without comparing it with a value TenantGuard can check. Compare '{Property}' with the current tenant.
+```
+
+when it reads the tenant property in some other way, as `e => e.TenantId.Length > 0`
+does.
 
 ### TGM008 owned-tenant
 

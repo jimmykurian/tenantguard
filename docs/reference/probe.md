@@ -181,13 +181,17 @@ a link across tenants, so the row passes without seeding one. A skip navigation 
 entity type is tenant-scoped isn't checked as a skip navigation: the join type's own
 navigations are. The row is skipped, naming the reason, when the type of the new dependent
 couldn't be seeded or can't be probed, or when saving the link fails. When the foreign key
-is unique, as for a one-to-one relationship or a unique index on its columns, the probe
-doesn't try: each row already has its one dependent, so a second can't link across tenants,
-and the row is skipped with
+is unique, as for a one-to-one relationship or a unique index on its columns, and the
+principal row the link would point at already has a seeded dependent through it, the probe
+doesn't try, since a second dependent would break the unique index, and the row is skipped
+with
 
 ```text
-OrderLine's foreign key (OrderId) is unique, so each Order row has at most one OrderLine, which the probe already seeded; a second OrderLine to link across tenants would break the unique index.
+Profile's foreign key (UserId) is unique, and acme's User row (Id: 1) already has a Profile, so a second one to link it across tenants would break the unique index.
 ```
+
+A unique foreign key whose seeded dependents leave it null, as an optional one-to-one does,
+has room for the link, so it's checked as any other.
 
 A row that passed is skipped
 too when B can't find its own row with `FindAsync`, or A can't find the row the link
