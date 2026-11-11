@@ -130,8 +130,7 @@ internal static class RawSqlCall
         }
 
         var text = new StringBuilder();
-        AppendKnownText(sql, text);
-        return text.ToString();
+        return AppendKnownText(sql, text) ? text.ToString() : null;
     }
 
     private static IOperation? FindSql(IInvocationOperation invocation, AnalyzerOptions options)
@@ -255,17 +254,24 @@ internal static class RawSqlCall
         return false;
     }
 
-    private static void AppendKnownText(IOperation interpolated, StringBuilder text)
+    // False when a hole has an alignment or a format, such as {42:'TenantId'}, which renders text
+    // the analyzer doesn't reproduce: the SQL is then built at runtime as far as TG002 can tell.
+    private static bool AppendKnownText(IOperation interpolated, StringBuilder text)
     {
         if (interpolated is IInterpolatedStringAdditionOperation addition)
         {
-            AppendKnownText(addition.Left, text);
-            AppendKnownText(addition.Right, text);
+            return AppendKnownText(addition.Left, text) && AppendKnownText(addition.Right, text);
         }
-        else if (interpolated is IInterpolatedStringOperation parts)
+
+        if (interpolated is IInterpolatedStringOperation parts)
         {
             foreach (var part in parts.Parts)
             {
+                if (IsFormatted(part))
+                {
+                    return false;
+                }
+
                 if (PartValue(part) is { HasValue: true } constant)
                 {
                     // A constant is text, whatever its type: {'T'}enantId is TenantId.
@@ -278,7 +284,18 @@ internal static class RawSqlCall
                 }
             }
         }
+
+        return true;
     }
+
+    // A hole written with an alignment or a format: {value,10} or {value:format}.
+    private static bool IsFormatted(IInterpolatedStringContentOperation part)
+        => part switch
+        {
+            IInterpolationOperation hole => hole.Alignment is not null || hole.FormatString is not null,
+            IInterpolatedStringAppendOperation { Kind: OperationKind.InterpolatedStringAppendFormatted, AppendCall: IInvocationOperation append } => append.Arguments.Length > 1,
+            _ => false,
+        };
 
     // A literal part's text, or a hole's value when it is a constant, such as nameof(Invoice.TenantId).
     private static Optional<object?> PartValue(IInterpolatedStringContentOperation part)

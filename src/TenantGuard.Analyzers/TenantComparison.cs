@@ -45,10 +45,12 @@ internal static class TenantComparison
         return false;
     }
 
-    // The last part of a name, not followed by a dot, that is one of the columns.
+    // The last part of a name, followed by neither a dot nor a parenthesis, that is one of the columns:
+    // TenantId() is a function.
     private static bool IsColumn(List<Token> tokens, int index, ImmutableArray<string> columns)
         => tokens[index].Kind == Kind.Name
-            && (index + 1 == tokens.Count || tokens[index + 1].Kind != Kind.Dot)
+            && !Is(tokens, index + 1, Kind.Dot)
+            && !Is(tokens, index + 1, Kind.Open)
             && columns.Any(column => string.Equals(column, tokens[index].Text, StringComparison.OrdinalIgnoreCase));
 
     // The first part of the qualified name that ends at index: i in i.TenantId.
@@ -146,7 +148,7 @@ internal static class TenantComparison
 
             if (c == '/' && At(sql, index + 1) == '*')
             {
-                index = sql.IndexOf("*/", index + 2, StringComparison.Ordinal) is var commentEnd and >= 0 ? commentEnd + 2 : sql.Length;
+                index = BlockCommentEnd(sql, index);
                 continue;
             }
 
@@ -257,6 +259,36 @@ internal static class TenantComparison
         return index;
     }
 
+    // Past the */ that closes the comment at open, counting nested /* */ as SQL Server and PostgreSQL
+    // do; the end of the text if none.
+    private static int BlockCommentEnd(string sql, int open)
+    {
+        var depth = 0;
+        var index = open;
+        while (index < sql.Length)
+        {
+            if (sql[index] == '/' && At(sql, index + 1) == '*')
+            {
+                depth++;
+                index += 2;
+            }
+            else if (sql[index] == '*' && At(sql, index + 1) == '/')
+            {
+                index += 2;
+                if (--depth == 0)
+                {
+                    return index;
+                }
+            }
+            else
+            {
+                index++;
+            }
+        }
+
+        return index;
+    }
+
     // Past {digits}, or 0 when the brace doesn't start one.
     private static int Placeholder(string sql, int open)
     {
@@ -269,9 +301,11 @@ internal static class TenantComparison
         return index > open + 1 && At(sql, index) == '}' ? index + 1 : 0;
     }
 
+    // A name goes on with letters, digits, _, $, # and @, as SQL Server's and PostgreSQL's do:
+    // TenantId$backup is one name.
     private static int NameEnd(string sql, int index)
     {
-        while (index < sql.Length && (char.IsLetterOrDigit(sql[index]) || sql[index] == '_'))
+        while (index < sql.Length && (char.IsLetterOrDigit(sql[index]) || sql[index] is '_' or '$' or '#' or '@'))
         {
             index++;
         }
