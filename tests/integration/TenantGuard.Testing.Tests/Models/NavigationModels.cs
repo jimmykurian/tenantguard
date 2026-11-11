@@ -108,6 +108,29 @@ internal static class NavigationModels
         }
     }
 
+    // One account, many profiles, but only one active profile per account: the unique index on
+    // AccountId has a filter, and the seeded profiles are inactive, so there is room for the link.
+    internal sealed class FilteredMembers(DbContextOptions options, string? tenant) : DbContext(options)
+    {
+        public string? CurrentTenant { get; } = tenant;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<FilteredAccount>(account =>
+            {
+                account.HasMany(row => row.Profiles).WithOne(profile => profile.Account).HasForeignKey(profile => profile.AccountId);
+                account.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                account.HasIndex(row => row.TenantId);
+            });
+            modelBuilder.Entity<FilteredProfile>(profile =>
+            {
+                profile.HasIndex(row => row.AccountId).IsUnique().HasFilter("Active = 1");
+                profile.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                profile.HasIndex(row => row.TenantId);
+            });
+        }
+    }
+
     // The same one to one, keyed by byte[]: a key TGM010 reports, so the context runs under Log.
     internal sealed class BinaryMembers(DbContextOptions options, string? tenant) : DbContext(options)
     {
@@ -194,6 +217,28 @@ internal static class NavigationModels
         public string TenantId { get; set; } = string.Empty;
 
         public Profile? Profile { get; set; }
+    }
+
+    internal sealed class FilteredAccount
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public List<FilteredProfile> Profiles { get; set; } = [];
+    }
+
+    internal sealed class FilteredProfile
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public bool Active { get; set; }
+
+        public int AccountId { get; set; }
+
+        public FilteredAccount Account { get; set; } = null!;
     }
 
     internal sealed class BinaryAccount

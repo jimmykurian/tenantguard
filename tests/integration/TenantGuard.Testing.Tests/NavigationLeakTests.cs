@@ -68,6 +68,13 @@ public sealed class NavigationLeakTests : FeatureFixture, IAsyncDisposable
             Then_both_binary_navigations_are_skipped_naming_the_unique_foreign_key);
 
     [Fact]
+    public Task Unique_index_with_a_filter_leaves_room_for_the_link()
+        => Runner.RunScenarioAsync(
+            Given_a_directory_whose_active_profiles_are_unique_per_account,
+            When_the_probe_runs,
+            Then_both_filtered_navigations_pass);
+
+    [Fact]
     public Task Optional_one_to_one_with_room_for_the_link_is_checked()
         => Runner.RunScenarioAsync(
             Given_a_directory_whose_profiles_leave_the_account_unset,
@@ -138,6 +145,9 @@ public sealed class NavigationLeakTests : FeatureFixture, IAsyncDisposable
             .Seed<BinaryProfile>((tenant, context) => new BinaryProfile { AccountId = [tenant == "acme" ? (byte)1 : (byte)2] })
             .RunAsync(Token);
     }
+
+    private Task Given_a_directory_whose_active_profiles_are_unique_per_account()
+        => UseDatabase((options, tenant) => new FilteredMembers(options, tenant), Guard<FilteredMembers>(members => members.CurrentTenant));
 
     private Task Given_a_directory_whose_profiles_leave_the_account_unset()
         => UseDatabase((options, tenant) => new OptionalMembers(options, tenant), Guard<OptionalMembers>(members => members.CurrentTenant));
@@ -234,6 +244,13 @@ public sealed class NavigationLeakTests : FeatureFixture, IAsyncDisposable
             row.Detail.Should().MatchRegex(Occupied);
         }
 
+        return Task.CompletedTask;
+    }
+
+    private Task Then_both_filtered_navigations_pass()
+    {
+        Row(_report, "FilteredAccount", "NavigationLeak(Profiles)").Outcome.Should().Be(ProbeOutcome.Passed);
+        Row(_report, "FilteredProfile", "NavigationLeak(Account)").Outcome.Should().Be(ProbeOutcome.Passed);
         return Task.CompletedTask;
     }
 

@@ -45,6 +45,14 @@ public sealed class ValidationErrorTests : IDisposable
         Validation.LoadFailure(new InvalidOperationException("No connection string.")).Should().BeNull();
     }
 
+    [Theory]
+    [InlineData("/app/settings.json")]
+    [InlineData("settings.json")]
+    public void A_missing_file_that_is_not_an_assembly_is_not_a_load_failure(string file)
+    {
+        Validation.LoadFailure(new System.Reflection.TargetInvocationException(new FileNotFoundException("Could not find the file.", file))).Should().BeNull();
+    }
+
     [Fact]
     public void The_startup_assemblys_factory_comes_before_the_contexts_assemblys()
         => Validation.CreateError(new InvalidOperationException("No connection string."), typeof(AppDbContext), "App", [.. Factories((typeof(AppDbContext), typeof(FirstFactory))), .. Factories((typeof(AppDbContext), typeof(SecondFactory)))])
