@@ -318,17 +318,17 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 92 | 116 | 14 | 222 |
-| Lines of code | 5,320 | 8,228 | 228 | 13,776 |
-| Methods | 403 | 847 | 21 | 1,271 |
+| Lines of code | 5,341 | 8,272 | 228 | 13,841 |
+| Methods | 404 | 848 | 21 | 1,273 |
 | Average complexity | 3.6 | 1.2 | 1.2 | 1.9 |
-| Max complexity | 35 | 5 | 4 | 35 |
+| Max complexity | 47 | 5 | 4 | 47 |
 
 <details>
 <summary>The 10 most complex methods</summary>
 
 | Method | Where | Complexity |
 | --- | --- | --- |
-| `TenantComparison.Tokenize` | `src/TenantGuard.Analyzers/TenantComparison.cs:126` | 35 |
+| `TenantComparison.Tokenize` | `src/TenantGuard.Analyzers/TenantComparison.cs:126` | 47 |
 | `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 32 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:118` | 20 |
@@ -336,8 +336,8 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:32` | 19 |
 | `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:33` | 17 |
 | `RawSqlCall.FindSql` | `src/TenantGuard.Analyzers/RawSqlCall.cs:137` | 14 |
+| `RawSqlCall.IsWritten` | `src/TenantGuard.Analyzers/RawSqlCall.cs:198` | 13 |
 | `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:201` | 13 |
-| `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
 
 </details>
 
