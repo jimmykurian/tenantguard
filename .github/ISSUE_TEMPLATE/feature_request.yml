@@ -17,8 +17,8 @@ body:
     attributes:
       label: Feature Area
       options:
-        - Model rules (TGM001 to TGM010)
-        - Analyzers (TG001 to TG004)
+        - Model rules (TGM001 to TGM014)
+        - Analyzers (TG001 to TG005)
         - Write guard (SaveChanges)
         - Isolation probe and seeding
         - Options and registration (UseTenantGuard)

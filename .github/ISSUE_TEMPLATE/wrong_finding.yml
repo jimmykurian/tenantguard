@@ -27,10 +27,17 @@ body:
         - TGM006 tenant-on-derived
         - TGM007 filter-not-parameterized
         - TGM008 owned-tenant
+        - TGM009 unindexed-tenant
+        - TGM010 tenant-free-unique
+        - TGM011 tenant-free-view
+        - TGM012 switchable-filter
+        - TGM013 open-without-tenant
+        - TGM014 unscoped-dependent
         - TG001 ignore-query-filters
         - TG002 raw-sql-without-tenant
         - TG003 missing-justification
         - TG004 raw-sql-unverifiable
+        - TG005 filter-switch
         - Write guard (TenantIsolationViolationException)
         - Isolation probe row
         - None (a finding was expected)
