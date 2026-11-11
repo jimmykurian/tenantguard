@@ -42,7 +42,7 @@ tenantguard.tenant_members_only = true         # optional: no shadow tenant prop
 - `tenantguard.tenant_filter_unnamed`: `true` says your tenant filters have no name, as
   `HasQueryFilter(expression)` without one gives. EF Core doesn't put an unnamed filter
   beside named ones on an entity type, and `IgnoreQueryFilters` with names never turns an
-  unnamed filter off, so TG001 doesn't report that overload. Matched ignoring case; the
+  unnamed filter off (behavior pin 10), so TG001 doesn't report that overload. Matched ignoring case; the
   default is `false`. With `tenantguard.tenant_filter_names` set too, the names are checked
   as before, for the entity types whose tenant filter is named.
 - `tenantguard.raw_sql_methods`: more methods that take raw SQL, checked by TG002 and
@@ -94,7 +94,8 @@ TG002 checks SQL the compiler can read; TG004 reports the rest. Readable SQL is:
 
 - a constant: a literal, a `const`, or constants joined with `+`;
 - an interpolated string, whose literal parts and constant holes, such as
-  `nameof(Invoice.TenantId)`, are its text, and whose other holes are values;
+  `nameof(Invoice.TenantId)`, are its text, and whose other holes are values, unless a hole
+  has an alignment or a format, such as `{id:000}`, whose text the analyzer doesn't render;
 - a local variable whose declaration sets it to readable SQL, and that is never assigned
   again, passed by `ref` or `out`, or written in a lambda or local function, such as
   `var sql = """SELECT ...""";` passed on as `sql`.
@@ -173,16 +174,22 @@ when the compiler [can read it](#which-sql-the-compiler-can-read) and it compare
 
 The column counts as a whole identifier, matched ignoring case: bare, quoted as
 `"TenantId"`, `[TenantId]` or `` `TenantId` ``, and qualified or not, as `i.TenantId` or
-`[dbo].[Invoices].[TenantId]`. A name it is only part of, such as `OwningTenantId`, or a
-parameter named like it, such as `@TenantId`, isn't the column. It passes when it is:
+`[dbo].[Invoices].[TenantId]`. A name it is only part of, such as `OwningTenantId` or
+`TenantId$backup` (a name goes on with letters, digits, `_`, `$`, `#` and `@`), a parameter
+named like it, such as `@TenantId`, or a function call, such as `TenantId()`, isn't the
+column. It passes when it is:
 
 - compared with `=` to a value, on either side, or with `= ANY (` a value `)`;
 - followed by `IN`, then a value or a parenthesized list whose first item is a value;
-- in the column list of an `INSERT INTO ... (...)`.
+- in the column list of an `INSERT INTO ... (...)`, SQLite's `INSERT OR IGNORE INTO` and the
+  other conflict actions included.
 
 A value is a parameter (`@name`, `:name`, `$name`, `$1` or `?`), a composite-format
 placeholder such as `{0}`, which `ExecuteSqlRaw` and `SqlQueryRaw` turn into parameters, an
-interpolated hole that isn't a constant, a string literal or a number. A column on the other side, as in a join's
+interpolated hole that isn't a constant, a string literal, including PostgreSQL's `$$...$$`
+and `$tag$...$tag$`, or a number, signed or not. What's inside a literal is never SQL. A
+comment, `--` to the end of the line or `/* ... */`, nested or not, is skipped: it neither
+passes the check nor breaks a comparison. A column on the other side, as in a join's
 `a.TenantId = b.TenantId`, or a subquery, isn't a value, and neither `<>`, `!=`, `<=` nor
 `>=` is a comparison that scopes the rows.
 

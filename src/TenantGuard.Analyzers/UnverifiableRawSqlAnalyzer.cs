@@ -21,7 +21,7 @@ internal sealed class UnverifiableRawSqlAnalyzer : DiagnosticAnalyzer
         title: "Raw SQL that cannot be checked for a tenant predicate",
         messageFormat: "Raw SQL built at runtime cannot be checked for a tenant predicate.",
         category: "Security",
-        defaultSeverity: DiagnosticSeverity.Info,
+        defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
@@ -36,7 +36,7 @@ internal sealed class UnverifiableRawSqlAnalyzer : DiagnosticAnalyzer
     private static void Analyze(OperationAnalysisContext context)
     {
         var operation = context.Operation;
-        if (RawSqlCall.FindSql(operation, AnalyzerSettings.RawSqlMethods(context.Options, operation.Syntax.SyntaxTree)) is { } sql
+        if (RawSqlCall.FindSql(operation, context.Options) is { } sql
             && RawSqlCall.KnownText(sql) is null
             && !CrossTenantAccess.IsAllowed(operation, context.ContainingSymbol))
         {

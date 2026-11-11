@@ -1,6 +1,6 @@
 # 0032. Analyzers read SQL in locals, compare the tenant, and see framework switches
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-11
 
 ## Context

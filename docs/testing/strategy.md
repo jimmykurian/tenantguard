@@ -72,3 +72,7 @@ Core version, stop and open an issue: the design rests on it.
    isolates tenants with query filters can't use a compiled model or Native AOT. When this
    fails, revisit the `[TenantKey]` source generator
    ([0027](../architecture/decisions/0027-no-source-generator-while-compiled-models-refuse-query-filters.md)).
+10. `IgnoreQueryFilters` with names, even an empty list, leaves an unnamed filter on, and
+    EF Core refuses an unnamed filter beside named ones on one entity type, so TG001 leaves
+    the named overload alone under `tenantguard.tenant_filter_unnamed`
+    ([0032](../architecture/decisions/0032-analyzers-read-sql-locals-compare-the-tenant-and-see-framework-switches.md)).

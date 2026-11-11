@@ -223,6 +223,36 @@ public sealed class IgnoreQueryFiltersTests
             "tenantguard.tenant_filter_names = TenantFilter, OrgFilter");
 
     [Fact]
+    public Task Named_overload_is_not_reported_when_the_tenant_filters_are_unnamed()
+        => Verify.VerifyAsync(
+            """
+            public static class Reports
+            {
+                public static int CountDeleted(AppDb db) => db.Invoices.IgnoreQueryFilters(["SoftDelete"]).Count();
+
+                public static int Count(AppDb db, IReadOnlyCollection<string> names) => db.Invoices.IgnoreQueryFilters(names).Count();
+
+                public static int CountAll(AppDb db) => db.Invoices.{|TG001:IgnoreQueryFilters()|}.Count();
+            }
+            """,
+            "tenantguard.tenant_filter_unnamed = true");
+
+    [Fact]
+    public Task Tenant_filter_names_are_still_checked_when_the_tenant_filters_are_also_unnamed()
+        => Verify.VerifyAsync(
+            """
+            public static class Reports
+            {
+                public static int CountDeleted(AppDb db) => db.Invoices.IgnoreQueryFilters(["SoftDelete"]).Count();
+
+                public static int CountAll(AppDb db) => db.Invoices.{|TG001:IgnoreQueryFilters(["TenantFilter"])|}.Count();
+
+                public static int Count(AppDb db, IReadOnlyCollection<string> names) => db.Invoices.{|TG001:IgnoreQueryFilters(names)|}.Count();
+            }
+            """,
+            TenantFilterNames + "\ntenantguard.tenant_filter_unnamed = true");
+
+    [Fact]
     public Task Other_IgnoreQueryFilters_methods_are_not_reported()
         => Verify.VerifyAsync("""
             public static class Sequences
