@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.1.0](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.10...v0.1.0) (2026-11-11)
+
+
+### Features
+
+* **analyzers:** read SQL in locals, compare the tenant column, add tenant_filter_unnamed and TG005 ([#104](https://github.com/jimmykurian/tenantguard/issues/104)) ([d13c9e4](https://github.com/jimmykurian/tenantguard/commit/d13c9e46961022bf8675f2230d7fa5edc33146c1))
+* **model:** check natural primary keys, tenant-free views, switchable filters and unscoped dependents ([#98](https://github.com/jimmykurian/tenantguard/issues/98)) ([17bd74c](https://github.com/jimmykurian/tenantguard/commit/17bd74ca2d000780980762ffc1fa5ebc7092ea3a))
+* **model:** clearer field-trial messages, tool errors, ProbeReport.ToString and an EF Core 10.0.0 floor ([#106](https://github.com/jimmykurian/tenantguard/issues/106)) ([1f3a0c1](https://github.com/jimmykurian/tenantguard/commit/1f3a0c16554e0ad14e415f4d6cd245d3e88516ce))
+* **probe:** add WithoutTenant and the NoTenantIsolation check ([#102](https://github.com/jimmykurian/tenantguard/issues/102)) ([a504293](https://github.com/jimmykurian/tenantguard/commit/a504293fc8e7a015fbea85f5669d65821e3a5df4))
+* **seeding:** seed constructor-bound types, collections, JSON and tables of tenants ([#96](https://github.com/jimmykurian/tenantguard/issues/96)) ([64156fb](https://github.com/jimmykurian/tenantguard/commit/64156fbcc5105178a7d9ad8a6be2266a49ca6952))
+
+
+### Bug Fixes
+
+* **probe:** skip checks another filter makes pass, and seed bools false ([#94](https://github.com/jimmykurian/tenantguard/issues/94)) ([1387758](https://github.com/jimmykurian/tenantguard/commit/1387758a40134b1a4bcd9177a1c7cf6ddb8b716e))
+
+
+### Documentation
+
+* **analyzers:** specify SQL in locals, tenant comparisons, unnamed filters and TG005 ([#103](https://github.com/jimmykurian/tenantguard/issues/103)) ([8401f0f](https://github.com/jimmykurian/tenantguard/commit/8401f0fc034209fef42c84a570b24508580b914d))
+* **model:** specify rules for natural keys, tenant-free views, switchable filters and unscoped dependents ([#97](https://github.com/jimmykurian/tenantguard/issues/97)) ([5549a2d](https://github.com/jimmykurian/tenantguard/commit/5549a2d144c32d5cf714b7099a70ceb809f182f4))
+* **model:** specify the field-trial messages, tool errors, ProbeReport.ToString and an EF Core 10.0.0 floor ([#105](https://github.com/jimmykurian/tenantguard/issues/105)) ([ad855e7](https://github.com/jimmykurian/tenantguard/commit/ad855e7ba93904fd9ef77384a20911a74a138c26))
+* **probe:** specify probing a context with no tenant ([#101](https://github.com/jimmykurian/tenantguard/issues/101)) ([adab644](https://github.com/jimmykurian/tenantguard/commit/adab644154cbd243260112481f837fd7a3b3a636))
+
 ## [0.1.0-preview.10](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.9...v0.1.0-preview.10) (2026-11-06)
 
 
