@@ -34,6 +34,29 @@ internal static class FilterSwitches
         return (switchable, openWithoutTenant);
     }
 
+    // TGM005: whether a filter ORs the tenant comparison with a null check of the tenant property, as
+    // e => e.TenantId == TenantId || e.TenantId == null does, which lets a row with no tenant through.
+    public static bool LetsNullTenantThrough(IReadOnlyEntityType entityType, IReadOnlyProperty tenantProperty)
+    {
+        foreach (var filter in entityType.GetDeclaredQueryFilters())
+        {
+            if (filter.Expression is not { Parameters.Count: 1 } lambda)
+            {
+                continue;
+            }
+
+            var access = new TenantAccess(lambda.Parameters[0], tenantProperty);
+            var finder = new NullTenantFinder(access);
+            finder.Visit(Normalize(QueryFilterAnalysis.Fold(lambda.Body)));
+            if (finder.Found)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Pushes each ! inward over && and ||, reads a bool | or & as || or &&, and reads a comparison with
     // a bool constant as the condition itself or its negation: x == true is x, x == false is !x.
     private static Expression Normalize(Expression expression)
@@ -124,6 +147,9 @@ internal static class FilterSwitches
         return conditions;
     }
 
+    private static bool IsNull(Expression expression)
+        => OperandClassifier.StripConversions(expression) is ConstantExpression { Value: null };
+
     private static bool Same(Expression left, Expression right)
         => ExpressionEqualityComparer.Instance.Equals(OperandClassifier.StripConversions(left), OperandClassifier.StripConversions(right));
 
@@ -192,9 +218,6 @@ internal static class FilterSwitches
                 _ => false,
             };
 
-        private static bool IsNull(Expression expression)
-            => OperandClassifier.StripConversions(expression) is ConstantExpression { Value: null };
-
         private List<Expression> ComparedOperands(Expression condition)
         {
             var collector = new OperandCollector(access);
@@ -208,6 +231,32 @@ internal static class FilterSwitches
             finder.Visit(condition);
             return finder.Found;
         }
+    }
+
+    // An || chain with a null check of the tenant property among its conditions.
+    private sealed class NullTenantFinder(TenantAccess access) : ExpressionVisitor
+    {
+        public bool Found { get; private set; }
+
+        public override Expression? Visit(Expression? node)
+        {
+            if (node is not null && IsOr(node) && Flatten(node, IsOr).Any(IsNullCheckOfTenant))
+            {
+                Found = true;
+            }
+
+            return base.Visit(node);
+        }
+
+        private bool IsNullCheckOfTenant(Expression condition)
+            => OperandClassifier.StripConversions(condition) switch
+            {
+                BinaryExpression { NodeType: ExpressionType.Equal } equal
+                    => (IsNull(equal.Right) && access.IsTenantAccess(equal.Left)) || (IsNull(equal.Left) && access.IsTenantAccess(equal.Right)),
+                UnaryExpression { NodeType: ExpressionType.Not, Operand: MemberExpression { Member.Name: "HasValue", Expression: { } nullable } }
+                    => access.IsTenantAccess(nullable),
+                _ => false,
+            };
     }
 
     private sealed class OperandCollector(TenantAccess access) : ExpressionVisitor

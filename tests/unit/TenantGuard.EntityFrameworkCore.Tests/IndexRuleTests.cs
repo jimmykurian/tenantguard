@@ -116,7 +116,7 @@ public sealed class IndexRuleTests
             Severity.Warning,
             entity,
             "TenantId",
-            $"{entity} has no index or key that starts with 'TenantId', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key.");
+            $"{entity} has no index or key that starts with 'TenantId', so a query that only its tenant filter narrows, such as a list of a tenant's rows, scans every tenant's rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key; a table read only by its key doesn't need one.");
 
     private static class Tenants
     {

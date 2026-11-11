@@ -39,13 +39,14 @@ internal static class RuleMessages
             property,
             $"{entity}: the tenant filter compares '{property}' to the constant {value}. Reference a DbContext member instead.");
 
-    public static ModelFinding NullableTenant(string entity, string property)
-        => new(
-            "TGM005",
-            Severity.Warning,
-            entity,
-            property,
-            $"{entity}.{property} is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.");
+    // sharedByFilter: the tenant filter ORs in a null check of the tenant property.
+    public static ModelFinding NullableTenant(string entity, string property, bool sharedByFilter)
+    {
+        var message = sharedByFilter
+            ? $"{entity}.{property} is nullable, and the tenant filter lets a row with no tenant through, so every tenant reads it. Confirm rows with no tenant are meant to be shared, or make '{property}' required."
+            : $"{entity}.{property} is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make '{property}' required, or declare host rows with NullTenantIsHost().";
+        return new("TGM005", Severity.Warning, entity, property, message);
+    }
 
     public static ModelFinding TenantOnDerived(string entity, string property, string root)
         => new(
@@ -55,13 +56,30 @@ internal static class RuleMessages
             property,
             $"{entity} declares '{property}' but filters can only be defined on the root type {root}. Move the property to the root.");
 
-    public static ModelFinding FilterNotParameterized(string entity, string property)
-        => new(
-            "TGM007",
-            Severity.Warning,
+    public static ModelFinding UnclassifiedOperand(string entity, string property)
+        => FilterNotParameterized(
             entity,
             property,
-            $"{entity}: the tenant filter's operand could not be classified; confirm it is evaluated per query.");
+            $"{entity}: TenantGuard can't tell where the value '{property}' is compared with comes from. Confirm it is read per query, from the context or a static member, not when the model was built.");
+
+    // method is the type and name, such as AppDbContext.MultiTenantFilter.
+    public static ModelFinding PassedToMethod(string entity, string property, string method)
+        => FilterNotParameterized(
+            entity,
+            property,
+            $"{entity}: the tenant filter passes '{property}' to {method} instead of comparing it, so TenantGuard can't check what it is compared with. Confirm {method} compares it with the current tenant, read per query.");
+
+    public static ModelFinding ComparedOnlyWithNull(string entity, string property)
+        => FilterNotParameterized(
+            entity,
+            property,
+            $"{entity}: the tenant filter compares '{property}' only with null, so it doesn't scope rows to a tenant. Compare '{property}' with the current tenant.");
+
+    public static ModelFinding ReadWithoutComparison(string entity, string property)
+        => FilterNotParameterized(
+            entity,
+            property,
+            $"{entity}: the tenant filter reads '{property}' without comparing it with a value TenantGuard can check. Compare '{property}' with the current tenant.");
 
     public static ModelFinding OwnedTenant(string owned, string owner, string property)
         => new(
@@ -77,7 +95,7 @@ internal static class RuleMessages
             Severity.Warning,
             entity,
             property,
-            $"{entity} has no index or key that starts with '{property}', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.{property}), or put '{property}' first in an existing index or key.");
+            $"{entity} has no index or key that starts with '{property}', so a query that only its tenant filter narrows, such as a list of a tenant's rows, scans every tenant's rows. Add HasIndex(e => e.{property}), or put '{property}' first in an existing index or key; a table read only by its key doesn't need one.");
 
     public static ModelFinding TenantFreeUniqueIndex(string entity, string property, IReadOnlyList<string> columns)
         => new(
@@ -138,4 +156,7 @@ internal static class RuleMessages
 
     private static string Members(IReadOnlyList<string> columns)
         => string.Join(", ", columns.Select(column => "e." + column));
+
+    private static ModelFinding FilterNotParameterized(string entity, string property, string message)
+        => new("TGM007", Severity.Warning, entity, property, message);
 }

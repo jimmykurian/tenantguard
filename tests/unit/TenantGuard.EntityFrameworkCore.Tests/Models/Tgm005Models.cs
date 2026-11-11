@@ -27,6 +27,30 @@ internal static class Tgm005Models
             => modelBuilder.Entity<Receipt>().HasQueryFilter(receipt => receipt.TenantId == CurrentTenant);
     }
 
+    // Negative: rows with no tenant are ORed in, so every tenant reads them.
+    internal sealed class SharedWithEveryTenant(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Receipt>().HasQueryFilter(receipt => receipt.TenantId == CurrentTenant || receipt.TenantId == null);
+            modelBuilder.Entity<Receipt>().HasIndex(receipt => receipt.TenantId);
+        }
+    }
+
+    // Negative: the same, as !(TenantId != tenant && TenantId != null).
+    internal sealed class SharedWithEveryTenantNegated(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Receipt>().HasQueryFilter(receipt => !(receipt.TenantId != CurrentTenant && receipt.TenantId != null));
+            modelBuilder.Entity<Receipt>().HasIndex(receipt => receipt.TenantId);
+        }
+    }
+
     internal sealed class Invoice
     {
         public int Id { get; set; }
