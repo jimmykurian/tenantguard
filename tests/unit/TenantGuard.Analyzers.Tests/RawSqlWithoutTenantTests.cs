@@ -165,6 +165,8 @@ public sealed class RawSqlWithoutTenantTests
     [InlineData("SELECT * FROM Invoices WHERE TenantId IS NULL")]
     [InlineData("SELECT * FROM Invoices WHERE TenantId IN (SELECT TenantId FROM Tenants)")]
     [InlineData("SELECT * FROM Invoices WHERE Note = 'TenantId = 1'")]
+    [InlineData("SELECT * FROM Invoices -- WHERE TenantId = @tenant")]
+    [InlineData("SELECT * FROM Invoices /* WHERE TenantId = @tenant */")]
     public Task SQL_that_names_the_column_without_comparing_it_with_a_value_is_reported(string sql)
         => Verify.VerifyAsync($$"""
             public static class Jobs
@@ -188,6 +190,10 @@ public sealed class RawSqlWithoutTenantTests
     [InlineData("SELECT * FROM Invoices WHERE TenantId = 'acme'")]
     [InlineData("SELECT * FROM Invoices WHERE TenantId = N'acme'")]
     [InlineData("SELECT * FROM Invoices WHERE TenantId=42")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId = -1")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId IN (-1, +2)")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId /* the scope */ = @tenant")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId = @tenant -- the scope")]
     [InlineData("INSERT INTO Invoices (Number, TenantId) VALUES (@number, @tenant)")]
     [InlineData("INSERT INTO [dbo].[Invoices] ([TenantId], [Number]) SELECT @tenant, @number")]
     public Task SQL_that_compares_the_column_with_a_value_is_not_reported(string sql)
@@ -206,6 +212,10 @@ public sealed class RawSqlWithoutTenantTests
                 public static int Mine(AppDb db, string tenant) => db.Database.ExecuteSql($"DELETE FROM Invoices WHERE {nameof(Invoice.TenantId)} = {tenant}");
 
                 public static int Join(AppDb db) => db.Database.ExecuteSql({|TG002:$"DELETE FROM Invoices WHERE TenantId = {nameof(Invoice.TenantId)}"|});
+
+                public static int Spelled(AppDb db) => db.Database.ExecuteSqlRaw({|TG002:$"DELETE FROM Invoices WHERE TenantId = {'T'}enantId"|});
+
+                public static int Numbered(AppDb db) => db.Database.ExecuteSqlRaw($"DELETE FROM Invoices WHERE TenantId = {42}");
             }
             """);
 
@@ -226,6 +236,12 @@ public sealed class RawSqlWithoutTenantTests
                 {
                     var sql = "DELETE FROM Invoices " + "WHERE TenantId = {0}";
                     return db.Database.ExecuteSqlRaw(sql, tenant);
+                }
+
+                public static int DeleteForgiven(AppDb db)
+                {
+                    string? sql = "DELETE FROM Invoices";
+                    return db.Database.ExecuteSqlRaw({|TG002:sql|}!);
                 }
 
                 public static int DeleteOne(AppDb db, int id)
@@ -261,6 +277,17 @@ public sealed class RawSqlWithoutTenantTests
             }
             """,
             "tenantguard.tenant_members_only = true");
+
+    [Fact]
+    public Task FromSql_listed_in_raw_sql_methods_is_checked()
+        => Verify.VerifyAsync(
+            """
+            public static class Reports
+            {
+                public static int Count(AppDb db) => db.Invoices.FromSqlRaw({|TG002:"SELECT * FROM Invoices"|}).Count();
+            }
+            """,
+            "tenantguard.raw_sql_methods = Microsoft.EntityFrameworkCore.RelationalQueryableExtensions.FromSqlRaw");
 
     [Fact]
     public Task FromSql_is_not_reported()

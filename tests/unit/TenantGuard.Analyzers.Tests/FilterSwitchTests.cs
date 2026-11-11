@@ -32,6 +32,17 @@ public sealed class FilterSwitchTests
             {
             }
 
+            public class FilterBase
+            {
+                public IDisposable Disable<TFilter>() where TFilter : class => null!;
+
+                public IDisposable Enable<TFilter>() where TFilter : class => null!;
+            }
+
+            public sealed class InheritedFilter : FilterBase, IDataFilter
+            {
+            }
+
             public sealed class DataFilter : IDataFilter
             {
                 public IDisposable Disable<TFilter>() where TFilter : class => null!;
@@ -81,6 +92,13 @@ public sealed class FilterSwitchTests
                 }
 
                 public static void Concrete(Volo.Abp.Data.DataFilter dataFilter)
+                {
+                    using (dataFilter.{|TG005:Disable<Volo.Abp.MultiTenancy.IMultiTenant>()|})
+                    {
+                    }
+                }
+
+                public static void Inherited(Volo.Abp.Data.InheritedFilter dataFilter)
                 {
                     using (dataFilter.{|TG005:Disable<Volo.Abp.MultiTenancy.IMultiTenant>()|})
                     {
