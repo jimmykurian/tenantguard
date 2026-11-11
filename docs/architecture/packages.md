@@ -6,7 +6,7 @@ installing it turns them on.
 | Package | Targets | Contents |
 | --- | --- | --- |
 | `TenantGuard.EntityFrameworkCore` | net10.0, net11.0 | Options, the model rules, the SaveChanges interceptor, the bypass scope and `AllowCrossTenantAccessAttribute`; bundles the analyzers |
-| `TenantGuard.Analyzers` | netstandard2.0 | TG001 to TG004, also shipped on their own for projects without EF Core |
+| `TenantGuard.Analyzers` | netstandard2.0 | TG001 to TG005, also shipped on their own for projects without EF Core |
 | `TenantGuard.Testing` | net10.0, net11.0 | `TenantIsolationProbe`, seeding and `ProbeReport` |
 | `TenantGuard.Tool` | net10.0, net11.0 | `dotnet tenantguard validate`, a .NET tool, with a payload for each target ([0024](decisions/0024-a-dotnet-tool-for-model-validation.md)) |
 | `TenantGuard.Testing.XunitV3` | net10.0, net11.0 | `ProbeRowsAttribute<TSource>`: each probe row an xUnit v3 test ([0025](decisions/0025-a-package-per-test-framework-for-probe-rows.md)) |

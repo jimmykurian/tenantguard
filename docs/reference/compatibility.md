@@ -6,7 +6,7 @@ What stays the same between TenantGuard releases, so you can depend on it.
 
 These are the public contract ([0006](../architecture/decisions/0006-the-public-contract.md)):
 
-- the rule IDs TGM001 to TGM014 and the analyzer IDs TG001 to TG004, and their default
+- the rule IDs TGM001 to TGM014 and the analyzer IDs TG001 to TG005, and their default
   severities;
 - every message, word for word, as the [rules](rules.md), [analyzers](analyzers.md),
   [exceptions](exceptions.md) and [logging](logging.md) pages give it: messages are

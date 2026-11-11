@@ -15,9 +15,9 @@ sequenceDiagram
     participant Roslyn as Compiler
     participant TG as TenantGuard.Analyzers
     Code->>Roslyn: build
-    Roslyn->>TG: each IgnoreQueryFilters() and raw SQL call
+    Roslyn->>TG: each IgnoreQueryFilters(), filter switch and raw SQL call
     TG->>TG: [AllowCrossTenantAccess("why")] on the method, a lambda or a class?
-    TG-->>Roslyn: TG001, TG002 or TG004 where it isn't
+    TG-->>Roslyn: TG001, TG002, TG004 or TG005 where it isn't
     TG-->>Roslyn: TG003 on an AllowCrossTenantAccess with no reason
 ```
 

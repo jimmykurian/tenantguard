@@ -95,7 +95,7 @@ Every command runs through the [Taskfile](Taskfile.yml), and CI runs the same ta
   `Hosting/` the composition root: `UseTenantGuard`, `AddTenantGuardStartupValidation`, and
   the EF convention that runs the rules. A ring depends only on rings further in, and
   `RingRules` in `tests/architecture/` fails on a dependency that points outward.
-- `src/TenantGuard.Analyzers`: TG001 to TG004, one file per rule, on
+- `src/TenantGuard.Analyzers`: TG001 to TG005, one file per rule, on
   `Microsoft.CodeAnalysis.CSharp` 4.8.0. The runtime package carries them too.
 - `src/TenantGuard.Tool`: `dotnet tenantguard validate`, which starts
   `src/TenantGuard.Tool.Payload` inside the app's own runtime and dependencies (ADR 0024).

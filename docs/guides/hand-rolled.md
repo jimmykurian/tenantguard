@@ -126,9 +126,10 @@ through instead, and logs each one at Information.
 The analyzers come with the package and run as you build:
 
 - `IgnoreQueryFilters()` is TG001, a warning.
-- Raw SQL that doesn't mention `TenantId` is TG002, a warning, whether it goes through EF
-  Core, Dapper or an ADO.NET command.
-- Raw SQL built at runtime, which can't be checked, is TG004, information.
+- Raw SQL that doesn't compare `TenantId` with a value, such as `TenantId = @tenantId`, is
+  TG002, a warning, whether it goes through EF Core, Dapper or an ADO.NET command, and
+  whether it's written inline or in a local first.
+- Raw SQL built at runtime, which can't be checked, is TG004, a warning.
 
 Fix the query, or say why it crosses tenants:
 
