@@ -181,11 +181,13 @@ column. It passes when it is:
 
 - compared with `=` to a value, on either side, or with `= ANY (` a value `)`;
 - followed by `IN`, then a value or a parenthesized list whose first item is a value;
-- in the column list of an `INSERT INTO ... (...)`.
+- in the column list of an `INSERT INTO ... (...)`, SQLite's `INSERT OR IGNORE INTO` and the
+  other conflict actions included.
 
 A value is a parameter (`@name`, `:name`, `$name`, `$1` or `?`), a composite-format
 placeholder such as `{0}`, which `ExecuteSqlRaw` and `SqlQueryRaw` turn into parameters, an
-interpolated hole that isn't a constant, a string literal or a number, signed or not. A
+interpolated hole that isn't a constant, a string literal, including PostgreSQL's `$$...$$`
+and `$tag$...$tag$`, or a number, signed or not. What's inside a literal is never SQL. A
 comment, `--` to the end of the line or `/* ... */`, nested or not, is skipped: it neither
 passes the check nor breaks a comparison. A column on the other side, as in a join's
 `a.TenantId = b.TenantId`, or a subquery, isn't a value, and neither `<>`, `!=`, `<=` nor
