@@ -9,7 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <!-- The floor, not the version tests run on: an app on any EF Core 10 patch restores without being moved up. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" VersionOverride="$(TenantGuardEfCoreFloor)" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
   </ItemGroup>
 

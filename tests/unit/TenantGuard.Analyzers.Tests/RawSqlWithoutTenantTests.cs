@@ -106,6 +106,21 @@ public sealed class RawSqlWithoutTenantTests
     }
 
     [Fact]
+    public Task Message_hints_at_the_tenant_column_key_when_it_is_not_set()
+    {
+        var test = Verify.Create("""
+            public static class Jobs
+            {
+                public static int DeleteAll(AppDb db) => db.Database.ExecuteSqlRaw({|#0:"DELETE FROM Invoices"|});
+            }
+            """);
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RawSqlWithoutTenantAnalyzer.Rule).WithLocation(0).WithMessage(
+            "Raw SQL bypasses query filters and does not compare 'TenantId' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")]. If the tenant column has another name, set tenantguard.tenant_column."));
+
+        return test.RunAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public Task Every_tenant_column_counts()
     {
         var test = Verify.Create(
@@ -325,6 +340,6 @@ public sealed class RawSqlWithoutTenantTests
         var rule = RawSqlWithoutTenantAnalyzer.Rule;
 
         (rule.Id, rule.DefaultSeverity).Should().Be(("TG002", DiagnosticSeverity.Warning));
-        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("Raw SQL bypasses query filters and does not compare '{0}' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].");
+        rule.MessageFormat.ToString(CultureInfo.InvariantCulture).Should().Be("Raw SQL bypasses query filters and does not compare '{0}' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].{1}");
     }
 }

@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/TenantGuard.Tool/TenantGuard.Tool.csproj" />
+    <!-- Under an alias: the payload has types of the same names as the tool's. -->
+    <ProjectReference Include="../../../src/TenantGuard.Tool.Payload/TenantGuard.Tool.Payload.csproj" Aliases="payload" />
     <PackageReference Include="FsCheck" />
     <PackageReference Include="NSubstitute" />
   </ItemGroup>

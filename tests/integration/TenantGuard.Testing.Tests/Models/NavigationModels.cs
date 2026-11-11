@@ -86,6 +86,68 @@ internal static class NavigationModels
         }
     }
 
+    // The same one to one, optional: each seeded profile leaves AccountId null, so the unique index
+    // has room for the link, and both navigations are checked.
+    internal sealed class OptionalMembers(DbContextOptions options, string? tenant) : DbContext(options)
+    {
+        public string? CurrentTenant { get; } = tenant;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<OptionalAccount>(account =>
+            {
+                account.HasOne(row => row.Profile).WithOne(profile => profile.Account).HasForeignKey<OptionalProfile>(profile => profile.AccountId).IsRequired(false);
+                account.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                account.HasIndex(row => row.TenantId);
+            });
+            modelBuilder.Entity<OptionalProfile>(profile =>
+            {
+                profile.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                profile.HasIndex(row => row.TenantId);
+            });
+        }
+    }
+
+    // One account, many profiles, but only one active profile per account: the unique index on
+    // AccountId has a filter, and the seeded profiles are inactive, so there is room for the link.
+    internal sealed class FilteredMembers(DbContextOptions options, string? tenant) : DbContext(options)
+    {
+        public string? CurrentTenant { get; } = tenant;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<FilteredAccount>(account =>
+            {
+                account.HasMany(row => row.Profiles).WithOne(profile => profile.Account).HasForeignKey(profile => profile.AccountId);
+                account.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                account.HasIndex(row => row.TenantId);
+            });
+            modelBuilder.Entity<FilteredProfile>(profile =>
+            {
+                profile.HasIndex(row => row.AccountId).IsUnique().HasFilter("Active = 1");
+                profile.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                profile.HasIndex(row => row.TenantId);
+            });
+        }
+    }
+
+    // The same one to one, keyed by byte[]: a key TGM010 reports, so the context runs under Log.
+    internal sealed class BinaryMembers(DbContextOptions options, string? tenant) : DbContext(options)
+    {
+        public string? CurrentTenant { get; } = tenant;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BinaryAccount>(account =>
+            {
+                account.Property(row => row.Id).ValueGeneratedNever();
+                account.HasOne(row => row.Profile).WithOne(profile => profile.Account).HasForeignKey<BinaryProfile>(profile => profile.AccountId);
+                account.HasQueryFilter(row => row.TenantId == CurrentTenant);
+            });
+            modelBuilder.Entity<BinaryProfile>().HasQueryFilter(row => row.TenantId == CurrentTenant);
+        }
+    }
+
     internal sealed class Region
     {
         public int Id { get; set; }
@@ -155,6 +217,68 @@ internal static class NavigationModels
         public string TenantId { get; set; } = string.Empty;
 
         public Profile? Profile { get; set; }
+    }
+
+    internal sealed class FilteredAccount
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public List<FilteredProfile> Profiles { get; set; } = [];
+    }
+
+    internal sealed class FilteredProfile
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public bool Active { get; set; }
+
+        public int AccountId { get; set; }
+
+        public FilteredAccount Account { get; set; } = null!;
+    }
+
+    internal sealed class BinaryAccount
+    {
+        public byte[] Id { get; set; } = [];
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public BinaryProfile? Profile { get; set; }
+    }
+
+    internal sealed class BinaryProfile
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public byte[] AccountId { get; set; } = [];
+
+        public BinaryAccount Account { get; set; } = null!;
+    }
+
+    internal sealed class OptionalAccount
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public OptionalProfile? Profile { get; set; }
+    }
+
+    internal sealed class OptionalProfile
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public int? AccountId { get; set; }
+
+        public OptionalAccount? Account { get; set; }
     }
 
     internal sealed class Profile

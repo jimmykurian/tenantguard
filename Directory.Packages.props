@@ -5,11 +5,22 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
+  <!--
+    EfCore10Version is the EF Core 10 everything builds and tests on; task test:floor sets it to the
+    floor. TenantGuardEfCoreFloor is what the packages depend on, so an app on any patch restores
+    without being moved up (ADR 0033).
+  -->
+  <PropertyGroup>
+    <EfCore10Version Condition="'$(EfCore10Version)' == ''">10.0.14</EfCore10Version>
+    <TenantGuardEfCoreFloor Condition="'$(TargetFramework)' != 'net11.0'">10.0.0</TenantGuardEfCoreFloor>
+    <TenantGuardEfCoreFloor Condition="'$(TargetFramework)' == 'net11.0'">11.0.0-rc.3.26522.148</TenantGuardEfCoreFloor>
+  </PropertyGroup>
+
   <!-- The net10.0 build references EF Core 10; net11.0 references EF Core 11 (a release candidate until .NET 11 ships). -->
   <ItemGroup Condition="'$(TargetFramework)' != 'net11.0'">
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.14" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EfCore10Version)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCore10Version)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EfCore10Version)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
@@ -47,8 +58,17 @@
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <PackageVersion Include="Verify.XunitV3" Version="33.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.4" />
-    <!-- Transitive from the analyzer testing package; pinned past the advisories on 9.0.x. -->
+    <!--
+      Pinned past the advisories on 9.0.x: transitive from the analyzer testing package, and from
+      Design 10.0.0, the floor the tool's payload compiles against. The payload runs on the app's
+      dependencies, not its own, so its pins only keep the graph clean.
+    -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.14" />
+    <!-- The version Design 10.0.0 brings, referenced by the tool's payload to leave out its content files. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.14.0" />
+    <!-- For task test:floor: past the advisory on 2.1.11, which EF Core Sqlite 10.0.0 brings. -->
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.13" />
   </ItemGroup>
 
   <!-- The opt-in probe runs on SQL Server and PostgreSQL, net10.0 only. -->

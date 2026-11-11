@@ -164,12 +164,18 @@ internal static class TenantModelRules
 
         if (tenantProperty.IsNullable && !options.NullTenantIsHost)
         {
-            findings.Add(RuleMessages.NullableTenant(entity, property));
+            findings.Add(RuleMessages.NullableTenant(entity, property, checksFilter && FilterSwitches.LetsNullTenantThrough(entityType, tenantProperty)));
         }
 
         if (checksFilter && filters.ReferencesTenantProperty && (filters.HasUnclassifiedOperand || !filters.HasComparison))
         {
-            findings.Add(RuleMessages.FilterNotParameterized(entity, property));
+            findings.Add(filters switch
+            {
+                { HasUnclassifiedOperand: true } => RuleMessages.UnclassifiedOperand(entity, property),
+                { PassedTo: { } method } => RuleMessages.PassedToMethod(entity, property, method),
+                { ComparesWithNull: true } => RuleMessages.ComparedOnlyWithNull(entity, property),
+                _ => RuleMessages.ReadWithoutComparison(entity, property),
+            });
         }
 
         if (checksFilter && filters.ReferencesTenantProperty)

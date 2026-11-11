@@ -42,6 +42,24 @@ internal static class Tgm007Models
             => modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId != null);
     }
 
+    // Negative: TenantId passed to a function, as ABP's DbFunction is, and never compared.
+    internal sealed class PassedToFunction(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        public static bool MultiTenantFilter(string tenantId, string currentTenant, bool enabled) => !enabled || tenantId == currentTenant;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => MultiTenantFilter(invoice.TenantId, CurrentTenant, true));
+    }
+
+    // Negative: TenantId read, but neither compared nor passed on.
+    internal sealed class ReadOnly(DbContextOptions options) : DbContext(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<Invoice>().HasQueryFilter(invoice => invoice.TenantId.Length > 0);
+    }
+
     internal sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
     {
         private readonly string _tenant = "acme";

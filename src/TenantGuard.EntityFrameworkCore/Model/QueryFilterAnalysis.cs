@@ -23,6 +23,12 @@ internal sealed class QueryFilterAnalysis
 
     public bool HasUnclassifiedOperand { get; private set; }
 
+    // A comparison of the tenant property with null, such as e.TenantId != null.
+    public bool ComparesWithNull { get; private set; }
+
+    // The method the filter passes the tenant property to, as Type.Method, such as a DbFunction.
+    public string? PassedTo { get; private set; }
+
     public List<string> Literals { get; } = [];
 
     public static QueryFilterAnalysis Analyze(IReadOnlyEntityType entityType, IReadOnlyProperty tenantProperty, Type? contextType)
@@ -67,6 +73,7 @@ internal sealed class QueryFilterAnalysis
     {
         if (kind == OperandClassifier.Kind.Ignored)
         {
+            ComparesWithNull = true;
             return;
         }
 
@@ -222,7 +229,15 @@ internal sealed class QueryFilterAnalysis
             {
                 analysis.ReferencesTenantProperty = true;
             }
-            else if (node.Method.Name is nameof(object.Equals) or nameof(Enumerable.Contains))
+            else if (node.Method.Name is not (nameof(object.Equals) or nameof(Enumerable.Contains)))
+            {
+                // MultiTenantFilter(e.TenantId, CurrentTenantId, true): passed on, not compared.
+                if (analysis.PassedTo is null && node.Arguments.Any(_access.IsTenantAccess))
+                {
+                    analysis.PassedTo = $"{node.Method.DeclaringType?.Name}.{node.Method.Name}";
+                }
+            }
+            else
             {
                 var operands = node.Object is null ? [.. node.Arguments] : new List<Expression> { node.Object };
                 if (node.Object is not null)

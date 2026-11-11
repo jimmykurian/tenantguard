@@ -49,7 +49,7 @@ public sealed class ValidateTests
     public async Task A_warning_passes_and_fails_under_warnings_as_errors()
     {
         const string Expected =
-            "- TGM005 (warning): Note.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.\n"
+            "- TGM005 (warning): Note.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost().\n"
             + "TenantGuard validated CleanDbContext: 0 errors, 1 warning.\n";
 
         var run = await ToolRun.StartAsync("validate", "--assembly", ToolRun.Fixture, "--context", "ValidateTool.Fixture.CleanDbContext");
@@ -68,7 +68,7 @@ public sealed class ValidateTests
 
         run.ExitCode.Should().Be(0);
         run.Output.Should().Be(
-            "- TGM005 (suppressed: a note without a tenant is a draft): Note.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.\n"
+            "- TGM005 (suppressed: a note without a tenant is a draft): Note.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost().\n"
             + "Unfiltered on purpose: Membership (maps users to their tenants)\n"
             + "TenantGuard validated DeclaredDbContext: 0 errors, 0 warnings, 1 suppressed.\n");
     }

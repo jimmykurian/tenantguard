@@ -34,6 +34,36 @@ internal static class FilterSwitches
         return (switchable, openWithoutTenant);
     }
 
+    // TGM005: whether a filter ORs the tenant comparison with a null check of the tenant property, as
+    // e => e.TenantId == TenantId || e.TenantId == null does, which lets a row with no tenant through.
+    // A null check an enclosing && rules out, as TenantId != null && (... || TenantId == null) does, or
+    // one that another declared filter rules out, lets nothing through: EF Core ANDs the filters.
+    public static bool LetsNullTenantThrough(IReadOnlyEntityType entityType, IReadOnlyProperty tenantProperty)
+    {
+        var lambdas = entityType.GetDeclaredQueryFilters()
+            .Select(filter => filter.Expression)
+            .OfType<LambdaExpression>()
+            .Where(lambda => lambda.Parameters.Count == 1)
+            .ToList();
+        for (var index = 0; index < lambdas.Count; index++)
+        {
+            var parameter = lambdas[index].Parameters[0];
+
+            // The other filters' conditions, over this filter's parameter, so they compare by shape.
+            var others = lambdas.Where((_, other) => other != index)
+                .SelectMany(other => Flatten(Normalize(QueryFilterAnalysis.Fold(ReplacingExpressionVisitor.Replace(other.Parameters[0], parameter, other.Body))), IsAnd))
+                .ToList();
+            var finder = new NullTenantFinder(new TenantAccess(parameter, tenantProperty));
+            finder.Walk(Normalize(QueryFilterAnalysis.Fold(lambdas[index].Body)), others);
+            if (finder.Found)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Pushes each ! inward over && and ||, reads a bool | or & as || or &&, and reads a comparison with
     // a bool constant as the condition itself or its negation: x == true is x, x == false is !x.
     private static Expression Normalize(Expression expression)
@@ -124,6 +154,9 @@ internal static class FilterSwitches
         return conditions;
     }
 
+    private static bool IsNull(Expression expression)
+        => OperandClassifier.StripConversions(expression) is ConstantExpression { Value: null };
+
     private static bool Same(Expression left, Expression right)
         => ExpressionEqualityComparer.Instance.Equals(OperandClassifier.StripConversions(left), OperandClassifier.StripConversions(right));
 
@@ -192,9 +225,6 @@ internal static class FilterSwitches
                 _ => false,
             };
 
-        private static bool IsNull(Expression expression)
-            => OperandClassifier.StripConversions(expression) is ConstantExpression { Value: null };
-
         private List<Expression> ComparedOperands(Expression condition)
         {
             var collector = new OperandCollector(access);
@@ -208,6 +238,45 @@ internal static class FilterSwitches
             finder.Visit(condition);
             return finder.Found;
         }
+    }
+
+    // An || chain with a null check of the tenant property among its conditions.
+    private sealed class NullTenantFinder(TenantAccess access)
+    {
+        public bool Found { get; private set; }
+
+        // guards are the conditions of the && chains above the expression, and of the other filters.
+        public void Walk(Expression expression, IReadOnlyList<Expression> guards)
+        {
+            if (IsOr(expression))
+            {
+                var conditions = Flatten(expression, IsOr);
+                Found |= conditions.Any(condition => IsNullCheckOfTenant(condition) && !guards.Any(guard => Same(guard, Negate(condition))));
+                foreach (var condition in conditions)
+                {
+                    Walk(condition, guards);
+                }
+            }
+            else if (IsAnd(expression))
+            {
+                var conditions = Flatten(expression, IsAnd);
+                for (var index = 0; index < conditions.Count; index++)
+                {
+                    var others = conditions.Where((_, other) => other != index);
+                    Walk(conditions[index], [.. guards, .. others]);
+                }
+            }
+        }
+
+        private bool IsNullCheckOfTenant(Expression condition)
+            => OperandClassifier.StripConversions(condition) switch
+            {
+                BinaryExpression { NodeType: ExpressionType.Equal } equal
+                    => (IsNull(equal.Right) && access.IsTenantAccess(equal.Left)) || (IsNull(equal.Left) && access.IsTenantAccess(equal.Right)),
+                UnaryExpression { NodeType: ExpressionType.Not, Operand: MemberExpression { Member.Name: "HasValue", Expression: { } nullable } }
+                    => access.IsTenantAccess(nullable),
+                _ => false,
+            };
     }
 
     private sealed class OperandCollector(TenantAccess access) : ExpressionVisitor

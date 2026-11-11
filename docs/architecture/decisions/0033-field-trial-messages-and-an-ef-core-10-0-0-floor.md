@@ -1,6 +1,6 @@
 # 0033. Field-trial messages and an EF Core 10.0.0 floor
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-11
 
 ## Context

@@ -54,11 +54,32 @@ public sealed class NavigationLeakTests : FeatureFixture, IAsyncDisposable
             Then_Tag_Baskets_still_passes);
 
     [Fact]
-    public Task One_to_one_link_that_cannot_be_saved_is_skipped()
+    public Task One_to_one_link_whose_row_already_has_its_dependent_is_skipped_saying_why()
         => Runner.RunScenarioAsync(
             Given_a_directory_of_accounts_with_one_profile_each,
             When_the_probe_runs,
-            Then_both_navigations_are_skipped_naming_the_failed_link);
+            Then_both_navigations_are_skipped_naming_the_unique_foreign_key);
+
+    [Fact]
+    public Task One_to_one_on_binary_keys_in_separate_arrays_is_skipped_saying_why()
+        => Runner.RunScenarioAsync(
+            Given_a_directory_of_accounts_keyed_by_bytes_with_one_profile_each,
+            When_the_probe_runs,
+            Then_both_binary_navigations_are_skipped_naming_the_unique_foreign_key);
+
+    [Fact]
+    public Task Unique_index_with_a_filter_leaves_room_for_the_link()
+        => Runner.RunScenarioAsync(
+            Given_a_directory_whose_active_profiles_are_unique_per_account,
+            When_the_probe_runs,
+            Then_both_filtered_navigations_pass);
+
+    [Fact]
+    public Task Optional_one_to_one_with_room_for_the_link_is_checked()
+        => Runner.RunScenarioAsync(
+            Given_a_directory_whose_profiles_leave_the_account_unset,
+            When_the_probe_runs,
+            Then_both_one_to_one_navigations_pass);
 
     public async ValueTask DisposeAsync()
     {
@@ -114,6 +135,22 @@ public sealed class NavigationLeakTests : FeatureFixture, IAsyncDisposable
 
     private Task Given_a_directory_of_accounts_with_one_profile_each()
         => UseDatabase((options, tenant) => new Members(options, tenant), Guard<Members>(members => members.CurrentTenant));
+
+    // The seeders give each profile's AccountId a new array equal to its account's key.
+    private async Task Given_a_directory_of_accounts_keyed_by_bytes_with_one_profile_each()
+    {
+        await UseDatabase((options, tenant) => new BinaryMembers(options, tenant), Guard<BinaryMembers>(members => members.CurrentTenant, log: true));
+        _probe = () => _databases.OfType<ProbeDatabase<BinaryMembers>>().Single().Probe()
+            .Seed<BinaryAccount>((tenant, context) => new BinaryAccount { Id = [tenant == "acme" ? (byte)1 : (byte)2] })
+            .Seed<BinaryProfile>((tenant, context) => new BinaryProfile { AccountId = [tenant == "acme" ? (byte)1 : (byte)2] })
+            .RunAsync(Token);
+    }
+
+    private Task Given_a_directory_whose_active_profiles_are_unique_per_account()
+        => UseDatabase((options, tenant) => new FilteredMembers(options, tenant), Guard<FilteredMembers>(members => members.CurrentTenant));
+
+    private Task Given_a_directory_whose_profiles_leave_the_account_unset()
+        => UseDatabase((options, tenant) => new OptionalMembers(options, tenant), Guard<OptionalMembers>(members => members.CurrentTenant));
 
     private async Task When_the_probe_runs()
     {
@@ -184,14 +221,43 @@ public sealed class NavigationLeakTests : FeatureFixture, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    private Task Then_both_navigations_are_skipped_naming_the_failed_link()
+    private Task Then_both_navigations_are_skipped_naming_the_unique_foreign_key()
     {
-        var account = Row(_report, "Account", "NavigationLeak(Profile)");
-        account.Outcome.Should().Be(ProbeOutcome.Skipped);
-        account.Detail.Should().StartWith("Saving the link for Profile as globex failed: ").And.Contain("UNIQUE");
-        var profile = Row(_report, "Profile", "NavigationLeak(Account)");
-        profile.Outcome.Should().Be(ProbeOutcome.Skipped);
-        profile.Detail.Should().StartWith("Saving the link for Account as acme failed: ").And.Contain("UNIQUE");
+        const string Occupied = @"^Profile's foreign key \(AccountId\) is unique, and (acme|globex)'s Account row \(Id: \d+\) already has a Profile, so a second one to link it across tenants would break the unique index\.$";
+        foreach (var check in new[] { ("Account", "NavigationLeak(Profile)"), ("Profile", "NavigationLeak(Account)") })
+        {
+            var row = Row(_report, check.Item1, check.Item2);
+            row.Outcome.Should().Be(ProbeOutcome.Skipped);
+            row.Detail.Should().MatchRegex(Occupied);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task Then_both_binary_navigations_are_skipped_naming_the_unique_foreign_key()
+    {
+        const string Occupied = @"^BinaryProfile's foreign key \(AccountId\) is unique, and (acme|globex)'s BinaryAccount row \(Id: .+\) already has a BinaryProfile, so a second one to link it across tenants would break the unique index\.$";
+        foreach (var check in new[] { ("BinaryAccount", "NavigationLeak(Profile)"), ("BinaryProfile", "NavigationLeak(Account)") })
+        {
+            var row = Row(_report, check.Item1, check.Item2);
+            row.Outcome.Should().Be(ProbeOutcome.Skipped, row.Detail);
+            row.Detail.Should().MatchRegex(Occupied);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task Then_both_filtered_navigations_pass()
+    {
+        Row(_report, "FilteredAccount", "NavigationLeak(Profiles)").Outcome.Should().Be(ProbeOutcome.Passed);
+        Row(_report, "FilteredProfile", "NavigationLeak(Account)").Outcome.Should().Be(ProbeOutcome.Passed);
+        return Task.CompletedTask;
+    }
+
+    private Task Then_both_one_to_one_navigations_pass()
+    {
+        Row(_report, "OptionalAccount", "NavigationLeak(Profile)").Outcome.Should().Be(ProbeOutcome.Passed);
+        Row(_report, "OptionalProfile", "NavigationLeak(Account)").Outcome.Should().Be(ProbeOutcome.Passed);
         return Task.CompletedTask;
     }
 }

@@ -47,7 +47,7 @@ public sealed class ConventionTests
                     TenantGuardLogging.Category,
                     LogLevel.Warning,
                     "ModelFinding",
-                    "TGM009: Invoice has no index or key that starts with 'TenantId', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key."),
+                    "TGM009: Invoice has no index or key that starts with 'TenantId', so a query that only its tenant filter narrows, such as a list of a tenant's rows, scans every tenant's rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key; a table read only by its key doesn't need one."),
                 new LogCapture.Entry(
                     TenantGuardLogging.Category,
                     LogLevel.Error,
@@ -68,7 +68,7 @@ public sealed class ConventionTests
         context.Model.Should().NotBeNull();
 
         capture.TenantGuardEntries.Where(entry => entry.Level == LogLevel.Warning).Select(entry => entry.Message).Should().Contain(
-            "TGM005: Receipt.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.");
+            "TGM005: Receipt.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost().");
     }
 
     [Fact]

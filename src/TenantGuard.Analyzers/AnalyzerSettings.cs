@@ -36,6 +36,9 @@ internal static class AnalyzerSettings
         return columns.IsEmpty ? _defaultTenantColumns : columns;
     }
 
+    // Whether tenantguard.tenant_column names at least one column.
+    public static bool TenantColumnIsSet(AnalyzerOptions options, SyntaxTree tree) => !Read(options, tree, TenantColumnKey).IsEmpty;
+
     // The names of the tenant query filters, or none when not set.
     public static ImmutableArray<string> TenantFilterNames(AnalyzerOptions options, SyntaxTree tree)
         => Read(options, tree, TenantFilterNamesKey);

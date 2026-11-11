@@ -20,6 +20,17 @@ public sealed class ProbeReport
     public IReadOnlyList<ProbeRow> Rows { get; }
 
     /// <summary>
+    /// Returns a table of every row, passed ones included, under a summary, the way
+    /// <see cref="AssertAllPassed"/> shows the rows that didn't pass.
+    /// </summary>
+    /// <returns>The table.</returns>
+    public override string ToString()
+    {
+        var notPassed = Rows.Count(row => row.Outcome != ProbeOutcome.Passed);
+        return ProbeTable.Format(Rows, notPassed > 0 ? $"{notPassed} of {Rows.Count} checks did not pass." : $"all {Rows.Count} checks passed.");
+    }
+
+    /// <summary>
     /// Throws <see cref="TenantIsolationProbeException"/>, with a table of the rows that failed or were
     /// skipped, unless every row passed.
     /// </summary>

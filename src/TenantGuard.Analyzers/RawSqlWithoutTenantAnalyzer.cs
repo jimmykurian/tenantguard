@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -15,10 +16,11 @@ internal sealed class RawSqlWithoutTenantAnalyzer : DiagnosticAnalyzer
 {
     public const string Id = "TG002";
 
+    [SuppressMessage("MicrosoftCodeAnalysisDesign", "RS1032:Define diagnostic message correctly", Justification = "{1} is empty or the documented hint, which ends with a period.")]
     public static readonly DiagnosticDescriptor Rule = new(
         Id,
         title: "Raw SQL without a tenant predicate",
-        messageFormat: "Raw SQL bypasses query filters and does not compare '{0}' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].",
+        messageFormat: "Raw SQL bypasses query filters and does not compare '{0}' with a value. Add a tenant predicate, or [AllowCrossTenantAccess(\"why\")].{1}",
         category: "Security",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -50,6 +52,8 @@ internal sealed class RawSqlWithoutTenantAnalyzer : DiagnosticAnalyzer
         }
 
         // With several columns the message reads: does not compare 'TenantId' or 'OrgId' with a value.
-        context.ReportDiagnostic(Diagnostic.Create(Rule, sql.Syntax.GetLocation(), string.Join("' or '", columns)));
+        // With the default column, it ends with a hint, for an app whose tenant property has another name.
+        var hint = AnalyzerSettings.TenantColumnIsSet(context.Options, tree) ? string.Empty : " If the tenant column has another name, set tenantguard.tenant_column.";
+        context.ReportDiagnostic(Diagnostic.Create(Rule, sql.Syntax.GetLocation(), string.Join("' or '", columns), hint));
     }
 }

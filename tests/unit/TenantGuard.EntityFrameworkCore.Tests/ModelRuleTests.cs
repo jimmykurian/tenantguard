@@ -164,7 +164,25 @@ public sealed class ModelRuleTests
                 Severity.Warning,
                 "Receipt",
                 "TenantId",
-                "Receipt.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard."));
+                "Receipt.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost()."));
+
+    [Theory]
+    [InlineData(typeof(Tgm005Models.NullCheckRuledOut))]
+    [InlineData(typeof(Tgm005Models.NullCheckRuledOutByAnotherFilter))]
+    public void Nullable_tenant_whose_null_check_is_ruled_out_is_TGM005_with_the_first_message(Type context)
+        => Validate(context).Findings.Should().ContainSingle().Subject.Message.Should().Be(
+            "Receipt.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost().");
+
+    [Theory]
+    [InlineData(typeof(Tgm005Models.SharedWithEveryTenant))]
+    [InlineData(typeof(Tgm005Models.SharedWithEveryTenantNegated))]
+    public void Nullable_tenant_the_filter_lets_through_is_TGM005_saying_every_tenant_reads_it(Type context)
+        => Validate(context).Findings.Should().ContainSingle().Subject.Should().Be(new ModelFinding(
+                "TGM005",
+                Severity.Warning,
+                "Receipt",
+                "TenantId",
+                "Receipt.TenantId is nullable, and the tenant filter lets a row with no tenant through, so every tenant reads it. Confirm rows with no tenant are meant to be shared, or make 'TenantId' required."));
 
     [Fact]
     public void Tenant_property_on_the_root_of_a_hierarchy_passes()
@@ -185,15 +203,28 @@ public sealed class ModelRuleTests
 
     [Fact]
     public void Comparison_with_another_column_is_TGM007()
-        => TestModels.Validate<Tgm007Models.OtherColumn>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized("Invoice", "TenantId"));
+        => TestModels.Validate<Tgm007Models.OtherColumn>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized(
+            "Invoice: TenantGuard can't tell where the value 'TenantId' is compared with comes from. Confirm it is read per query, from the context or a static member, not when the model was built."));
 
     [Fact]
     public void Field_of_a_configuration_class_is_TGM007()
-        => TestModels.Validate<Tgm007Models.ConfigurationField>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized("Invoice", "TenantId"));
+        => TestModels.Validate<Tgm007Models.ConfigurationField>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized(
+            "Invoice: TenantGuard can't tell where the value 'TenantId' is compared with comes from. Confirm it is read per query, from the context or a static member, not when the model was built."));
 
     [Fact]
-    public void Tenant_property_that_is_never_compared_is_TGM007()
-        => TestModels.Validate<Tgm007Models.NullCheckOnly>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized("Invoice", "TenantId"));
+    public void Tenant_property_compared_only_with_null_is_TGM007()
+        => TestModels.Validate<Tgm007Models.NullCheckOnly>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized(
+            "Invoice: the tenant filter compares 'TenantId' only with null, so it doesn't scope rows to a tenant. Compare 'TenantId' with the current tenant."));
+
+    [Fact]
+    public void Tenant_property_passed_to_a_function_is_TGM007_naming_it()
+        => TestModels.Validate<Tgm007Models.PassedToFunction>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized(
+            "Invoice: the tenant filter passes 'TenantId' to PassedToFunction.MultiTenantFilter instead of comparing it, so TenantGuard can't check what it is compared with. Confirm PassedToFunction.MultiTenantFilter compares it with the current tenant, read per query."));
+
+    [Fact]
+    public void Tenant_property_read_another_way_is_TGM007()
+        => TestModels.Validate<Tgm007Models.ReadOnly>().Findings.Should().ContainSingle().Subject.Should().Be(NotParameterized(
+            "Invoice: the tenant filter reads 'TenantId' without comparing it with a value TenantGuard can check. Compare 'TenantId' with the current tenant."));
 
     [Fact]
     public void Owned_type_without_a_tenant_property_passes()
@@ -266,11 +297,9 @@ public sealed class ModelRuleTests
             property,
             $"{entity}: the tenant filter captures a local value. The model is cached per context type, so every tenant will see the first tenant's rows. Reference a DbContext member instead.");
 
-    private static ModelFinding NotParameterized(string entity, string property)
-        => new(
-            "TGM007",
-            Severity.Warning,
-            entity,
-            property,
-            $"{entity}: the tenant filter's operand could not be classified; confirm it is evaluated per query.");
+    private static ModelFinding NotParameterized(string message)
+        => new("TGM007", Severity.Warning, "Invoice", "TenantId", message);
+
+    private static ModelReport Validate(Type context)
+        => (ModelReport)typeof(TestModels).GetMethod(nameof(TestModels.Validate))!.MakeGenericMethod(context).Invoke(null, [null])!;
 }

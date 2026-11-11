@@ -37,19 +37,45 @@ internal sealed class TenantModelConvention(
             (Model: model, Check: check, ModelTenant: modelTenant));
 
         var report = check.Report;
+
+        // The validate tool prints the check itself, so it isn't logged twice.
+        var log = !ValidateToolSwitch.IsOn;
         if (report.CrossTenantReason is { } crossTenantReason)
         {
-            TenantGuardLog.CrossTenantModel(logger, contextType.Name, crossTenantReason);
+            if (log)
+            {
+                TenantGuardLog.CrossTenantModel(logger, contextType.Name, crossTenantReason);
+            }
+
             return model;
         }
 
         CheckDeclarations(model);
+        if (report.Errors.Count > 0 && options.Enforcement == Enforcement.Throw)
+        {
+            LogCheck(report, check.TenantProperties.Count, errors: false, log);
+            throw new TenantGuardModelException(report);
+        }
+
+        LogCheck(report, check.TenantProperties.Count, errors: true, log);
+        return model;
+    }
+
+    // The declarations, the summary, the warnings and suppressed findings, and the errors when they
+    // aren't thrown.
+    private void LogCheck(ModelReport report, int tenantScopedEntities, bool errors, bool log)
+    {
+        if (!log)
+        {
+            return;
+        }
+
         foreach (var unfiltered in report.Unfiltered)
         {
             TenantGuardLog.UnfilteredEntity(logger, unfiltered.Entity, unfiltered.Reason);
         }
 
-        TenantGuardLog.ModelValidated(logger, check.TenantProperties.Count, report.Errors.Count, report.Warnings.Count);
+        TenantGuardLog.ModelValidated(logger, tenantScopedEntities, report.Errors.Count, report.Warnings.Count);
         foreach (var warning in report.Warnings)
         {
             TenantGuardLog.ModelFinding(logger, LogLevel.Warning, warning.RuleId, warning.Message);
@@ -60,20 +86,10 @@ internal sealed class TenantModelConvention(
             TenantGuardLog.FindingSuppressed(logger, suppressed.Finding.RuleId, suppressed.Finding.Entity, suppressed.Reason);
         }
 
-        if (report.Errors.Count > 0)
+        foreach (var error in errors ? report.Errors : [])
         {
-            if (options.Enforcement == Enforcement.Throw)
-            {
-                throw new TenantGuardModelException(report);
-            }
-
-            foreach (var error in report.Errors)
-            {
-                TenantGuardLog.ModelFinding(logger, LogLevel.Error, error.RuleId, error.Message);
-            }
+            TenantGuardLog.ModelFinding(logger, LogLevel.Error, error.RuleId, error.Message);
         }
-
-        return model;
     }
 
     // An Unfiltered declaration names a root entity type with a tenant property; a type the model

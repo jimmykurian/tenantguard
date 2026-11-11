@@ -1,0 +1,16 @@
+<Project>
+
+  <!--
+    Under task test:floor, EF Core 10.0.0's Sqlite brings SQLitePCLRaw 2.1.11, and its Design brings
+    the cryptography packages at 9.0.0, which have advisories; the tests run on the patched versions
+    the latest EF Core 10 patch brings. Each is added only when the project doesn't reference it, and
+    NU1510 is off for them: where a shared framework, such as ASP.NET Core, already provides one, the
+    pin isn't needed.
+  -->
+  <ItemGroup Condition="'$(EfCore10Version)' == '10.0.0' and '$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" NoWarn="NU1510" Condition="'@(PackageReference->WithMetadataValue('Identity', 'SQLitePCLRaw.lib.e_sqlite3'))' == ''" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" NoWarn="NU1510" Condition="'@(PackageReference->WithMetadataValue('Identity', 'System.Security.Cryptography.Pkcs'))' == ''" />
+    <PackageReference Include="System.Security.Cryptography.Xml" NoWarn="NU1510" Condition="'@(PackageReference->WithMetadataValue('Identity', 'System.Security.Cryptography.Xml'))' == ''" />
+  </ItemGroup>
+
+</Project>
