@@ -104,7 +104,7 @@ TenantGuard validated ReportingDbContext: declared cross-tenant (reports and dat
 Findings and the summary go to standard output; a reason the tool couldn't run goes to
 standard error. The app's own logging runs too, as it does under `dotnet ef`, so a host
 with a console logger prints its lines among them. TenantGuard's own log of the model
-findings, which `Enforcement.Log` writes, is left out while the tool runs, so each finding
+check, its summary, findings and declarations, is left out while the tool runs, so each
 prints once.
 
 ## Exit codes

@@ -11,6 +11,7 @@ about testing your app with the probe.
 | `tests/unit/` | `TenantGuard.EntityFrameworkCore.Tests`, `TenantGuard.Analyzers.Tests`, `TenantGuard.Tool.Tests` | In process: SQLite in memory at most | `task test:unit` |
 | `tests/architecture/` | `TenantGuard.Architecture.Tests` | The shipped assemblies, read with NetArchTest | `task test:architecture` |
 | `tests/integration/` | `TenantGuard.BehaviorPins`, `TenantGuard.Testing.Tests` | EF Core on SQLite | `task test:integration` |
+| `tests/unit/`, `tests/integration/` | The same projects, on net10.0 | EF Core 10.0.0, the packages' floor, so the runtime package uses no API a later 10.0.x patch added | `task test:floor` |
 | `tests/integration/` | `TenantGuard.Providers.Tests` | SQL Server and PostgreSQL in Testcontainers; needs Docker | `task test:providers` |
 | `tests/e2e/` | `HandRolled.Api.Tests`, `Finbuckle.Api.Tests` | Each sample app through its host | `task test:e2e` |
 | `tests/e2e/` | `ValidateTool.Tests` | The built `dotnet tenantguard validate`, on `ValidateTool.Fixture` and `ValidateTool.UnreferencedFixture`, an app that doesn't reference TenantGuard (net10.0 and net11.0), and both sample apps | `task test:e2e` |
