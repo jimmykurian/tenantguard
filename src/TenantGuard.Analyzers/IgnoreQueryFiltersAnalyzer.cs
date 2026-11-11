@@ -10,12 +10,13 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
-using Microsoft.CodeAnalysis.Text;
 
 namespace TenantGuard.Analyzers;
 
 // TG001: IgnoreQueryFilters() turns off the tenant filter. The named overload is fine when
-// tenantguard.tenant_filter_names is set and the names are constants that leave every tenant filter on.
+// tenantguard.tenant_filter_names is set and the names are constants that leave every tenant filter on,
+// or, with no names set, when tenantguard.tenant_filter_unnamed = true: names never turn an unnamed
+// filter off (behavior pin 10).
 // With tenantguard.tenant_members_only = true, a query over an entity type with no tenant member has no
 // tenant filter to turn off.
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -52,116 +53,17 @@ internal sealed class IgnoreQueryFiltersAnalyzer : DiagnosticAnalyzer
         if (invocation.TargetMethod.Name != "IgnoreQueryFilters"
             || !SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType, extensions)
             || LeavesTenantFiltersOn(invocation, context.Options, context.CancellationToken)
-            || !MayHaveTenantFilter(invocation, context.Options)
+            || !TenantMembers.MayHaveTenantFilter(invocation, context.Options)
             || CrossTenantAccess.IsAllowed(invocation, context.ContainingSymbol))
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, CallSite(invocation)));
+        context.ReportDiagnostic(Diagnostic.Create(Rule, CallSite.Of(invocation)));
     }
 
-    // False, under tenantguard.tenant_members_only, when the query's element type is a class or struct
-    // that has no member named in tenantguard.tenant_column or marked [TenantKey], itself or through its reference
-    // navigations: a tenant filter reaches the tenant through those, as post => post.Blog.TenantId ==
-    // TenantId does. Without the key, a shadow tenant property, as Finbuckle's IsMultiTenant() adds,
-    // may be there, so every call may switch a tenant filter off.
-    private static bool MayHaveTenantFilter(IInvocationOperation invocation, AnalyzerOptions options)
-    {
-        if (!AnalyzerSettings.TenantMembersOnly(options, invocation.Syntax.SyntaxTree))
-        {
-            return true;
-        }
-
-        var typeArguments = invocation.TargetMethod.TypeArguments;
-        if (typeArguments.Length != 1
-            || typeArguments[0] is not INamedTypeSymbol { TypeKind: TypeKind.Class or TypeKind.Struct } entity
-            || entity.SpecialType == SpecialType.System_Object)
-        {
-            return true;
-        }
-
-        var columns = AnalyzerSettings.TenantColumns(options, invocation.Syntax.SyntaxTree);
-        return ReachesTenantMember(entity, columns, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default));
-    }
-
-    private static bool ReachesTenantMember(ITypeSymbol type, ImmutableArray<string> columns, HashSet<ITypeSymbol> visited)
-    {
-        if (!visited.Add(type))
-        {
-            return false;
-        }
-
-        for (var current = type; current is not null; current = current.BaseType)
-        {
-            foreach (var member in current.GetMembers())
-            {
-                if (member.IsStatic || MemberType(member) is not { } memberType)
-                {
-                    continue;
-                }
-
-                if (IsTenantKey(member) || columns.Any(column => string.Equals(column, member.Name, System.StringComparison.OrdinalIgnoreCase)))
-                {
-                    return true;
-                }
-
-                if (Navigation(memberType) is { } target
-                    && (target.TypeKind is TypeKind.Interface or TypeKind.TypeParameter || ReachesTenantMember(target, columns, visited)))
-                {
-                    // A navigation whose type can't be followed may lead to a tenant.
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    // Marked [TenantKey], TenantGuard's attribute for a tenant property under another name.
-    private static bool IsTenantKey(ISymbol member)
-        => member.GetAttributes().Any(attribute => attribute.AttributeClass is
-        {
-            Name: "TenantKeyAttribute",
-            ContainingNamespace: { Name: "TenantGuard", ContainingNamespace.IsGlobalNamespace: true },
-        });
-
-    private static ITypeSymbol? MemberType(ISymbol member)
-        => member switch
-        {
-            IPropertySymbol { IsIndexer: false } property => property.Type,
-            IFieldSymbol { IsImplicitlyDeclared: false } field => field.Type,
-            _ => null,
-        };
-
-    // The type a reference navigation leads to: a class, struct, interface or type parameter of the
-    // app's own, other than a collection. Null for a scalar, such as string, int or DateTime.
-    private static ITypeSymbol? Navigation(ITypeSymbol type)
-    {
-        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable)
-        {
-            type = nullable.TypeArguments[0];
-        }
-
-        var scalarOrCollection = type.SpecialType != SpecialType.None
-            || type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.TypeParameter)
-            || IsSystemType(type)
-            || type.AllInterfaces.Any(@interface => @interface.SpecialType == SpecialType.System_Collections_IEnumerable);
-        return scalarOrCollection ? null : type;
-    }
-
-    private static bool IsSystemType(ITypeSymbol type)
-    {
-        var root = type.ContainingNamespace;
-        while (root is { ContainingNamespace.IsGlobalNamespace: false })
-        {
-            root = root.ContainingNamespace;
-        }
-
-        return root is { Name: "System" or "Microsoft" };
-    }
-
-    // The named overload, with the tenant filter names configured, and constant names that are not among them.
+    // The named overload, with the tenant filter names configured, and constant names that are not among
+    // them; or, with none configured, under tenantguard.tenant_filter_unnamed.
     private static bool LeavesTenantFiltersOn(IInvocationOperation invocation, AnalyzerOptions options, CancellationToken cancellationToken)
     {
         var names = invocation.Arguments.FirstOrDefault(argument => argument.Parameter?.Ordinal == 1);
@@ -171,8 +73,12 @@ internal sealed class IgnoreQueryFiltersAnalyzer : DiagnosticAnalyzer
         }
 
         var tenantFilters = AnalyzerSettings.TenantFilterNames(options, invocation.Syntax.SyntaxTree);
-        return !tenantFilters.IsEmpty
-            && ConstantStrings(names.Value, cancellationToken) is { } ignored
+        if (tenantFilters.IsEmpty)
+        {
+            return AnalyzerSettings.TenantFilterUnnamed(options, invocation.Syntax.SyntaxTree);
+        }
+
+        return ConstantStrings(names.Value, cancellationToken) is { } ignored
             && !ignored.Any(tenantFilters.Contains);
     }
 
@@ -215,21 +121,4 @@ internal sealed class IgnoreQueryFiltersAnalyzer : DiagnosticAnalyzer
     // The item a collection initializer adds, such as "SoftDelete" in new List<string> { "SoftDelete" }.
     private static Optional<object?> AddedValue(IOperation initializer)
         => initializer is IInvocationOperation { Arguments.Length: 1 } add ? add.Arguments[0].Value.ConstantValue : default;
-
-    // From the method name to the closing parenthesis, so a long query chain is not underlined.
-    private static Location CallSite(IInvocationOperation invocation)
-    {
-        if (invocation.Syntax is not InvocationExpressionSyntax call)
-        {
-            return invocation.Syntax.GetLocation();
-        }
-
-        var name = call.Expression switch
-        {
-            MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
-            MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
-            var expression => expression,
-        };
-        return Location.Create(call.SyntaxTree, TextSpan.FromBounds(name.SpanStart, call.Span.End));
-    }
 }
