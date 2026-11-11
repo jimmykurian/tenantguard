@@ -86,6 +86,28 @@ internal static class NavigationModels
         }
     }
 
+    // The same one to one, optional: each seeded profile leaves AccountId null, so the unique index
+    // has room for the link, and both navigations are checked.
+    internal sealed class OptionalMembers(DbContextOptions options, string? tenant) : DbContext(options)
+    {
+        public string? CurrentTenant { get; } = tenant;
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<OptionalAccount>(account =>
+            {
+                account.HasOne(row => row.Profile).WithOne(profile => profile.Account).HasForeignKey<OptionalProfile>(profile => profile.AccountId).IsRequired(false);
+                account.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                account.HasIndex(row => row.TenantId);
+            });
+            modelBuilder.Entity<OptionalProfile>(profile =>
+            {
+                profile.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                profile.HasIndex(row => row.TenantId);
+            });
+        }
+    }
+
     internal sealed class Region
     {
         public int Id { get; set; }
@@ -155,6 +177,26 @@ internal static class NavigationModels
         public string TenantId { get; set; } = string.Empty;
 
         public Profile? Profile { get; set; }
+    }
+
+    internal sealed class OptionalAccount
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public OptionalProfile? Profile { get; set; }
+    }
+
+    internal sealed class OptionalProfile
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public int? AccountId { get; set; }
+
+        public OptionalAccount? Account { get; set; }
     }
 
     internal sealed class Profile

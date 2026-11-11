@@ -49,6 +49,9 @@ internal sealed class NavigationChecks<TContext>(
 
     private static string OneLine(string message) => message.ReplaceLineEndings(" ");
 
+    private static string Article(string name)
+        => name.Length > 0 && "AEIOUaeiou".Contains(name[0], StringComparison.Ordinal) ? "an" : "a";
+
     private static object? TenantOf(EntityEntry entry, IProperty property) => entry.Property(property.Name).CurrentValue;
 
     private static async Task<string?> TrySaveAsync(DbContext context, CancellationToken cancellationToken)
@@ -75,6 +78,11 @@ internal sealed class NavigationChecks<TContext>(
     {
         var foreignKey = navigation.ForeignKey!;
         var dependent = navigation.Dependent!;
+        if (OccupiedUniqueForeignKey(foreignKey, dependent, principal, principalTenant: linkTenant == viewer ? owner : viewer) is { } occupied)
+        {
+            return occupied;
+        }
+
         await using var linkContext = createContext(linkTenant);
         var entry = factory.Add(
             linkContext,
@@ -107,6 +115,33 @@ internal sealed class NavigationChecks<TContext>(
             entry.State = EntityState.Deleted;
             await linkContext.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    // A unique foreign key, as of a one-to-one relationship or a unique index on its columns, whose
+    // principal row already has a seeded dependent: a second one would break the unique index, so the
+    // link can't be seeded. Null when there is room for it.
+    private CheckResult? OccupiedUniqueForeignKey(IForeignKey foreignKey, IEntityType dependent, SeededRow principal, string principalTenant)
+    {
+        var unique = foreignKey.IsUnique
+            || dependent.GetIndexes().Any(index => index.IsUnique && index.Properties.All(foreignKey.Properties.Contains))
+            || dependent.GetKeys().Any(key => key.Properties.All(foreignKey.Properties.Contains));
+        if (!unique || rowsOf(dependent) is not { } seeded)
+        {
+            return null;
+        }
+
+        var occupied = seeded.Values.Any(row => foreignKey.Properties.Select((property, index) => (property, index)).All(pair =>
+            Equals(row.Values[pair.property.Name], principal.Values[foreignKey.PrincipalKey.Properties[pair.index].Name])));
+        if (!occupied)
+        {
+            return null;
+        }
+
+        var columns = string.Join(", ", foreignKey.Properties.Select(property => property.Name));
+        var principalType = foreignKey.PrincipalEntityType.DisplayName();
+        var dependentType = dependent.DisplayName();
+        return CheckResult.Skipped(
+            $"{dependentType}'s foreign key ({columns}) is unique, and {principalTenant}'s {principalType} row {principal.FormatKey()} already has {Article(dependentType)} {dependentType}, so a second one to link it across tenants would break the unique index.");
     }
 
     // A join row between the viewer's row and the owner's target row, saved through the viewer's context.
