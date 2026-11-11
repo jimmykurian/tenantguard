@@ -102,13 +102,20 @@ internal static class Validation
         }
     }
 
-    // The FileNotFoundException or FileLoadException behind an exception, however a factory, reflection
-    // or EF Core wrapped it, or null when it isn't one.
+    // The FileNotFoundException or FileLoadException of an assembly behind an exception, however a
+    // factory, reflection or EF Core wrapped it, or null when it isn't one. A file that isn't an
+    // assembly, such as a settings file the factory reads, is left to CreateError.
     internal static IOException? LoadFailure(Exception? exception)
     {
         for (; exception is not null; exception = exception.InnerException)
         {
-            if (exception is FileNotFoundException or FileLoadException)
+            var file = exception switch
+            {
+                FileNotFoundException notFound => notFound.FileName,
+                FileLoadException notLoaded => notLoaded.FileName,
+                _ => null,
+            };
+            if (file is not null && IsAssemblyIdentity(file))
             {
                 return (IOException)exception;
             }
@@ -190,6 +197,19 @@ internal static class Validation
         using var deps = JsonDocument.Parse(File.ReadAllText(depsFile));
         return deps.RootElement.TryGetProperty("libraries", out var libraries)
             && libraries.EnumerateObject().Any(library => library.Name.StartsWith(DesignAssembly + "/", StringComparison.OrdinalIgnoreCase));
+    }
+
+    // An assembly's display name, with its version, as the runtime names one it can't load.
+    private static bool IsAssemblyIdentity(string name)
+    {
+        try
+        {
+            return new AssemblyName(name).Version is not null;
+        }
+        catch (Exception exception) when (exception is ArgumentException or FileLoadException)
+        {
+            return false;
+        }
     }
 
     private static int Report(TextWriter output, string contextName, ModelReport report, bool warningsAsErrors)

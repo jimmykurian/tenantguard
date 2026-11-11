@@ -49,6 +49,9 @@ internal sealed class NavigationChecks<TContext>(
 
     private static string OneLine(string message) => message.ReplaceLineEndings(" ");
 
+    // A unique index with a filter, as HasFilter("Active = 1") gives, is unique only over the rows it keeps.
+    private static bool IsUnfiltered(IIndex index) => index.FindAnnotation("Relational:Filter")?.Value is null;
+
     private static string Article(string name)
         => name.Length > 0 && "AEIOUaeiou".Contains(name[0], StringComparison.Ordinal) ? "an" : "a";
 
@@ -123,7 +126,7 @@ internal sealed class NavigationChecks<TContext>(
     private CheckResult? OccupiedUniqueForeignKey(IForeignKey foreignKey, IEntityType dependent, SeededRow principal, string principalTenant)
     {
         var unique = foreignKey.IsUnique
-            || dependent.GetIndexes().Any(index => index.IsUnique && index.Properties.All(foreignKey.Properties.Contains))
+            || dependent.GetIndexes().Any(index => index.IsUnique && IsUnfiltered(index) && index.Properties.All(foreignKey.Properties.Contains))
             || dependent.GetKeys().Any(key => key.Properties.All(foreignKey.Properties.Contains));
         if (!unique || rowsOf(dependent) is not { } seeded)
         {
