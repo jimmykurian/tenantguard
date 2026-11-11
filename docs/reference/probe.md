@@ -242,7 +242,9 @@ As no tenant, FindAsync(Id: 1) returned acme's row.
 - Under [`CrossTenantWhenNoTenant`](options.md#the-no-tenant-model-of-a-per-tenant-model),
   when the no-tenant context's model is the cross-tenant one, it reads every tenant's rows on
   purpose, so every NoTenantIsolation row is skipped, with the note
-  `The context with no tenant is declared cross-tenant by CrossTenantWhenNoTenant.`
+  `The context with no tenant is declared cross-tenant by CrossTenantWhenNoTenant.` A
+  no-tenant context whose options declare it `CrossTenant` is skipped the same way, with the
+  note naming `CrossTenant`.
 - With a model per tenant, the no-tenant context's model is found by entity type name, as
   for each tenant's context.
 - The check doesn't load navigations. A context with no tenant has no row of its own to

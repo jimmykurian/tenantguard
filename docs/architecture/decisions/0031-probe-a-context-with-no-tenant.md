@@ -1,6 +1,6 @@
 # 0031. Probe a context with no tenant
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-10
 
 ## Context
