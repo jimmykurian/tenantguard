@@ -167,6 +167,11 @@ public sealed class RawSqlWithoutTenantTests
     [InlineData("SELECT * FROM Invoices WHERE Note = 'TenantId = 1'")]
     [InlineData("SELECT * FROM Invoices -- WHERE TenantId = @tenant")]
     [InlineData("SELECT * FROM Invoices /* WHERE TenantId = @tenant */")]
+    [InlineData("SELECT * FROM Invoices /* outer /* inner */ TenantId = @tenant */")]
+    [InlineData("SELECT * FROM Invoices WHERE @tenant = TenantId()")]
+    [InlineData("SELECT * FROM Invoices WHERE TenantId() = @tenant")]
+    [InlineData("SELECT TenantId FROM Invoices WHERE 'acme' = TenantId$backup")]
+    [InlineData("SELECT TenantId FROM Invoices WHERE TenantId#old = @tenant")]
     public Task SQL_that_names_the_column_without_comparing_it_with_a_value_is_reported(string sql)
         => Verify.VerifyAsync($$"""
             public static class Jobs

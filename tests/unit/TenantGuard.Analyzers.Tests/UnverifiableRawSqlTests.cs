@@ -54,6 +54,17 @@ public sealed class UnverifiableRawSqlTests
             """);
 
     [Fact]
+    public Task An_interpolated_hole_with_a_format_or_an_alignment_is_built_at_runtime()
+        => Verify.VerifyAsync("""
+            public static class Jobs
+            {
+                public static int Formatted(AppDb db) => db.Database.ExecuteSqlRaw({|TG004:$"DELETE FROM Invoices WHERE TenantId = {42:'TenantId'}"|});
+
+                public static int Aligned(AppDb db, string tenant) => db.Database.ExecuteSqlRaw({|TG004:$"DELETE FROM Invoices WHERE TenantId = {tenant,10}"|});
+            }
+            """);
+
+    [Fact]
     public Task A_local_written_again_is_built_at_runtime()
         => Verify.VerifyAsync("""
             public static class Jobs
