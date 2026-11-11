@@ -122,7 +122,7 @@ When creating the context fails:
 | Cause | Message |
 | --- | --- |
 | The app's `.deps.json` lists no `Microsoft.EntityFrameworkCore.Design` | `{Startup} doesn't reference Microsoft.EntityFrameworkCore.Design. Add it to the startup project, as dotnet ef needs, so the tool can create the context the way the app does.` |
-| An assembly fails to load, such as an EF Core assembly at a version the app doesn't have | `Couldn't load {Assembly}, which creating {Context} needs: {Error}` |
-| The startup assembly has more than one `IDesignTimeDbContextFactory<T>` for a context, which makes EF Core fail for every context | `{Startup} has {Count} IDesignTimeDbContextFactory<{Context}> types: {Types}. Keep one, so the tool can create the context the way dotnet ef does.` |
-| Anything else, with no design-time factory for the context | `Couldn't create {Context}: {Error} Add an IDesignTimeDbContextFactory<{Context}> to the startup assembly, or make the app's host build without configuration CI doesn't have.` |
-| Anything else, with one | `Couldn't create {Context} through {Factory}: {Error}` |
+| An assembly fails to load, such as an EF Core assembly at a version the app doesn't have, also inside the app's factory | `Couldn't load {Assembly}, which creating {Context} needs: {Error}` |
+| The startup assembly, or the context's, has more than one `IDesignTimeDbContextFactory<T>` for a context, which makes EF Core fail for every context | `{Startup} has {Count} IDesignTimeDbContextFactory<{Context}> types: {Types}. Keep one, so the tool can create the context the way dotnet ef does.` |
+| Anything else, with no design-time factory for the context in the startup assembly or the context's | `Couldn't create {Context}: {Error} Add an IDesignTimeDbContextFactory<{Context}> to the startup assembly, or make the app's host build without configuration CI doesn't have.` |
+| Anything else, with one: the startup assembly's first, as EF Core looks there first | `Couldn't create {Context} through {Factory}: {Error}` |

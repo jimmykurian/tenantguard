@@ -154,7 +154,9 @@ rows to everyone. `{Value}` is the constant, with strings quoted.
 ```
 
 When the tenant filter ORs the tenant comparison with a null check of the tenant property,
-as `e => e.TenantId == TenantId || e.TenantId == null` does, the message says that instead:
+as `e => e.TenantId == TenantId || e.TenantId == null` does, the message says that instead,
+unless an enclosing `&&` or another of the type's filters rules the null check out, as
+`e.TenantId != null` does:
 
 ```text
 {Entity}.{Property} is nullable, and the tenant filter lets a row with no tenant through, so every tenant reads it. Confirm rows with no tenant are meant to be shared, or make '{Property}' required.
