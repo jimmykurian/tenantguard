@@ -38,6 +38,7 @@ accepted record isn't edited later except to mark it superseded
 | [0029](0029-declare-cross-tenant-data-with-a-reason.md) | Declare cross-tenant data, each with a reason | Accepted | 2026-11-05 |
 | [0030](0030-model-rules-for-natural-keys-views-switchable-filters-and-dependents.md) | Model rules for natural keys, views, switchable filters and unscoped dependents | Accepted | 2026-11-10 |
 | [0031](0031-probe-a-context-with-no-tenant.md) | Probe a context with no tenant | Accepted | 2026-11-10 |
+| [0032](0032-analyzers-read-sql-locals-compare-the-tenant-and-see-framework-switches.md) | Analyzers read SQL in locals, compare the tenant, and see framework switches | Proposed | 2026-11-11 |
 
 ## Proposing a change
 
