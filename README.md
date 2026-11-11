@@ -317,27 +317,27 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 88 | 114 | 14 | 216 |
-| Lines of code | 4,914 | 7,776 | 228 | 12,918 |
-| Methods | 374 | 819 | 21 | 1,214 |
-| Average complexity | 3.4 | 1.2 | 1.2 | 1.9 |
-| Max complexity | 32 | 5 | 4 | 32 |
+| Files | 92 | 116 | 14 | 222 |
+| Lines of code | 5,320 | 8,228 | 228 | 13,776 |
+| Methods | 403 | 847 | 21 | 1,271 |
+| Average complexity | 3.6 | 1.2 | 1.2 | 1.9 |
+| Max complexity | 35 | 5 | 4 | 35 |
 
 <details>
 <summary>The 10 most complex methods</summary>
 
 | Method | Where | Complexity |
 | --- | --- | --- |
+| `TenantComparison.Tokenize` | `src/TenantGuard.Analyzers/TenantComparison.cs:126` | 35 |
 | `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 32 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:118` | 20 |
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:119` | 20 |
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:32` | 19 |
 | `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:33` | 17 |
+| `RawSqlCall.FindSql` | `src/TenantGuard.Analyzers/RawSqlCall.cs:137` | 14 |
 | `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:201` | 13 |
 | `NavigationCase.For` | `src/TenantGuard.Testing/Probe/NavigationCase.cs:25` | 13 |
-| `RowFactory.Add` | `src/TenantGuard.Testing/Seeding/RowFactory.cs:81` | 13 |
-| `SeedPlan.Create` | `src/TenantGuard.Testing/Seeding/SeedPlan.cs:36` | 13 |
 
 </details>
 
