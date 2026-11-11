@@ -12,12 +12,18 @@ dotnet tool install --global TenantGuard.Tool --prerelease
 dotnet tenantguard validate --assembly src/App/bin/Release/net10.0/App.dll
 ```
 
+Under [package source mapping](https://learn.microsoft.com/nuget/consume-packages/package-source-mapping),
+`dotnet tool install --add-source` fails, because the added source has no mapping. Point it
+at a `nuget.config` that maps `TenantGuard.*` to the source instead:
+`dotnet tool install --global TenantGuard.Tool --prerelease --configfile nuget.config`.
+
 ## Requirements
 
 - The app targets net10.0 or net11.0, and its build output holds `App.deps.json` and
   `App.runtimeconfig.json`, as `dotnet build` writes them.
-- The startup assembly references `Microsoft.EntityFrameworkCore.Design`, as `dotnet ef`
-  needs. The tool creates the context the way `dotnet ef` does (see below).
+- The startup assembly references `Microsoft.EntityFrameworkCore.Design`, at any patch of
+  the app's EF Core major version, as `dotnet ef` needs. The tool creates the context the
+  way `dotnet ef` does (see below).
 - The tool's version is the version of `TenantGuard.EntityFrameworkCore` the app references.
   An app that doesn't reference it can be checked with any version, under the default
   options: the tool loads its own copy of the runtime package.
@@ -68,7 +74,7 @@ uses, followed by a summary line:
 
 ```text
 - TGM001: Customer has tenant property 'TenantId' but no query filter references it. Add HasQueryFilter(e => e.TenantId == <current tenant>) on the root type.
-- TGM005 (warning): Invoice.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.
+- TGM005 (warning): Invoice.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost().
 TenantGuard validated AppDbContext: 1 error, 1 warning.
 ```
 
@@ -82,8 +88,8 @@ unfiltered entity types, and the summary counts the suppressed findings when the
 Neither fails the run, `--warnings-as-errors` included:
 
 ```text
-- TGM005 (warning): Invoice.TenantId is nullable; rows with no tenant are invisible to every tenant and bypass the write guard.
-- TGM009 (suppressed: a lookup table, read by key): Country has no index or key that starts with 'TenantId', so each query its tenant filter scopes reads past other tenants' rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key.
+- TGM005 (warning): Invoice.TenantId is nullable: a row with no tenant matches no tenant's filter, but a context with no current tenant can read it. Make 'TenantId' required, or declare host rows with NullTenantIsHost().
+- TGM009 (suppressed: a lookup table, read by key): Country has no index or key that starts with 'TenantId', so a query that only its tenant filter narrows, such as a list of a tenant's rows, scans every tenant's rows. Add HasIndex(e => e.TenantId), or put 'TenantId' first in an existing index or key; a table read only by its key doesn't need one.
 Unfiltered on purpose: Membership (maps users to their tenants), OutboxMessage (dispatched for every tenant by one worker)
 TenantGuard validated AppDbContext: 0 errors, 1 warning, 1 suppressed.
 ```
@@ -97,7 +103,9 @@ TenantGuard validated ReportingDbContext: declared cross-tenant (reports and dat
 
 Findings and the summary go to standard output; a reason the tool couldn't run goes to
 standard error. The app's own logging runs too, as it does under `dotnet ef`, so a host
-with a console logger prints its lines among them.
+with a console logger prints its lines among them. TenantGuard's own log of the model
+findings, which `Enforcement.Log` writes, is left out while the tool runs, so each finding
+prints once.
 
 ## Exit codes
 
@@ -109,3 +117,12 @@ with a console logger prints its lines among them.
 
 For exit code 2, the message says what failed and what to do, such as
 `The assembly has 2 DbContext types: AppDbContext, AuditDbContext. Pass --context to pick one.`
+When creating the context fails:
+
+| Cause | Message |
+| --- | --- |
+| The app's `.deps.json` lists no `Microsoft.EntityFrameworkCore.Design` | `{Startup} doesn't reference Microsoft.EntityFrameworkCore.Design. Add it to the startup project, as dotnet ef needs, so the tool can create the context the way the app does.` |
+| An assembly fails to load, such as an EF Core assembly at a version the app doesn't have | `Couldn't load {Assembly}, which creating {Context} needs: {Error}` |
+| The startup assembly has more than one `IDesignTimeDbContextFactory<T>` for a context, which makes EF Core fail for every context | `{Startup} has {Count} IDesignTimeDbContextFactory<{Context}> types: {Types}. Keep one, so the tool can create the context the way dotnet ef does.` |
+| Anything else, with no design-time factory for the context | `Couldn't create {Context}: {Error} Add an IDesignTimeDbContextFactory<{Context}> to the startup assembly, or make the app's host build without configuration CI doesn't have.` |
+| Anything else, with one | `Couldn't create {Context} through {Factory}: {Error}` |
