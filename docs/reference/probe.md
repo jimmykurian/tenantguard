@@ -181,7 +181,8 @@ a link across tenants, so the row passes without seeding one. A skip navigation 
 entity type is tenant-scoped isn't checked as a skip navigation: the join type's own
 navigations are. The row is skipped, naming the reason, when the type of the new dependent
 couldn't be seeded or can't be probed, or when saving the link fails. When the foreign key
-is unique, as for a one-to-one relationship or a unique index on its columns, and the
+is unique, as for a one-to-one relationship or a unique index on its columns without a
+filter, and the
 principal row the link would point at already has a seeded dependent through it, the probe
 doesn't try, since a second dependent would break the unique index, and the row is skipped
 with
