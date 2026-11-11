@@ -318,17 +318,17 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 92 | 116 | 14 | 222 |
-| Lines of code | 5,378 | 8,287 | 228 | 13,893 |
-| Methods | 406 | 849 | 21 | 1,276 |
-| Average complexity | 3.6 | 1.2 | 1.2 | 1.9 |
-| Max complexity | 45 | 5 | 4 | 45 |
+| Lines of code | 5,403 | 8,299 | 228 | 13,930 |
+| Methods | 407 | 850 | 21 | 1,278 |
+| Average complexity | 3.7 | 1.2 | 1.2 | 2.0 |
+| Max complexity | 48 | 5 | 4 | 48 |
 
 <details>
 <summary>The 10 most complex methods</summary>
 
 | Method | Where | Complexity |
 | --- | --- | --- |
-| `TenantComparison.Tokenize` | `src/TenantGuard.Analyzers/TenantComparison.cs:128` | 45 |
+| `TenantComparison.Tokenize` | `src/TenantGuard.Analyzers/TenantComparison.cs:130` | 48 |
 | `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:15` | 32 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:118` | 20 |
