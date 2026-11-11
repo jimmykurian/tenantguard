@@ -2,3 +2,4 @@
 TenantGuard.Testing.IProbeSource
 TenantGuard.Testing.IProbeSource.RunAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<TenantGuard.Testing.ProbeReport!>!
 TenantGuard.Testing.ProbeRow.AssertPassed() -> void
+TenantGuard.Testing.TenantIsolationProbe<TContext>.WithoutTenant(System.Func<TContext!>! createContext) -> TenantGuard.Testing.TenantIsolationProbe<TContext!>!
