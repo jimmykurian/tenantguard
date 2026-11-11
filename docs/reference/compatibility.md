@@ -17,11 +17,13 @@ These are the public contract ([0006](../architecture/decisions/0006-the-public-
 
 Changing any of them is a breaking change, and needs an accepted architecture decision first.
 
-## While the releases are previews
+## Releases
 
-The current releases are 0.1.0 previews (`0.1.0-preview.N`). They waited for EF Core 11 to
-be stable ([0016](../architecture/decisions/0016-first-release-is-a-preview.md)), which it
-now is, so the stable 0.1.0 comes next. The
+0.1.0 is the first stable release. The `0.1.0-preview.N` releases before it were previews,
+while EF Core 11 was a release candidate
+([0016](../architecture/decisions/0016-first-release-is-a-preview.md)). Until 1.0, a
+breaking change to the contract above raises the minor version, as `0.2.0`; from 1.0, the
+major version. The
 [changelog](https://github.com/jimmykurian/tenantguard/blob/main/CHANGELOG.md) lists every
 change between releases.
 

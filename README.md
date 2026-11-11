@@ -5,10 +5,6 @@
   </picture>
 </h1>
 
-> **Preview.** TenantGuard is in 0.1.0 previews on NuGet. .NET 11 and EF Core 11 are
-> generally available, and both builds now depend on stable EF Core, so the stable v0.1.0
-> is next.
-
 Multi-tenant EF Core apps isolate tenants with global query filters and a `TenantId`
 column. A dozen packages ship that mechanism (Finbuckle.MultiTenant, TenancyKit,
 SaasSuite, Tenantry, MultiTenancy.EntityFrameworkCore, and more), and most teams hand-roll
@@ -32,7 +28,7 @@ so.
 
 It works on Finbuckle, on any of the tenancy packages, and on hand-rolled query filters.
 
-[![NuGet](https://img.shields.io/nuget/vpre/TenantGuard.EntityFrameworkCore?style=flat-square&label=nuget)](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore) [![Latest release](https://img.shields.io/github/v/release/jimmykurian/tenantguard?include_prereleases&style=flat-square&label=release)](https://github.com/jimmykurian/tenantguard/releases) [![License: Apache-2.0](https://img.shields.io/github/license/jimmykurian/tenantguard?style=flat-square)](LICENSE)
+[![NuGet](https://img.shields.io/nuget/v/TenantGuard.EntityFrameworkCore?style=flat-square&label=nuget)](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore) [![Latest release](https://img.shields.io/github/v/release/jimmykurian/tenantguard?style=flat-square&label=release)](https://github.com/jimmykurian/tenantguard/releases) [![License: Apache-2.0](https://img.shields.io/github/license/jimmykurian/tenantguard?style=flat-square)](LICENSE)
 
 [Documentation](https://tenantguard.is-cool.dev/) · [Rules](https://tenantguard.is-cool.dev/reference/rules/) · [Analyzers](https://tenantguard.is-cool.dev/reference/analyzers/) · [Guides](https://tenantguard.is-cool.dev/guides/) · [Changelog](CHANGELOG.md) · [NuGet](https://www.nuget.org/packages/TenantGuard.EntityFrameworkCore)
 
@@ -55,8 +51,8 @@ dependency is `Microsoft.EntityFrameworkCore`, so it works with any provider.
 ## Install
 
 ```sh
-dotnet add package TenantGuard.EntityFrameworkCore --prerelease
-dotnet add package TenantGuard.Testing --prerelease   # in the test project
+dotnet add package TenantGuard.EntityFrameworkCore
+dotnet add package TenantGuard.Testing   # in the test project
 ```
 
 It needs EF Core 10.0.0 or later on net10.0, so it doesn't move an app's EF Core up a patch.

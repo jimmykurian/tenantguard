@@ -2,9 +2,6 @@
 
 # TenantGuard
 
-> **Preview.** TenantGuard is in 0.1.0 previews. .NET 11 and EF Core 11 are generally
-> available, and both builds now depend on stable EF Core, so the stable 0.1.0 is next.
-
 TenantGuard proves an EF Core multi-tenant model leaks nothing. It doesn't resolve tenants
 or add filters; it takes the model you already have, on Finbuckle, any tenancy package or
 hand-rolled query filters, and:
@@ -28,8 +25,8 @@ hand-rolled query filters, and:
 ## Install
 
 ```sh
-dotnet add package TenantGuard.EntityFrameworkCore --prerelease
-dotnet add package TenantGuard.Testing --prerelease   # in the test project
+dotnet add package TenantGuard.EntityFrameworkCore
+dotnet add package TenantGuard.Testing   # in the test project
 ```
 
 ## Quick start

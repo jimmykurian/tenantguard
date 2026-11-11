@@ -6,7 +6,7 @@ insert over or delete another's. It works with any test framework: `AssertAllPas
 throws when a check didn't pass, and every framework fails a test that throws.
 
 ```sh
-dotnet add package TenantGuard.Testing --prerelease
+dotnet add package TenantGuard.Testing
 ```
 
 ## The probe
@@ -116,7 +116,7 @@ check as a test of its own, add the adapter for your test framework and put the 
 class of its own:
 
 ```sh
-dotnet add package TenantGuard.Testing.XunitV3 --prerelease   # or TenantGuard.Testing.TUnit
+dotnet add package TenantGuard.Testing.XunitV3 # or TenantGuard.Testing.TUnit
 ```
 
 ```csharp
@@ -163,7 +163,7 @@ A pipeline that only builds the app can run the same rules with the validate too
 build output and with no database:
 
 ```sh
-dotnet tool install --global TenantGuard.Tool --prerelease
+dotnet tool install --global TenantGuard.Tool
 dotnet build src/App -c Release
 dotnet tenantguard validate --assembly src/App/bin/Release/net10.0/App.dll --warnings-as-errors
 ```

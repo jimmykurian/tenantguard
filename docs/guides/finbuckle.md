@@ -9,7 +9,7 @@ Finbuckle.MultiTenant 10.
 ## Turn TenantGuard on
 
 ```sh
-dotnet add package TenantGuard.EntityFrameworkCore --prerelease
+dotnet add package TenantGuard.EntityFrameworkCore
 ```
 
 ```csharp
