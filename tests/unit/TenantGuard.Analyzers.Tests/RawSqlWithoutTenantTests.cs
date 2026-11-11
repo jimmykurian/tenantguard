@@ -172,6 +172,8 @@ public sealed class RawSqlWithoutTenantTests
     [InlineData("SELECT * FROM Invoices WHERE TenantId() = @tenant")]
     [InlineData("SELECT TenantId FROM Invoices WHERE 'acme' = TenantId$backup")]
     [InlineData("SELECT TenantId FROM Invoices WHERE TenantId#old = @tenant")]
+    [InlineData("SELECT \\u0024\\u0024 TenantId = 1 \\u0024\\u0024 FROM Invoices")]
+    [InlineData("SELECT $q$ TenantId = @tenant $q$ FROM Invoices")]
     public Task SQL_that_names_the_column_without_comparing_it_with_a_value_is_reported(string sql)
         => Verify.VerifyAsync($$"""
             public static class Jobs
@@ -201,6 +203,8 @@ public sealed class RawSqlWithoutTenantTests
     [InlineData("SELECT * FROM Invoices WHERE TenantId = @tenant -- the scope")]
     [InlineData("INSERT INTO Invoices (Number, TenantId) VALUES (@number, @tenant)")]
     [InlineData("INSERT INTO [dbo].[Invoices] ([TenantId], [Number]) SELECT @tenant, @number")]
+    [InlineData("INSERT OR IGNORE INTO Invoices (TenantId, Number) VALUES (@tenant, @number)")]
+    [InlineData("INSERT OR REPLACE INTO Invoices (Number, TenantId) VALUES ($number, $tenant)")]
     public Task SQL_that_compares_the_column_with_a_value_is_not_reported(string sql)
         => Verify.VerifyAsync($$""""
             public static class Jobs
@@ -208,6 +212,16 @@ public sealed class RawSqlWithoutTenantTests
                 public static int Run(AppDb db) => db.Database.ExecuteSqlRaw("""{{sql}}""");
             }
             """");
+
+    // \u0024 is $: the test markup reads $$ as a caret.
+    [Fact]
+    public Task A_dollar_quoted_string_is_a_value()
+        => Verify.VerifyAsync("""
+            public static class Jobs
+            {
+                public static int Run(AppDb db) => db.Database.ExecuteSqlRaw("SELECT * FROM Invoices WHERE TenantId = \u0024\u0024acme\u0024\u0024");
+            }
+            """);
 
     [Fact]
     public Task An_interpolated_hole_is_a_value_and_a_constant_hole_is_text()
