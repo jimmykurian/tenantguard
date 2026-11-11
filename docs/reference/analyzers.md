@@ -182,7 +182,9 @@ parameter named like it, such as `@TenantId`, isn't the column. It passes when i
 
 A value is a parameter (`@name`, `:name`, `$name`, `$1` or `?`), a composite-format
 placeholder such as `{0}`, which `ExecuteSqlRaw` and `SqlQueryRaw` turn into parameters, an
-interpolated hole that isn't a constant, a string literal or a number. A column on the other side, as in a join's
+interpolated hole that isn't a constant, a string literal or a number, signed or not. A
+comment, `--` to the end of the line or `/* ... */`, is skipped: it neither passes the
+check nor breaks a comparison. A column on the other side, as in a join's
 `a.TenantId = b.TenantId`, or a subquery, isn't a value, and neither `<>`, `!=`, `<=` nor
 `>=` is a comparison that scopes the rows.
 
