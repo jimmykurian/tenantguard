@@ -36,18 +36,25 @@ internal static class FilterSwitches
 
     // TGM005: whether a filter ORs the tenant comparison with a null check of the tenant property, as
     // e => e.TenantId == TenantId || e.TenantId == null does, which lets a row with no tenant through.
+    // A null check an enclosing && rules out, as TenantId != null && (... || TenantId == null) does, or
+    // one that another declared filter rules out, lets nothing through: EF Core ANDs the filters.
     public static bool LetsNullTenantThrough(IReadOnlyEntityType entityType, IReadOnlyProperty tenantProperty)
     {
-        foreach (var filter in entityType.GetDeclaredQueryFilters())
+        var lambdas = entityType.GetDeclaredQueryFilters()
+            .Select(filter => filter.Expression)
+            .OfType<LambdaExpression>()
+            .Where(lambda => lambda.Parameters.Count == 1)
+            .ToList();
+        for (var index = 0; index < lambdas.Count; index++)
         {
-            if (filter.Expression is not { Parameters.Count: 1 } lambda)
-            {
-                continue;
-            }
+            var parameter = lambdas[index].Parameters[0];
 
-            var access = new TenantAccess(lambda.Parameters[0], tenantProperty);
-            var finder = new NullTenantFinder(access);
-            finder.Visit(Normalize(QueryFilterAnalysis.Fold(lambda.Body)));
+            // The other filters' conditions, over this filter's parameter, so they compare by shape.
+            var others = lambdas.Where((_, other) => other != index)
+                .SelectMany(other => Flatten(Normalize(QueryFilterAnalysis.Fold(ReplacingExpressionVisitor.Replace(other.Parameters[0], parameter, other.Body))), IsAnd))
+                .ToList();
+            var finder = new NullTenantFinder(new TenantAccess(parameter, tenantProperty));
+            finder.Walk(Normalize(QueryFilterAnalysis.Fold(lambdas[index].Body)), others);
             if (finder.Found)
             {
                 return true;
@@ -234,18 +241,31 @@ internal static class FilterSwitches
     }
 
     // An || chain with a null check of the tenant property among its conditions.
-    private sealed class NullTenantFinder(TenantAccess access) : ExpressionVisitor
+    private sealed class NullTenantFinder(TenantAccess access)
     {
         public bool Found { get; private set; }
 
-        public override Expression? Visit(Expression? node)
+        // guards are the conditions of the && chains above the expression, and of the other filters.
+        public void Walk(Expression expression, IReadOnlyList<Expression> guards)
         {
-            if (node is not null && IsOr(node) && Flatten(node, IsOr).Any(IsNullCheckOfTenant))
+            if (IsOr(expression))
             {
-                Found = true;
+                var conditions = Flatten(expression, IsOr);
+                Found |= conditions.Any(condition => IsNullCheckOfTenant(condition) && !guards.Any(guard => Same(guard, Negate(condition))));
+                foreach (var condition in conditions)
+                {
+                    Walk(condition, guards);
+                }
             }
-
-            return base.Visit(node);
+            else if (IsAnd(expression))
+            {
+                var conditions = Flatten(expression, IsAnd);
+                for (var index = 0; index < conditions.Count; index++)
+                {
+                    var others = conditions.Where((_, other) => other != index);
+                    Walk(conditions[index], [.. guards, .. others]);
+                }
+            }
         }
 
         private bool IsNullCheckOfTenant(Expression condition)

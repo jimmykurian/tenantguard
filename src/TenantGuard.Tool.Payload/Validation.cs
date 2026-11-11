@@ -68,15 +68,22 @@ internal static class Validation
             // the convention's exception, and its report, arrive here.
             return Report(output, contextType!.Name, modelException.Report, arguments.WarningsAsErrors);
         }
-        catch (Exception exception) when (exception is FileNotFoundException or FileLoadException)
+        catch (Exception exception) when (LoadFailure(exception) is { } loadFailure)
         {
             var depsFile = Path.ChangeExtension(startupAssembly.Location, ".deps.json");
-            error.WriteLine(LoadError(exception, startupAssembly.GetName().Name!, contextType!.Name, ListsDesign(depsFile)));
+            error.WriteLine(LoadError(loadFailure, startupAssembly.GetName().Name!, contextType!.Name, ListsDesign(depsFile)));
             return ExitCodes.CouldNotValidate;
         }
         catch (Exception exception)
         {
-            error.WriteLine(CreateError(exception, contextType!, startupAssembly.GetName().Name!, Factories(startupAssembly)));
+            // EF Core looks for a design-time factory in the startup assembly, then in the context's.
+            List<IGrouping<Type, Type>> factories = [.. Factories(startupAssembly)];
+            if (contextType!.Assembly != startupAssembly)
+            {
+                factories.AddRange(Factories(contextType.Assembly));
+            }
+
+            error.WriteLine(CreateError(exception, contextType, startupAssembly.GetName().Name!, factories));
             return ExitCodes.CouldNotValidate;
         }
 
@@ -93,6 +100,21 @@ internal static class Validation
 
             return Report(output, contextType!.Name, report, arguments.WarningsAsErrors);
         }
+    }
+
+    // The FileNotFoundException or FileLoadException behind an exception, however a factory, reflection
+    // or EF Core wrapped it, or null when it isn't one.
+    internal static IOException? LoadFailure(Exception? exception)
+    {
+        for (; exception is not null; exception = exception.InnerException)
+        {
+            if (exception is FileNotFoundException or FileLoadException)
+            {
+                return (IOException)exception;
+            }
+        }
+
+        return null;
     }
 
     // An assembly that didn't load: Design missing from the app, when its .deps.json lists none, or
@@ -112,9 +134,10 @@ internal static class Validation
             : $"Couldn't load {name ?? "an assembly"}, which creating {contextName} needs: {exception.Message}";
     }
 
-    // Why creating the context failed, and what to do: more than one design-time factory for a context,
-    // which makes EF Core fail for every context; a failure in the context's one factory; or, with no
-    // factory, the hint to add one.
+    // Why creating the context failed, and what to do: more than one design-time factory for a context in
+    // one assembly, which makes EF Core fail for every context; a failure in the context's factory, the
+    // first of factories, which lists the startup assembly's before the context's; or, with no factory,
+    // the hint to add one.
     internal static string CreateError(Exception exception, Type contextType, string startup, IReadOnlyList<IGrouping<Type, Type>> factories)
     {
         var cause = exception is TargetInvocationException { InnerException: { } inner } ? inner : exception;
@@ -126,7 +149,7 @@ internal static class Validation
         }
 
         return factories.FirstOrDefault(group => group.Key == contextType) is { } own
-            ? $"Couldn't create {contextType.Name} through {own.Single().Name}: {cause.Message}"
+            ? $"Couldn't create {contextType.Name} through {own.First().Name}: {cause.Message}"
             : $"Couldn't create {contextType.Name}: {cause.Message} "
                 + $"Add an IDesignTimeDbContextFactory<{contextType.Name}> to the startup assembly, "
                 + "or make the app's host build without configuration CI doesn't have.";

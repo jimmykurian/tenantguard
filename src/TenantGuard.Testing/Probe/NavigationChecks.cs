@@ -130,8 +130,9 @@ internal sealed class NavigationChecks<TContext>(
             return null;
         }
 
-        var occupied = seeded.Values.Any(row => foreignKey.Properties.Select((property, index) => (property, index)).All(pair =>
-            Equals(row.Values[pair.property.Name], principal.Values[foreignKey.PrincipalKey.Properties[pair.index].Name])));
+        // Compared as keys, so equal byte[] keys in separate arrays match.
+        var occupied = seeded.Values.Any(row => foreignKey.PrincipalKey.Properties.Select((key, index) => (key, index)).All(pair =>
+            pair.key.GetKeyValueComparer().Equals(row.Values[foreignKey.Properties[pair.index].Name], principal.Values[pair.key.Name])));
         if (!occupied)
         {
             return null;
