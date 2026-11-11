@@ -8,14 +8,14 @@ connection string.
 It ships as the .NET tool package `TenantGuard.Tool`:
 
 ```sh
-dotnet tool install --global TenantGuard.Tool --prerelease
+dotnet tool install --global TenantGuard.Tool
 dotnet tenantguard validate --assembly src/App/bin/Release/net10.0/App.dll
 ```
 
 Under [package source mapping](https://learn.microsoft.com/nuget/consume-packages/package-source-mapping),
 `dotnet tool install --add-source` fails, because the added source has no mapping. Point it
 at a `nuget.config` that maps `TenantGuard.*` to the source instead:
-`dotnet tool install --global TenantGuard.Tool --prerelease --configfile nuget.config`.
+`dotnet tool install --global TenantGuard.Tool --configfile nuget.config`.
 
 ## Requirements
 

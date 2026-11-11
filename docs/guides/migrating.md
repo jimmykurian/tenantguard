@@ -8,7 +8,7 @@ makes each check binding.
 ## 1. Install, and read the build
 
 ```sh
-dotnet add package TenantGuard.EntityFrameworkCore --prerelease
+dotnet add package TenantGuard.EntityFrameworkCore
 ```
 
 The analyzers run from the next build, and each finding is a warning:
