@@ -5,9 +5,9 @@
   </picture>
 </h1>
 
-> **Preview.** The 0.1.0 previews build their net11.0 target against the EF Core 11
-> release candidate, so they are prereleases on NuGet. The stable v0.1.0 follows .NET 11
-> and EF Core 11 general availability.
+> **Preview.** TenantGuard is in 0.1.0 previews on NuGet. .NET 11 and EF Core 11 are
+> generally available, and both builds now depend on stable EF Core, so the stable v0.1.0
+> is next.
 
 Multi-tenant EF Core apps isolate tenants with global query filters and a `TenantId`
 column. A dozen packages ship that mechanism (Finbuckle.MultiTenant, TenancyKit,
@@ -270,7 +270,7 @@ a dependency that points outward. [ADR 0019](docs/architecture/decisions/0019-ru
 
 ## Development
 
-Requires the .NET 11 SDK (11.0.100-rc.3 or later) and [Task](https://taskfile.dev). Every
+Requires the .NET 11 SDK (11.0.100 or later) and [Task](https://taskfile.dev). Every
 command runs through the [Taskfile](Taskfile.yml), and CI calls the same tasks: `task ci`
 runs lint, build, the unit, architecture, integration and end-to-end tests, pack, the
 samples and scrub. `task --list` shows the rest. The docs site needs Node.js 22 or later

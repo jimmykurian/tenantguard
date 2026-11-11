@@ -37,8 +37,7 @@ approach.
 
 **Prerequisites:**
 
-- The .NET SDK that `global.json` pins (the .NET 11 SDK, a release candidate until .NET
-  11 ships), and the .NET 10 runtime for the samples, which target `net10.0`. The
+- The .NET SDK that `global.json` pins (the .NET 11 SDK), and the .NET 10 runtime for the samples, which target `net10.0`. The
   `net10.0` test builds roll forward to .NET 11 when the .NET 10 runtime is missing; CI
   installs both.
 - [Task](https://taskfile.dev).
@@ -266,8 +265,6 @@ Before the first stable release:
   `prerelease` with `"release-as": "0.1.0"`, and remove `release-as` again once 0.1.0 is
   out. Release Please opens a release PR for the same version while `release-as` names it,
   and merging that PR fails because the tag already exists.
-- Move `global.json` and the EF Core 11 packages off the release candidate, and drop
-  `allowPrerelease`. A stable package can't depend on a prerelease one.
 - Remove the preview note at the top of `README.md` and of `assets/nuget-readme.md`, the
   README nuget.org shows, and the `--prerelease` flags from the install commands in both and
   in `docs/guides/`.

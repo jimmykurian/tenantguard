@@ -2,9 +2,8 @@
 
 # TenantGuard
 
-> **Preview.** The 0.1.0 previews build their net11.0 target against the EF Core 11
-> release candidate, so they are prereleases. The stable 0.1.0 follows .NET 11 and EF Core
-> 11 general availability.
+> **Preview.** TenantGuard is in 0.1.0 previews. .NET 11 and EF Core 11 are generally
+> available, and both builds now depend on stable EF Core, so the stable 0.1.0 is next.
 
 TenantGuard proves an EF Core multi-tenant model leaks nothing. It doesn't resolve tenants
 or add filters; it takes the model you already have, on Finbuckle, any tenancy package or
