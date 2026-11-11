@@ -255,16 +255,10 @@ owns it.
 
 The releases before 0.1.0 were previews (`0.1.0-preview.N`), until EF Core 11 was
 generally available ([0016](docs/architecture/decisions/0016-first-release-is-a-preview.md)).
-`release-please-config.json` sets `"release-as": "0.1.0"` for the first stable release.
-
-Once 0.1.0 is out:
-
-- Remove `release-as` from `.github/release-please-config.json`. Release Please opens a
-  release PR for the same version while `release-as` names it, and merging that PR fails
-  because the tag already exists.
-- Install 0.1.0 from nuget.org into a fresh console app, without `--prerelease`, and check
-  that `IgnoreQueryFilters()` is TG001 and that an unguarded entity fails startup with
-  TGM001.
+0.1.0 was cut with `"release-as": "0.1.0"`, removed once it shipped: while `release-as`
+names a version, Release Please opens a release PR for it again, and merging that PR fails
+because the tag already exists. Use `release-as` only to force one version, and remove it
+in the next PR.
 
 ## License
 
