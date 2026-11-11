@@ -11,15 +11,18 @@ makes each check binding.
 dotnet add package TenantGuard.EntityFrameworkCore --prerelease
 ```
 
-The analyzers run from the next build. Each `IgnoreQueryFilters()` is TG001, and raw SQL
-that doesn't mention the tenant column is TG002, both warnings; raw SQL built at runtime is
-TG004, information. With `TreatWarningsAsErrors`, turn them down while you work through
-the list:
+The analyzers run from the next build, and each finding is a warning:
+`IgnoreQueryFilters()` is TG001, raw SQL that doesn't compare the tenant column with a
+value is TG002, raw SQL built at runtime is TG004, and a framework switch such as ABP's
+`IDataFilter.Disable<IMultiTenant>()` is TG005. With `TreatWarningsAsErrors`, turn them
+down while you work through the list:
 
 ```ini
 [*.cs]
 dotnet_diagnostic.TG001.severity = suggestion
 dotnet_diagnostic.TG002.severity = suggestion
+dotnet_diagnostic.TG004.severity = suggestion
+dotnet_diagnostic.TG005.severity = suggestion
 ```
 
 Fix each call, or justify it with `[AllowCrossTenantAccess("why")]`, then delete these

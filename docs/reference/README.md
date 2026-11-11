@@ -6,7 +6,7 @@ ID, a message, an option name or an exception type is a breaking change
 ([Compatibility](compatibility.md)).
 
 - [Model rules](rules.md): TGM001 to TGM014, checked when EF Core builds the model
-- [Analyzers](analyzers.md): TG001 to TG004, checked at compile time
+- [Analyzers](analyzers.md): TG001 to TG005, checked at compile time
 - [Write guard](write-guard.md): what `SaveChanges` checks for each Added, Modified and
   Deleted entry
 - [Isolation probe](probe.md): how the probe seeds rows and what each check proves

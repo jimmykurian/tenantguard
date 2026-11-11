@@ -114,9 +114,10 @@ Finbuckle's.
 | ID | Severity | Reported when |
 |---|---|---|
 | TG001 | warning | `IgnoreQueryFilters()` switches the tenant filter off |
-| TG002 | warning | Raw SQL doesn't mention the tenant column |
+| TG002 | warning | Raw SQL doesn't compare the tenant column with a value |
 | TG003 | error | `[AllowCrossTenantAccess]` has no reason |
-| TG004 | info | Raw SQL is built at runtime, so it can't be checked |
+| TG004 | warning | Raw SQL is built at runtime, so it can't be checked |
+| TG005 | warning | A framework's own switch, such as ABP's `IDataFilter.Disable<IMultiTenant>()`, turns the tenant filter off |
 
 Code that crosses tenants on purpose says why, and the analyzers leave it alone:
 
@@ -126,8 +127,8 @@ public Task<decimal> TotalForAllTenantsAsync(AppDbContext db)
     => db.Invoices.IgnoreQueryFilters().SumAsync(invoice => invoice.Total);
 ```
 
-Two `.editorconfig` keys tune them: `tenantguard.tenant_column` (default `TenantId`) and
-`tenantguard.tenant_filter_names`.
+`.editorconfig` keys tune them, such as `tenantguard.tenant_column` (default `TenantId`),
+`tenantguard.tenant_filter_names` and `tenantguard.tenant_filter_unnamed`.
 [Analyzers reference](https://github.com/jimmykurian/tenantguard/blob/main/docs/reference/analyzers.md)
 
 ## Testing
@@ -193,8 +194,10 @@ check proves it for each entity, and TG001 flags an `IgnoreQueryFilters()` that 
 switch the filter off first.
 
 **And raw SQL?** TG002 and TG004 flag it at build time, through EF Core, Dapper, ADO.NET
-commands and any wrapper you list in `tenantguard.raw_sql_methods`. `FromSql` on an entity
-type isn't flagged: EF Core applies the query filters over it.
+commands and any wrapper you list in `tenantguard.raw_sql_methods`, also when the SQL is in
+a local such as `var sql = """...""";`. `FromSql` on an entity type isn't flagged unless,
+under `tenantguard.tenant_members_only`, the type has no tenant member: EF Core applies the
+query filters over it.
 
 **Named query filters?** Supported. A named filter that reads the tenant property counts
 for TGM001, and with `tenantguard.tenant_filter_names` set, TG001 lets
@@ -234,7 +237,7 @@ model and on every `SaveChanges`, and the test kit in your tests.
 ```mermaid
 flowchart LR
     subgraph build["Build"]
-        src["Your code"] --> analyzers["Analyzers<br/>TG001 to TG004"]
+        src["Your code"] --> analyzers["Analyzers<br/>TG001 to TG005"]
     end
     subgraph runtime["TenantGuard.EntityFrameworkCore"]
         direction TB

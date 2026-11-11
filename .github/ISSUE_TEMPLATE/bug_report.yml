@@ -19,7 +19,7 @@ body:
       label: Package
       options:
         - TenantGuard.EntityFrameworkCore (model rules, write guard)
-        - TenantGuard.Analyzers (TG001 to TG004)
+        - TenantGuard.Analyzers (TG001 to TG005)
         - TenantGuard.Testing (isolation probe)
     validations:
       required: true
