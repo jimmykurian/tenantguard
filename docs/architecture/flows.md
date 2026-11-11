@@ -92,7 +92,8 @@ sequenceDiagram
 
 The probe seeds a row per tenant for every tenant-scoped entity type, through each tenant's
 own context, then runs six checks for every ordered pair of tenants, and NavigationLeak for
-every navigation to a tenant-scoped type.
+every navigation to a tenant-scoped type. With `WithoutTenant`, it also reads each entity
+type once as a context with no tenant (NoTenantIsolation).
 
 ```mermaid
 sequenceDiagram
@@ -104,6 +105,7 @@ sequenceDiagram
     Probe->>Ctx: seed one row per tenant per entity type, principals first
     loop every entity type, every ordered pair of tenants
         Probe->>Ctx: ReadIsolation, FindIsolation (before any check writes)
+        Probe->>Ctx: NoTenantIsolation, once per entity type, with WithoutTenant
         Probe->>Ctx: NavigationLeak per navigation: link B's row to A's, Include, delete the link
         Probe->>Ctx: BulkIsolation, UpdateGuard, InsertGuard, DeleteGuard, each rolled back
     end

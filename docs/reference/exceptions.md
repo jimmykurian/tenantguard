@@ -122,4 +122,5 @@ message of an argument exception ends with the parameter's name, as in
 | `RunAsync`, when the write guard blocks seeding because the context's model was built for another tenant ([per-tenant models](options.md#per-tenant-models)) | `InvalidOperationException`: `The write guard blocked seeding {Entity} as {Tenant}, because the context's model was built for another tenant. Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.` |
 
 A null argument to `UseTenantGuard`, `CurrentTenant`, `TenantGuardModel.Validate`, the
-probe's constructor, `WithTenants` or `Seed<T>` throws `ArgumentNullException`.
+probe's constructor, `WithTenants`, `WithoutTenant` or `Seed<T>` throws
+`ArgumentNullException`.

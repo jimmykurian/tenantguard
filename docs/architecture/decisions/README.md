@@ -37,6 +37,7 @@ accepted record isn't edited later except to mark it superseded
 | [0028](0028-docs-site-has-a-design-of-its-own.md) | The docs site has a design of its own | Accepted | 2026-11-04 |
 | [0029](0029-declare-cross-tenant-data-with-a-reason.md) | Declare cross-tenant data, each with a reason | Accepted | 2026-11-05 |
 | [0030](0030-model-rules-for-natural-keys-views-switchable-filters-and-dependents.md) | Model rules for natural keys, views, switchable filters and unscoped dependents | Accepted | 2026-11-10 |
+| [0031](0031-probe-a-context-with-no-tenant.md) | Probe a context with no tenant | Proposed | 2026-11-10 |
 
 ## Proposing a change
 
