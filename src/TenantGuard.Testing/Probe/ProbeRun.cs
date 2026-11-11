@@ -9,11 +9,13 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace TenantGuard.Testing;
 
 // One run of the probe: read the model through a context for the first tenant, seed a row per
-// tenant for every tenant-scoped entity type, then run every check for every ordered pair of tenants.
+// tenant for every tenant-scoped entity type, then run every check for every ordered pair of tenants,
+// and NoTenantIsolation once per entity type when there is a factory for a context with no tenant.
 internal sealed class ProbeRun<TContext>(
     Func<string, TContext> createContext,
     IReadOnlyList<string> tenants,
-    IReadOnlyDictionary<Type, Func<string, TContext, object>> seeders)
+    IReadOnlyDictionary<Type, Func<string, TContext, object>> seeders,
+    Func<TContext>? createContextWithoutTenant)
     where TContext : DbContext
 {
     // Where the one row of an entity type that is not tenant-scoped is kept.
@@ -37,9 +39,7 @@ internal sealed class ProbeRun<TContext>(
         await using (var context = createContext(tenants[0]))
         {
             model = context.Model;
-            var extension = context.GetService<IDbContextOptions>().FindExtension<TenantGuardOptionsExtension>();
-            options = extension?.Options ?? TenantGuardOptions.Default;
-            guarded = extension is not null;
+            options = OptionsOf(context, out guarded);
             relational = IsRelational(context);
         }
 
@@ -91,6 +91,11 @@ internal sealed class ProbeRun<TContext>(
         // Every read check runs before any write check, so a leaking write cannot change what a read sees.
         // NavigationLeak reads too, and deletes the links it seeds, so it runs between them.
         await RunChecksAsync(targets, ProbeChecks.Reads, checks, results, cancellationToken);
+        if (createContextWithoutTenant is not null)
+        {
+            await RunWithoutTenantAsync(createContextWithoutTenant, targets, results, cancellationToken);
+        }
+
         foreach (var target in targets)
         {
             foreach (var navigation in navigations[target.Type])
@@ -109,12 +114,20 @@ internal sealed class ProbeRun<TContext>(
         foreach (var type in scoped)
         {
             var skipped = cannotProbe[type] ?? (notSeeded.TryGetValue(type, out var reason) ? $"Needs a seeder: {reason}." : null);
-            rows.AddRange(ProbeChecks.All.Concat(navigations[type].Select(navigation => navigation.Check)).Select(check => skipped is null
+            var noTenant = createContextWithoutTenant is null ? [] : new[] { ProbeChecks.NoTenantIsolation };
+            rows.AddRange(ProbeChecks.All.Concat(navigations[type].Select(navigation => navigation.Check)).Concat(noTenant).Select(check => skipped is null
                 ? Combine(type.DisplayName(), check, results[(type, check)])
                 : new ProbeRow(type.DisplayName(), check, ProbeOutcome.Skipped, skipped)));
         }
 
         return new ProbeReport(rows);
+    }
+
+    private static TenantGuardOptions OptionsOf(DbContext context, out bool guarded)
+    {
+        var extension = context.GetService<IDbContextOptions>().FindExtension<TenantGuardOptionsExtension>();
+        guarded = extension is not null;
+        return extension?.Options ?? TenantGuardOptions.Default;
     }
 
     private static string? WhyCannotProbe(IEntityType type)
@@ -185,6 +198,33 @@ internal sealed class ProbeRun<TContext>(
                     pairs.Add(await checks.RunAsync(check, target, viewer, owner, cancellationToken));
                 }
             }
+        }
+    }
+
+    // NoTenantIsolation for every target. Under CrossTenantWhenNoTenant, a no-tenant context whose model
+    // is the cross-tenant one reads every tenant's rows on purpose, so each row is skipped.
+    private async Task RunWithoutTenantAsync(
+        Func<TContext> createWithoutTenant,
+        IReadOnlyList<ProbeTarget> targets,
+        Dictionary<(IEntityType Type, string Check), List<CheckResult>> results,
+        CancellationToken cancellationToken)
+    {
+        CrossTenantModel crossTenant;
+        await using (var context = createWithoutTenant())
+        {
+            crossTenant = TenantGuardEntities.For(context.Model, OptionsOf(context, out _)).CrossTenant;
+        }
+
+        var checks = new NoTenantChecks<TContext>(createWithoutTenant, createContext, tenants);
+        foreach (var target in targets)
+        {
+            var result = crossTenant switch
+            {
+                CrossTenantModel.No => await checks.RunAsync(target, cancellationToken),
+                CrossTenantModel.NoTenant => CheckResult.Skipped("The context with no tenant is declared cross-tenant by CrossTenantWhenNoTenant."),
+                _ => CheckResult.Skipped("The context with no tenant is declared cross-tenant by CrossTenant."),
+            };
+            results[(target.Type, ProbeChecks.NoTenantIsolation)] = [result];
         }
     }
 

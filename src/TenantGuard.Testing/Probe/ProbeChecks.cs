@@ -4,7 +4,8 @@
 
 namespace TenantGuard.Testing;
 
-// The probe's six checks, by the names ProbeRow.Check carries, and NavigationLeak, one per navigation.
+// The probe's six checks, by the names ProbeRow.Check carries, NavigationLeak, one per navigation, and
+// NoTenantIsolation, with WithoutTenant.
 internal static class ProbeChecks
 {
     public const string ReadIsolation = "ReadIsolation";
@@ -20,6 +21,8 @@ internal static class ProbeChecks
     public const string DeleteGuard = "DeleteGuard";
 
     public const string NavigationLeak = "NavigationLeak";
+
+    public const string NoTenantIsolation = "NoTenantIsolation";
 
     // The checks that only read, which run for every entity type before any check writes.
     public static readonly IReadOnlyList<string> Reads = [ReadIsolation, FindIsolation];

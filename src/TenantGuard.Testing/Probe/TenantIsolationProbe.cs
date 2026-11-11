@@ -8,8 +8,9 @@ namespace TenantGuard.Testing;
 
 /// <summary>
 /// Proves, for every tenant-scoped entity type of a context, that one tenant cannot read, find, bulk
-/// delete, update, insert or delete another tenant's rows. It seeds a row per tenant, then runs six
-/// checks with a fresh context per tenant per check.
+/// delete, update, insert or delete another tenant's rows, or load them through a navigation, and, with
+/// <see cref="WithoutTenant"/>, that a context with no tenant reads none of them. It seeds a row per
+/// tenant, then runs the checks with a fresh context per tenant per check.
 /// </summary>
 /// <typeparam name="TContext">The application's context type.</typeparam>
 public sealed class TenantIsolationProbe<TContext>
@@ -18,6 +19,7 @@ public sealed class TenantIsolationProbe<TContext>
     private readonly Func<string, TContext> _createContext;
     private readonly Dictionary<Type, Func<string, TContext, object>> _seeders = [];
     private string[] _tenants = [];
+    private Func<TContext>? _createContextWithoutTenant;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TenantIsolationProbe{TContext}"/> class.
@@ -52,6 +54,24 @@ public sealed class TenantIsolationProbe<TContext>
     }
 
     /// <summary>
+    /// Adds the NoTenantIsolation check: as a context with no current tenant, every probed entity type
+    /// returns none of the tenants' rows from <c>Set&lt;TEntity&gt;()</c> or <c>FindAsync</c>. A second
+    /// call replaces the first factory.
+    /// </summary>
+    /// <param name="createContext">
+    /// Creates a context with no current tenant, on the same database as the other contexts. The probe
+    /// disposes each one and never writes through it.
+    /// </param>
+    /// <returns>The same probe, for chaining.</returns>
+    public TenantIsolationProbe<TContext> WithoutTenant(Func<TContext> createContext)
+    {
+        ArgumentNullException.ThrowIfNull(createContext);
+
+        _createContextWithoutTenant = createContext;
+        return this;
+    }
+
+    /// <summary>
     /// Creates the rows of <typeparamref name="TEntity"/> with a function instead of the default
     /// seeder. The probe still sets the tenant property, and any required foreign key left unset.
     /// </summary>
@@ -80,6 +100,6 @@ public sealed class TenantIsolationProbe<TContext>
             throw new InvalidOperationException("Call WithTenants with at least two tenants before RunAsync.");
         }
 
-        return new ProbeRun<TContext>(_createContext, _tenants, _seeders).RunAsync(cancellationToken);
+        return new ProbeRun<TContext>(_createContext, _tenants, _seeders, _createContextWithoutTenant).RunAsync(cancellationToken);
     }
 }
