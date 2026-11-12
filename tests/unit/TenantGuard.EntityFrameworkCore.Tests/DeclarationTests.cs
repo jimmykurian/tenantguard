@@ -251,7 +251,7 @@ public sealed class DeclarationTests : IDisposable
         using var host = Create<OpenLedger>(_connection, tenant: null, tg => tg.CrossTenantWhenNoTenant("background work"));
 
         FluentActions.Invoking(() => host.Model).Should().Throw<TenantGuardModelException>()
-            .Which.Report.Errors.Should().ContainSingle().Which.RuleId.Should().Be("TGM001");
+            .Which.Report.Errors.Select(error => error.RuleId).Should().Equal("TGM001", "TGM001");
     }
 
     [Fact]
@@ -269,6 +269,21 @@ public sealed class DeclarationTests : IDisposable
         exception.Message.Should().Be(
             "TenantGuard blocked a save to OpenLedger: its model was built with no tenant and declared cross-tenant, so its query filters read every tenant's rows, "
             + "but the current tenant is \"acme\". Key the model cache by tenant in IModelCacheKeyFactory, so each tenant gets a model of its own.");
+    }
+
+    [Fact]
+    public void A_tenants_owned_write_through_the_no_tenant_model_is_blocked()
+    {
+        using var host = Create<OpenLedger>(_connection, tenant: null, NoTenantCrossTenant, typeof(SharedKeyFactory));
+        host.Database.EnsureCreated();
+        host.Shipments.Add(new Shipment { Id = 1, TenantId = "acme", Destination = new Destination { City = "Springfield" } });
+        host.SaveChanges();
+        using var acme = Create<OpenLedger>(_connection, "acme", NoTenantCrossTenant, typeof(SharedKeyFactory));
+
+        acme.Shipments.Single().Destination.City = "Shelbyville";
+
+        FluentActions.Invoking(() => acme.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>()
+            .Which.Message.Should().StartWith("TenantGuard blocked a save to OpenLedger: its model was built with no tenant and declared cross-tenant");
     }
 
     [Fact]

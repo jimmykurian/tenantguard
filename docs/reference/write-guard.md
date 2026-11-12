@@ -32,11 +32,17 @@ entry Unchanged. An Added, Modified or Deleted entry of an owned type is checked
 owner:
 
 - the guard finds the owner's entry from the ownership foreign key, walking up through
-  nested owned types to the owner that isn't owned;
+  nested owned types to the owner that isn't owned. An Added entry is checked through the
+  owner its foreign key names now, a Deleted one through the owner its original foreign key
+  names, and a Modified one through both, so a row moved from one owner to another, as an
+  `OwnsMany` row with a key of its own can be, is checked against both;
 - when that owner is Added, Modified or Deleted, its own check covers the owned entry,
   which isn't checked again;
 - when the owner is Unchanged, its tenant value has to be the current tenant, as for a
-  Deleted entry; otherwise the owned entry is a violation.
+  Deleted entry; otherwise the owned entry is a violation;
+- when the owner isn't tracked, as when only the owned entry was attached, its tenant can't
+  be checked, and the owned entry is a violation. Track the owner too, by reading or
+  attaching it.
 
 So a context for globex that tracks acme's `Order`, read with `IgnoreQueryFilters()` or
 attached, can't change `order.Shipping.Street`, or add, change or delete acme's order

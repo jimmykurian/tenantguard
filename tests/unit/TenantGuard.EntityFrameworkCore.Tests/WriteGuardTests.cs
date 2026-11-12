@@ -242,19 +242,6 @@ public sealed class WriteGuardTests
     }
 
     [Fact]
-    public void Owned_types_are_skipped()
-    {
-        using var db = new ShopDatabase();
-        using var acme = db.Create("acme");
-        acme.Orders.Add(new Order { Id = 1, TenantId = "acme", Shipping = new Address { Street = "1 Main St", TenantId = "globex" } });
-
-        acme.SaveChanges();
-
-        using var reader = db.Create("acme");
-        reader.Orders.Single().Shipping.TenantId.Should().Be("globex");
-    }
-
-    [Fact]
     public async Task SaveChangesAsync_is_guarded_too()
     {
         using var db = new ShopDatabase();

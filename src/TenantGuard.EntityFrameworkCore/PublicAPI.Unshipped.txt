@@ -7,3 +7,5 @@ TenantGuard.TenantGuardOptionsBuilder.NullTenantIsHost() -> TenantGuard.TenantGu
 TenantGuard.TenantGuardOptionsBuilder.Suppress(string! ruleId, string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Suppress<TEntity>(string! ruleId, string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Unfiltered<TEntity>(string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantViolation.Owner.get -> string?
+TenantGuard.TenantViolation.Owner.init -> void
