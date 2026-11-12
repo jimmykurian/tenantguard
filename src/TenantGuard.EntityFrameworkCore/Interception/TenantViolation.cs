@@ -18,7 +18,8 @@ namespace TenantGuard;
 /// <param name="Expected">The current tenant, or null when there is none.</param>
 /// <param name="Actual">
 /// The tenant on the row: the new value for an insert, the stored or changed value for an update, the
-/// stored value for a delete; for a write to an owned entity, the owner's tenant.
+/// stored value for a delete; for a write to an owned entity, the owner's tenant, or null when the owner
+/// isn't tracked.
 /// </param>
 public sealed record TenantViolation(
     string Entity,

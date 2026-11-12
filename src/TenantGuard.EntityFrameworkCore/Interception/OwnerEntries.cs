@@ -13,9 +13,22 @@ internal sealed class OwnerEntries(ChangeTracker changeTracker)
 {
     private readonly Dictionary<IKey, Dictionary<object?[], EntityEntry>> _byKey = [];
 
-    // The owner that isn't owned, walking up through nested owned types; null if one isn't tracked,
-    // which EF Core doesn't allow.
-    public EntityEntry? RootOwner(EntityEntry entry)
+    // The entity type at the top of an owned type's ownership chain, the one that isn't owned.
+    public static IEntityType RootType(IEntityType entityType)
+    {
+        var current = entityType;
+        while (current.FindOwnership() is { } ownership)
+        {
+            current = ownership.PrincipalEntityType;
+        }
+
+        return current;
+    }
+
+    // The owner that isn't owned, walking up through nested owned types by the ownership foreign key's
+    // current values, or its original ones for the owner a row is moved away from; null when an owner
+    // isn't tracked.
+    public EntityEntry? RootOwner(EntityEntry entry, bool original)
     {
         var current = entry;
         while (current.Metadata.FindOwnership() is { } ownership)
@@ -23,7 +36,8 @@ internal sealed class OwnerEntries(ChangeTracker changeTracker)
             var values = new object?[ownership.Properties.Count];
             for (var i = 0; i < values.Length; i++)
             {
-                values[i] = current.Property(ownership.Properties[i]).CurrentValue;
+                var property = current.Property(ownership.Properties[i]);
+                values[i] = original ? property.OriginalValue : property.CurrentValue;
             }
 
             if (!Index(ownership.PrincipalKey).TryGetValue(values, out var owner))

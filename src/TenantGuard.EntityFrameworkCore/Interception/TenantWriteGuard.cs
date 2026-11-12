@@ -117,10 +117,7 @@ internal static class TenantWriteGuard
             var owners = new OwnerEntries(context.ChangeTracker);
             foreach (var entry in owned)
             {
-                // An owner that is itself written is checked by its own entry, so the row is reported once.
-                if (owners.RootOwner(entry) is not { State: EntityState.Unchanged } owner
-                    || !entities.TryGet(owner.Metadata, out var tenant)
-                    || tenant.Unfiltered)
+                if (!entities.TryGet(OwnerEntries.RootType(entry.Metadata), out var tenant) || tenant.Unfiltered)
                 {
                     continue;
                 }
@@ -130,8 +127,8 @@ internal static class TenantWriteGuard
                     return;
                 }
 
-                CheckTenantType(currentTenant, owner.Metadata, tenant);
-                if (CheckOwned(entry, owner, tenant, currentTenant, host, options) is { } write)
+                CheckTenantType(currentTenant, OwnerEntries.RootType(entry.Metadata), tenant);
+                if (CheckOwned(entry, owners, tenant, currentTenant, host, options) is { } write)
                 {
                     (blocked ??= []).Add(write);
                 }
@@ -177,19 +174,10 @@ internal static class TenantWriteGuard
     // means that tenant's context was handed the no-tenant model, whose filters read every tenant's rows.
     private static void CheckNoTenantModel(DbContext context, TenantGuardEntities entities, TenantGuardScope scope, TenantGuardOptions options)
     {
-        OwnerEntries? owners = null;
-        bool WritesTenantRow(EntityEntry entry)
-        {
-            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
-            {
-                return false;
-            }
-
-            var written = entry.Metadata.IsOwned() ? (owners ??= new OwnerEntries(context.ChangeTracker)).RootOwner(entry) : entry;
-            return written is not null && entities.TryGet(written.Metadata, out var tenant) && !tenant.Unfiltered;
-        }
-
-        var writesTenantRows = context.ChangeTracker.Entries().Any(WritesTenantRow);
+        var writesTenantRows = context.ChangeTracker.Entries().Any(entry =>
+            entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+            && entities.TryGet(OwnerEntries.RootType(entry.Metadata), out var tenant)
+            && !tenant.Unfiltered);
         if (writesTenantRows && ResolveCurrentTenant(context, options) is { } currentTenant)
         {
             TenantGuardLog.ViolationBlocked(scope.Logger, context.GetType().Name, 0);
@@ -212,27 +200,49 @@ internal static class TenantWriteGuard
         }
     }
 
-    // An owned entry whose owner is Unchanged: the owner's stored row has to be the current tenant's.
+    // An owned entry, through the owner it is written to and, for an update or a delete, the one it was
+    // stored under, which differ when a row moves to another owner. An owner that is itself written is
+    // checked by its own entry; an Unchanged one's stored row has to be the current tenant's. An owner
+    // that isn't tracked can't be checked, so the write is blocked.
     private static Blocked? CheckOwned(
         EntityEntry entry,
-        EntityEntry owner,
+        OwnerEntries owners,
         TenantPropertyMetadata tenant,
         object? currentTenant,
         bool host,
         TenantGuardOptions options)
     {
-        var value = owner.Property(tenant.Property).OriginalValue;
-        if (currentTenant is not null ? tenant.Matches(value, currentTenant) : host && value is null)
+        var ownerName = OwnerEntries.RootType(entry.Metadata).DisplayName();
+        var name = tenant.Property.Name;
+        Blocked Blocked(object? actual, string detail)
+            => new(new TenantViolation(entry.Metadata.DisplayName(), entry.State, Keys(entry, options), currentTenant, actual) { Owner = ownerName }, detail);
+
+        for (var pass = 0; pass < 2; pass++)
         {
-            return null;
+            var original = pass == 1;
+            if (original ? entry.State == EntityState.Added : entry.State == EntityState.Deleted)
+            {
+                continue;
+            }
+
+            if (owners.RootOwner(entry, original) is not { } owner)
+            {
+                return Blocked(null, $"owned by {ownerName}, which isn't tracked, so its {name} can't be checked");
+            }
+
+            if (owner.State != EntityState.Unchanged)
+            {
+                continue;
+            }
+
+            var value = owner.Property(tenant.Property).OriginalValue;
+            if (currentTenant is not null ? !tenant.Matches(value, currentTenant) : !(host && value is null))
+            {
+                return Blocked(value, $"owned by {ownerName}, whose {name} is {TenantValueFormatter.Format(value)}");
+            }
         }
 
-        var ownerName = owner.Metadata.DisplayName();
-        var violation = new TenantViolation(entry.Metadata.DisplayName(), entry.State, Keys(entry, options), currentTenant, value)
-        {
-            Owner = ownerName,
-        };
-        return new Blocked(violation, $"owned by {ownerName}, whose {tenant.Property.Name} is {TenantValueFormatter.Format(value)}");
+        return null;
     }
 
     private static Blocked? CheckEntry(
