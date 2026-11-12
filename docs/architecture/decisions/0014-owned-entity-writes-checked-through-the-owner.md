@@ -28,6 +28,10 @@ Implemented in #108. A change to an owned entity of another tenant's row is reje
 `OwnsOne`, `OwnsMany` (add, change and delete) and nested owned types, and `OwnedWriteGuardTests`
 covers each. An owner that is itself Added, Modified or Deleted is checked by its own entry,
 so its owned entries aren't reported again, and `StampOnAdd` stamps a new owner as before.
+A Modified owned entry is checked through the owner its original foreign key names too, so
+an `OwnsMany` row with a key of its own can't be moved away from another tenant's row, and
+one whose owner isn't tracked, as when only the owned entry was attached, is a violation:
+its tenant can't be read.
 `TenantViolation.Owner` names the owner whose tenant was checked, since EF Core's display
 name of an owned type doesn't. [The write guard reference](../../reference/write-guard.md#owned-entities)
 gives the details, and [Exceptions](../../reference/exceptions.md#tenantisolationviolationexception)

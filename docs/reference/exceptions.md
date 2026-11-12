@@ -39,7 +39,7 @@ to be the current tenant ([owned entities](write-guard.md#owned-entities)).
 | `State` | `Added`, `Modified` or `Deleted` |
 | `Keys` | The primary key values by property name; empty under `IncludeKeysInErrors(false)`, or for a key EF Core hasn't generated yet |
 | `Expected` | The current tenant, or null when there is none |
-| `Actual` | The tenant on the row: the new value for an insert, the stored or changed value for an update, the stored value for a delete; for an owned entry, the owner's tenant |
+| `Actual` | The tenant on the row: the new value for an insert, the stored or changed value for an update, the stored value for a delete; for an owned entry, the owner's tenant, or null when the owner isn't tracked |
 
 The message lists up to ten violations and the total:
 
@@ -52,14 +52,22 @@ TenantGuard blocked 12 writes outside the current tenant "acme":
 Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
 ```
 
-An owned entry's line names its owner and the owner's tenant. The owned entry's own keys
-include the ownership key, the owner's key values:
+An owned entry's line names its owner and the owner's tenant. Its keys are the owned
+entry's own, which hold the ownership key, the owner's key values, unless the owned type
+has a key of its own:
 
 ```text
 TenantGuard blocked 2 writes outside the current tenant "globex":
 - Modified Address (OrderId: 3): owned by Order, whose TenantId is "acme"
 - Added OrderLine (OrderId: 3, Id: 2): owned by Order, whose TenantId is "acme"
 Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
+```
+
+When the owner isn't tracked, so its tenant can't be read, `Actual` is null and the line
+says so:
+
+```text
+- Modified OrderLine (OrderId: 3, Id: 2): owned by Order, which isn't tracked, so its TenantId can't be checked
 ```
 
 With no current tenant, under `NoTenantPolicy.Reject`:
