@@ -40,9 +40,10 @@ owner:
 
 So a context for globex that tracks acme's `Order`, read with `IgnoreQueryFilters()` or
 attached, can't change `order.Shipping.Street`, or add, change or delete acme's order
-lines. The owner's checks apply as they are: an owned entry of an `Unfiltered<TEntity>`
-type, of a context declared `CrossTenant`, or of an owner that isn't tenant-scoped isn't
-checked, and `NoTenantPolicy`, `NullTenantIsHost` and the bypass scope work the same way.
+lines. The owner's checks apply as they are: an owned entry isn't checked when its owner
+is declared with `Unfiltered<TEntity>` (which names the owner, never the owned type), isn't
+tenant-scoped, or belongs to a context declared `CrossTenant`; and `NoTenantPolicy`,
+`NullTenantIsHost` and the bypass scope work the same way.
 
 A tenant property declared on the owned type itself is ignored, and TGM008 reports it
 ([rules](rules.md#tgm008-owned-tenant)).

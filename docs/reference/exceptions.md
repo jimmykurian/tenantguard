@@ -52,13 +52,13 @@ TenantGuard blocked 12 writes outside the current tenant "acme":
 Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
 ```
 
-An owned entry's line names its owner, with the owner's keys under `IncludeKeysInErrors`,
-and the owner's tenant:
+An owned entry's line names its owner and the owner's tenant. The owned entry's own keys
+include the ownership key, the owner's key values:
 
 ```text
 TenantGuard blocked 2 writes outside the current tenant "globex":
-- Modified Address (OrderId: 3): owned by Order (Id: 3), whose TenantId is "acme"
-- Added OrderLine (OrderId: 3, Id: 2): owned by Order (Id: 3), whose TenantId is "acme"
+- Modified Address (OrderId: 3): owned by Order, whose TenantId is "acme"
+- Added OrderLine (OrderId: 3, Id: 2): owned by Order, whose TenantId is "acme"
 Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
 ```
 
