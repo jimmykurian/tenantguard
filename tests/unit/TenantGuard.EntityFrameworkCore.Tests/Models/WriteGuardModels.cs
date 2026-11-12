@@ -10,8 +10,8 @@ namespace TenantGuard.EntityFrameworkCore.Tests.Models;
 internal static class WriteGuardModels
 {
     // A tenant-scoped Invoice, a Note with a shadow TenantId, an Order that owns an Address (with a
-    // TenantId of its own, which the guard ignores, and a nested GeoPoint) and OrderLines, and a shared
-    // Country.
+    // TenantId of its own, which the guard ignores, and a nested GeoPoint), OrderLines keyed by the order
+    // and Parcels with a key of their own, which can move to another order, and a shared Country.
     internal sealed class Shop(DbContextOptions options) : DbContext(options)
     {
         public string? CurrentTenant { get; set; }
@@ -37,6 +37,11 @@ internal static class WriteGuardModels
                 order.HasQueryFilter(row => row.TenantId == CurrentTenant);
                 order.OwnsOne(row => row.Shipping, shipping => shipping.OwnsOne(address => address.Geo));
                 order.OwnsMany(row => row.Lines);
+                order.OwnsMany(row => row.Parcels, parcel =>
+                {
+                    parcel.HasKey(row => row.Id);
+                    parcel.Property(row => row.Id).ValueGeneratedNever();
+                });
             });
             modelBuilder.Entity<Country>();
         }
@@ -76,6 +81,8 @@ internal static class WriteGuardModels
         public Address Shipping { get; set; } = new();
 
         public List<OrderLine> Lines { get; set; } = [];
+
+        public List<Parcel> Parcels { get; set; } = [];
     }
 
     internal sealed class Address
@@ -97,6 +104,13 @@ internal static class WriteGuardModels
         public int Id { get; set; }
 
         public string Sku { get; set; } = string.Empty;
+    }
+
+    internal sealed class Parcel
+    {
+        public int Id { get; set; }
+
+        public string Label { get; set; } = string.Empty;
     }
 
     internal sealed class Country

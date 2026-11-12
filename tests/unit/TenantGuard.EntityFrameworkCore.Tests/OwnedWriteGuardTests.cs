@@ -101,6 +101,79 @@ public sealed class OwnedWriteGuardTests
     }
 
     [Fact]
+    public void Moving_an_owned_row_away_from_another_tenants_row_is_rejected()
+    {
+        using var db = SeededDatabase();
+        SeedGlobexOrder(db);
+        using var globex = db.Create("globex");
+        var acmeOrder = globex.Orders.IgnoreQueryFilters().Single(order => order.Id == 1);
+        var parcel = acmeOrder.Parcels.Single();
+        acmeOrder.Parcels.Remove(parcel);
+        globex.Orders.Single().Parcels.Add(parcel);
+
+        var exception = FluentActions.Invoking(() => globex.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
+
+        exception.Violations.Should().ContainSingle().Which.Should().BeEquivalentTo(
+            new TenantViolation("Parcel", EntityState.Modified, Keys(("Id", 1)), "globex", "acme") { Owner = "Order" }, options => options.ComparingByMembers<TenantViolation>());
+        StoredOrder(db).Parcels.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Moving_an_owned_row_onto_another_tenants_row_is_rejected()
+    {
+        using var db = SeededDatabase();
+        SeedGlobexOrder(db);
+        using var globex = db.Create("globex");
+        var globexOrder = globex.Orders.Single();
+        var parcel = globexOrder.Parcels.Single();
+        globexOrder.Parcels.Remove(parcel);
+        globex.Orders.IgnoreQueryFilters().Single(order => order.Id == 1).Parcels.Add(parcel);
+
+        var exception = FluentActions.Invoking(() => globex.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
+
+        exception.Message.Should().Contain("\n- Modified Parcel (Id: 2): owned by Order, whose TenantId is \"acme\"\n");
+        StoredOrder(db).Parcels.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Moving_an_owned_row_between_the_current_tenants_rows_is_saved()
+    {
+        using var db = SeededDatabase();
+        using (var acme = db.Create("acme"))
+        {
+            acme.Orders.Add(new Order { Id = 2, TenantId = "acme" });
+            acme.SaveChanges();
+            var first = acme.Orders.Single(order => order.Id == 1);
+            var parcel = first.Parcels.Single();
+            first.Parcels.Remove(parcel);
+            acme.Orders.Single(order => order.Id == 2).Parcels.Add(parcel);
+
+            acme.SaveChanges();
+        }
+
+        StoredOrder(db).Parcels.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(EntityState.Modified)]
+    [InlineData(EntityState.Deleted)]
+    public void An_owned_row_tracked_without_its_owner_is_rejected(EntityState state)
+    {
+        using var db = SeededDatabase();
+        using var globex = db.Create("globex");
+        var entry = globex.Entry(new OrderLine { Id = 1, Sku = "globex-sku" });
+        entry.Property("OrderId").CurrentValue = 1;
+        entry.State = state;
+
+        var exception = FluentActions.Invoking(() => globex.SaveChanges()).Should().ThrowExactly<TenantIsolationViolationException>().Which;
+
+        exception.Message.Should().Contain($"\n- {state} OrderLine (OrderId: 1, Id: 1): owned by Order, which isn't tracked, so its TenantId can't be checked\n");
+        exception.Violations.Should().ContainSingle().Which.Should().BeEquivalentTo(
+            new TenantViolation("OrderLine", state, Keys(("OrderId", 1), ("Id", 1)), "globex", null) { Owner = "Order" }, options => options.ComparingByMembers<TenantViolation>());
+        StoredOrder(db).Lines.Select(line => line.Sku).Should().BeEquivalentTo("acme-1", "acme-2");
+    }
+
+    [Fact]
     public void Owned_writes_of_the_current_tenants_row_are_saved()
     {
         using var db = SeededDatabase();
@@ -229,7 +302,7 @@ public sealed class OwnedWriteGuardTests
         StoredOrder(db).Shipping.TenantId.Should().Be("globex");
     }
 
-    // acme's Order 1, shipped to 1 Main St at latitude 1, with lines 1 and 2.
+    // acme's Order 1, shipped to 1 Main St at latitude 1, with lines 1 and 2 and parcel 1.
     private static ShopDatabase SeededDatabase()
     {
         var db = new ShopDatabase();
@@ -240,15 +313,24 @@ public sealed class OwnedWriteGuardTests
             TenantId = "acme",
             Shipping = new Address { Street = "1 Main St", Geo = new GeoPoint { Latitude = 1 } },
             Lines = [new OrderLine { Id = 1, Sku = "acme-1" }, new OrderLine { Id = 2, Sku = "acme-2" }],
+            Parcels = [new Parcel { Id = 1, Label = "acme-parcel" }],
         });
         acme.SaveChanges();
         return db;
     }
 
+    // globex's Order 2, with parcel 2.
+    private static void SeedGlobexOrder(ShopDatabase db)
+    {
+        using var globex = db.Create("globex");
+        globex.Orders.Add(new Order { Id = 2, TenantId = "globex", Parcels = [new Parcel { Id = 2, Label = "globex-parcel" }] });
+        globex.SaveChanges();
+    }
+
     private static Order StoredOrder(ShopDatabase db)
     {
         using var reader = db.Create(tenant: null);
-        return reader.Orders.IgnoreQueryFilters().AsNoTracking().Single();
+        return reader.Orders.IgnoreQueryFilters().AsNoTracking().Single(order => order.Id == 1);
     }
 
     private static Dictionary<string, object?> Keys(params (string Name, object? Value)[] keys)
