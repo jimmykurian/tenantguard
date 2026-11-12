@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0](https://github.com/jimmykurian/tenantguard/compare/v0.1.0...v1.0.0) (2026-11-12)
+
+
+### Features
+
+* **interception:** check owned entity writes through their owner ([#113](https://github.com/jimmykurian/tenantguard/issues/113)) ([1b84037](https://github.com/jimmykurian/tenantguard/commit/1b84037ed56ed64a808eeeb3606cfa5d78d734e6))
+
+
+### Documentation
+
+* **interception:** specify checking owned entity writes through their owner ([#111](https://github.com/jimmykurian/tenantguard/issues/111)) ([c4fce4c](https://github.com/jimmykurian/tenantguard/commit/c4fce4cb7d07b225844eeffbe1987a6c11ccfe3c))
+
 ## [0.1.0](https://github.com/jimmykurian/tenantguard/compare/v0.1.0-preview.10...v0.1.0) (2026-11-11)
 
 
