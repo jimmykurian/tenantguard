@@ -322,8 +322,8 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 94 | 120 | 14 | 228 |
-| Lines of code | 5,795 | 8,889 | 228 | 14,912 |
-| Methods | 435 | 917 | 21 | 1,373 |
+| Lines of code | 5,811 | 8,968 | 228 | 15,007 |
+| Methods | 436 | 922 | 21 | 1,379 |
 | Average complexity | 3.7 | 1.2 | 1.2 | 2.0 |
 | Max complexity | 48 | 5 | 4 | 48 |
 
@@ -333,7 +333,7 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Method | Where | Complexity |
 | --- | --- | --- |
 | `TenantComparison.Tokenize` | `src/TenantGuard.Analyzers/TenantComparison.cs:130` | 48 |
-| `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:16` | 34 |
+| `TenantWriteGuard.Check` | `src/TenantGuard.EntityFrameworkCore/Interception/TenantWriteGuard.cs:16` | 33 |
 | `TenantModelRules.CheckRoot` | `src/TenantGuard.EntityFrameworkCore/Model/TenantModelRules.cs:118` | 24 |
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:119` | 20 |
