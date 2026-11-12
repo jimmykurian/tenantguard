@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/jimmykurian/tenantguard/compare/v1.0.0...v1.0.1) (2026-11-12)
+
+
+### Documentation
+
+* **docs:** show owned entity writes and filter switches on the site ([#116](https://github.com/jimmykurian/tenantguard/issues/116)) ([314c34d](https://github.com/jimmykurian/tenantguard/commit/314c34d20038e33ccfa207ec7280d6ab8d81ff0c))
+
 ## [1.0.0](https://github.com/jimmykurian/tenantguard/compare/v0.1.0...v1.0.0) (2026-11-12)
 
 
