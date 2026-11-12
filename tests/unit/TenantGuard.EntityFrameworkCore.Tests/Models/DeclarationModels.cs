@@ -115,6 +115,8 @@ internal static class DeclarationModels
     {
         public DbSet<Invoice> Invoices => Set<Invoice>();
 
+        public DbSet<Shipment> Shipments => Set<Shipment>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             var tenant = Tenant;
@@ -124,6 +126,15 @@ internal static class DeclarationModels
                 if (tenant is not null)
                 {
                     invoice.HasQueryFilter(row => row.TenantId == tenant);
+                }
+            });
+            modelBuilder.Entity<Shipment>(shipment =>
+            {
+                shipment.HasIndex(row => row.TenantId);
+                shipment.OwnsOne(row => row.Destination);
+                if (tenant is not null)
+                {
+                    shipment.HasQueryFilter(row => row.TenantId == tenant);
                 }
             });
         }
@@ -148,6 +159,21 @@ internal static class DeclarationModels
         public int Id { get; set; }
 
         public string TenantId { get; set; } = string.Empty;
+    }
+
+    // A tenant-scoped row that owns its destination.
+    internal sealed class Shipment
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public Destination Destination { get; set; } = new();
+    }
+
+    internal sealed class Destination
+    {
+        public string City { get; set; } = string.Empty;
     }
 
     internal sealed class Membership
