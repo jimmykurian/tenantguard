@@ -22,9 +22,31 @@ Entity types declared with `Unfiltered<TEntity>` are skipped, and so is every sa
 context declared `CrossTenant`, or of the no-tenant model under `CrossTenantWhenNoTenant`
 ([cross-tenant data](options.md#cross-tenant-data)).
 
-Owned entity types are skipped: an entry of an owned type isn't checked, and changing only
-the owned part of another tenant's row isn't blocked yet
+## Owned entities
+
+An owned type has no tenant property of its own: its rows are its owner's
 ([0014](../architecture/decisions/0014-owned-entity-writes-checked-through-the-owner.md)).
+EF Core tracks an owned entity, such as `Order.Shipping` (`OwnsOne`) or `Order.Lines`
+(`OwnsMany`), as an entry of its own, so changing only the owned part leaves the owner's
+entry Unchanged. An Added, Modified or Deleted entry of an owned type is checked through its
+owner:
+
+- the guard finds the owner's entry from the ownership foreign key, walking up through
+  nested owned types to the owner that isn't owned;
+- when that owner is Added, Modified or Deleted, its own check covers the owned entry,
+  which isn't checked again;
+- when the owner is Unchanged, its tenant value has to be the current tenant, as for a
+  Deleted entry; otherwise the owned entry is a violation.
+
+So a context for globex that tracks acme's `Order`, read with `IgnoreQueryFilters()` or
+attached, can't change `order.Shipping.Street`, or add, change or delete acme's order
+lines. The owner's checks apply as they are: an owned entry isn't checked when its owner
+is declared with `Unfiltered<TEntity>` (which names the owner, never the owned type), isn't
+tenant-scoped, or belongs to a context declared `CrossTenant`; and `NoTenantPolicy`,
+`NullTenantIsHost` and the bypass scope work the same way.
+
+A tenant property declared on the owned type itself is ignored, and TGM008 reports it
+([rules](rules.md#tgm008-owned-tenant)).
 
 ## The current tenant
 
@@ -62,7 +84,8 @@ leaves the entities as they were.
 
 Violations throw `TenantIsolationViolationException`, an `InvalidOperationException`, which
 lists each one: the entity type, its state, its key values (when `IncludeKeysInErrors` is
-on, the default), and the expected and actual tenant. [Exceptions](exceptions.md) has the
+on, the default), and the expected and actual tenant; for an owned entry, also its owner,
+whose tenant is the actual one. [Exceptions](exceptions.md) has the
 message. No other value of the entity is in the exception or the logs.
 
 ## A model built for another tenant
