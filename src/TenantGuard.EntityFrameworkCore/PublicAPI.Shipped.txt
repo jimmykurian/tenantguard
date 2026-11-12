@@ -38,6 +38,7 @@ TenantGuard.ModelFinding.Severity.init -> void
 TenantGuard.ModelReport
 TenantGuard.ModelReport.Errors.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
 TenantGuard.ModelReport.Findings.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
+TenantGuard.ModelReport.Suppressed.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
 TenantGuard.ModelReport.Warnings.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.ModelFinding!>!
 TenantGuard.NoTenantPolicy
 TenantGuard.NoTenantPolicy.Allow = 1 -> TenantGuard.NoTenantPolicy
@@ -54,16 +55,23 @@ TenantGuard.TenantGuardModelException
 TenantGuard.TenantGuardModelException.Report.get -> TenantGuard.ModelReport!
 TenantGuard.TenantGuardOptions
 TenantGuard.TenantGuardOptionsBuilder
+TenantGuard.TenantGuardOptionsBuilder.AllowCapturedValues() -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.CrossTenant(string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.CrossTenantWhenNoTenant(string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.CurrentTenant(System.Func<Microsoft.EntityFrameworkCore.DbContext!, object?>! resolver) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Enforcement(TenantGuard.Enforcement enforcement) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.IncludeKeysInErrors(bool include = true) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.NullTenantIsHost() -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Options.get -> TenantGuard.TenantGuardOptions!
 TenantGuard.TenantGuardOptionsBuilder.RequireAllEntitiesScoped() -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.Shared<TEntity>() -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.StampOnAdd(bool stamp = true) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.Suppress(string! ruleId, string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.Suppress<TEntity>(string! ruleId, string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.TenantGuardOptionsBuilder() -> void
 TenantGuard.TenantGuardOptionsBuilder.TenantProperty<TEntity>(System.Linq.Expressions.Expression<System.Func<TEntity!, object?>!>! property) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.TenantPropertyNames(params string![]! names) -> TenantGuard.TenantGuardOptionsBuilder!
+TenantGuard.TenantGuardOptionsBuilder.Unfiltered<TEntity>(string! reason) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardOptionsBuilder.WhenNoCurrentTenant(TenantGuard.NoTenantPolicy policy) -> TenantGuard.TenantGuardOptionsBuilder!
 TenantGuard.TenantGuardServiceCollectionExtensions
 TenantGuard.TenantIsolationViolationException
@@ -82,6 +90,8 @@ TenantGuard.TenantViolation.Expected.get -> object?
 TenantGuard.TenantViolation.Expected.init -> void
 TenantGuard.TenantViolation.Keys.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
 TenantGuard.TenantViolation.Keys.init -> void
+TenantGuard.TenantViolation.Owner.get -> string?
+TenantGuard.TenantViolation.Owner.init -> void
 TenantGuard.TenantViolation.State.get -> Microsoft.EntityFrameworkCore.EntityState
 TenantGuard.TenantViolation.State.init -> void
 TenantGuard.TenantViolation.TenantViolation(string! Entity, Microsoft.EntityFrameworkCore.EntityState State, System.Collections.Generic.IReadOnlyDictionary<string!, object?>! Keys, object? Expected, object? Actual) -> void
