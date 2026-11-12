@@ -5,11 +5,12 @@
 using System.Collections.ObjectModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
 // Checks every Added, Modified and Deleted entry of a tenant-scoped entity type against the current
-// tenant, and throws before SaveChanges reaches the database.
+// tenant, and an owned one through its owner, and throws before SaveChanges reaches the database.
 internal static class TenantWriteGuard
 {
     public static void Check(DbContext? context, TenantGuardScope scope)
@@ -39,43 +40,67 @@ internal static class TenantWriteGuard
         var resolved = false;
         List<Blocked>? blocked = null;
         List<PropertyEntry>? stamps = null;
+        List<EntityEntry>? owned = null;
+
+        // Reads the current tenant once, at the first tenant-scoped write; false when NoTenantPolicy.Allow
+        // lets the save through unchecked.
+        bool Resolve()
+        {
+            if (resolved)
+            {
+                return true;
+            }
+
+            currentTenant = ResolveCurrentTenant(context, options);
+            resolved = true;
+
+            // Under NullTenantIsHost, no current tenant is the host, checked like any tenant.
+            if (currentTenant is null && !host && options.NoTenantPolicy == NoTenantPolicy.Allow)
+            {
+                TenantGuardLog.NoTenantAllowed(scope.Logger, context.GetType().Name);
+                return false;
+            }
+
+            // A per-tenant model handed to another tenant's context: what it read came from the model's tenant.
+            if (currentTenant is not null && entities.ModelTenant is { } modelTenant && !Equals(modelTenant, currentTenant))
+            {
+                TenantGuardLog.ViolationBlocked(scope.Logger, context.GetType().Name, 0);
+                throw new TenantIsolationViolationException(context.GetType().Name, modelTenant, currentTenant);
+            }
+
+            return true;
+        }
 
         // Entries() runs DetectChanges first: SavingChanges comes before SaveChanges runs it.
         foreach (var entry in context.ChangeTracker.Entries())
         {
-            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted)
-                || !entities.TryGet(entry.Metadata, out var tenant)
-                || tenant.Unfiltered)
+            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
             {
                 continue;
             }
 
-            if (!resolved)
+            if (!entities.TryGet(entry.Metadata, out var tenant))
             {
-                currentTenant = ResolveCurrentTenant(context, options);
-                resolved = true;
-
-                // Under NullTenantIsHost, no current tenant is the host, checked like any tenant.
-                if (currentTenant is null && !host && options.NoTenantPolicy == NoTenantPolicy.Allow)
+                // Checked through its owner once every entry is seen ([0014]).
+                if (entry.Metadata.IsOwned())
                 {
-                    TenantGuardLog.NoTenantAllowed(scope.Logger, context.GetType().Name);
-                    return;
+                    (owned ??= []).Add(entry);
                 }
 
-                // A per-tenant model handed to another tenant's context: what it read came from the model's tenant.
-                if (currentTenant is not null && entities.ModelTenant is { } modelTenant && !Equals(modelTenant, currentTenant))
-                {
-                    TenantGuardLog.ViolationBlocked(scope.Logger, context.GetType().Name, 0);
-                    throw new TenantIsolationViolationException(context.GetType().Name, modelTenant, currentTenant);
-                }
+                continue;
             }
 
-            if (currentTenant is not null && !tenant.Property.ClrType.IsInstanceOfType(currentTenant))
+            if (tenant.Unfiltered)
             {
-                throw new InvalidOperationException(
-                    $"CurrentTenant returned a {currentTenant.GetType().Name}, but {entry.Metadata.DisplayName()}.{tenant.Property.Name} is a {tenant.Property.ClrType.Name}. Return a value of the tenant property's type.");
+                continue;
             }
 
+            if (!Resolve())
+            {
+                return;
+            }
+
+            CheckTenantType(currentTenant, entry.Metadata, tenant);
             var property = entry.Property(tenant.Property);
             if (entry.State == EntityState.Added && currentTenant is not null && options.StampOnAdd && tenant.IsUnset(property.CurrentValue))
             {
@@ -84,6 +109,32 @@ internal static class TenantWriteGuard
             else if (CheckEntry(entry, property, tenant, currentTenant, host, options) is { } write)
             {
                 (blocked ??= []).Add(write);
+            }
+        }
+
+        if (owned is not null)
+        {
+            var owners = new OwnerEntries(context.ChangeTracker);
+            foreach (var entry in owned)
+            {
+                // An owner that is itself written is checked by its own entry, so the row is reported once.
+                if (owners.RootOwner(entry) is not { State: EntityState.Unchanged } owner
+                    || !entities.TryGet(owner.Metadata, out var tenant)
+                    || tenant.Unfiltered)
+                {
+                    continue;
+                }
+
+                if (!Resolve())
+                {
+                    return;
+                }
+
+                CheckTenantType(currentTenant, owner.Metadata, tenant);
+                if (CheckOwned(entry, owner, tenant, currentTenant, host, options) is { } write)
+                {
+                    (blocked ??= []).Add(write);
+                }
             }
         }
 
@@ -126,10 +177,19 @@ internal static class TenantWriteGuard
     // means that tenant's context was handed the no-tenant model, whose filters read every tenant's rows.
     private static void CheckNoTenantModel(DbContext context, TenantGuardEntities entities, TenantGuardScope scope, TenantGuardOptions options)
     {
-        var writesTenantRows = context.ChangeTracker.Entries().Any(entry =>
-            entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
-            && entities.TryGet(entry.Metadata, out var tenant)
-            && !tenant.Unfiltered);
+        OwnerEntries? owners = null;
+        bool WritesTenantRow(EntityEntry entry)
+        {
+            if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
+            {
+                return false;
+            }
+
+            var written = entry.Metadata.IsOwned() ? (owners ??= new OwnerEntries(context.ChangeTracker)).RootOwner(entry) : entry;
+            return written is not null && entities.TryGet(written.Metadata, out var tenant) && !tenant.Unfiltered;
+        }
+
+        var writesTenantRows = context.ChangeTracker.Entries().Any(WritesTenantRow);
         if (writesTenantRows && ResolveCurrentTenant(context, options) is { } currentTenant)
         {
             TenantGuardLog.ViolationBlocked(scope.Logger, context.GetType().Name, 0);
@@ -142,6 +202,38 @@ internal static class TenantWriteGuard
             ? resolve(context)
             : throw new InvalidOperationException(
                 $"TenantGuard checks the writes of {context.GetType().Name} against its current tenant, but no CurrentTenant is configured. Add CurrentTenant(ctx => ...) to UseTenantGuard.");
+
+    private static void CheckTenantType(object? currentTenant, IReadOnlyEntityType entityType, TenantPropertyMetadata tenant)
+    {
+        if (currentTenant is not null && !tenant.Property.ClrType.IsInstanceOfType(currentTenant))
+        {
+            throw new InvalidOperationException(
+                $"CurrentTenant returned a {currentTenant.GetType().Name}, but {entityType.DisplayName()}.{tenant.Property.Name} is a {tenant.Property.ClrType.Name}. Return a value of the tenant property's type.");
+        }
+    }
+
+    // An owned entry whose owner is Unchanged: the owner's stored row has to be the current tenant's.
+    private static Blocked? CheckOwned(
+        EntityEntry entry,
+        EntityEntry owner,
+        TenantPropertyMetadata tenant,
+        object? currentTenant,
+        bool host,
+        TenantGuardOptions options)
+    {
+        var value = owner.Property(tenant.Property).OriginalValue;
+        if (currentTenant is not null ? tenant.Matches(value, currentTenant) : host && value is null)
+        {
+            return null;
+        }
+
+        var ownerName = owner.Metadata.DisplayName();
+        var violation = new TenantViolation(entry.Metadata.DisplayName(), entry.State, Keys(entry, options), currentTenant, value)
+        {
+            Owner = ownerName,
+        };
+        return new Blocked(violation, $"owned by {ownerName}, whose {tenant.Property.Name} is {TenantValueFormatter.Format(value)}");
+    }
 
     private static Blocked? CheckEntry(
         EntityEntry entry,
