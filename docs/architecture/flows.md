@@ -63,7 +63,7 @@ context, for unit tests and tooling. [Rules](../reference/rules.md) has each rul
 
 The interceptor implements both `SavingChanges` and `SavingChangesAsync`. It reads the
 metadata the convention stored, checks each tenant-scoped entry against the current tenant,
-and throws before anything reaches the database.
+and an owned entry through its owner, and throws before anything reaches the database.
 
 ```mermaid
 sequenceDiagram
@@ -76,7 +76,7 @@ sequenceDiagram
     alt bypass open, nothing tracked, or no tenant-scoped type
         Guard-->>EF: continue, no allocations
     else
-        Guard->>Guard: CurrentTenant(context), then check each Added, Modified and Deleted entry
+        Guard->>Guard: CurrentTenant(context), then check each Added, Modified and Deleted entry, an owned one through its owner
         alt a write outside the current tenant
             Guard-->>App: TenantIsolationViolationException
         else every write in the current tenant
