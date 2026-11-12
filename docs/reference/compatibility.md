@@ -19,11 +19,11 @@ Changing any of them is a breaking change, and needs an accepted architecture de
 
 ## Releases
 
-0.1.0 is the first stable release. The `0.1.0-preview.N` releases before it were previews,
-while EF Core 11 was a release candidate
-([0016](../architecture/decisions/0016-first-release-is-a-preview.md)). Until 1.0, a
-breaking change to the contract above raises the minor version, as `0.2.0`; from 1.0, the
-major version. The
+1.0.0 is the first major release: the write guard covers every write path it is meant to,
+owned entities included. 0.1.0 was the first stable release, and the `0.1.0-preview.N`
+releases before it were previews, while EF Core 11 was a release candidate
+([0016](../architecture/decisions/0016-first-release-is-a-preview.md)). From 1.0.0, a
+breaking change to the contract above raises the major version, as `2.0.0`. The
 [changelog](https://github.com/jimmykurian/tenantguard/blob/main/CHANGELOG.md) lists every
 change between releases.
 
