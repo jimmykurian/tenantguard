@@ -35,9 +35,7 @@ to the GitHub Release with `task release:attach`.
 The releases before 0.1.0 were previews (`0.1.0-preview.N`), marked as prereleases on NuGet
 and GitHub, until EF Core 11 was generally available
 ([0016](../architecture/decisions/0016-first-release-is-a-preview.md)). 0.1.0 is the first
-stable release.
-[CONTRIBUTING.md](https://github.com/jimmykurian/tenantguard/blob/main/CONTRIBUTING.md) lists
-what's left once it's out.
+stable release, and Release Please bumps from it as the Conventional Commits say.
 
 ## Branch protection
 
