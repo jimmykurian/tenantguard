@@ -222,9 +222,9 @@ does.
 An owned type is stored with its owner and filtered through it, so its own tenant
 property plays no part. The ownership key isn't a tenant property: EF Core names a shadow
 one `{Owner}{OwnerKey}`, so a type owned by an entity named `Tenant` gets a `TenantId` that
-refers to its owner, and TGM008 skips it, shadow or declared. The write guard skips owned entries, so it checks the owner's
-tenant only when the owner's own row is written: a save that changes only the owned part
-of another tenant's row isn't blocked yet.
+refers to its owner, and TGM008 skips it, shadow or declared. The write guard checks a
+write to an owned entity through its owner's tenant
+([owned entities](write-guard.md#owned-entities)).
 
 ### TGM009 unindexed-tenant
 

@@ -26,19 +26,20 @@ moves or deletes a row outside the current tenant:
 | Modified | The row's original tenant isn't the current tenant, or the update changes it |
 | Deleted | The row's original tenant isn't the current tenant |
 
-Tenants are compared with the tenant property's `ValueComparer`. Entries of owned types
-are skipped, so a save that changes only the owned part of another tenant's row isn't
-blocked yet.
+Tenants are compared with the tenant property's `ValueComparer`. An entry of an owned type
+is checked through its owner: when the owner's entry is Unchanged, the owner's tenant has
+to be the current tenant ([owned entities](write-guard.md#owned-entities)).
 
 `Violations` lists every blocked write as a `TenantViolation`:
 
 | Member | What it holds |
 |---|---|
-| `Entity` | The entity type's display name |
+| `Entity` | The entity type's display name; for an owned entry, the owned type's |
+| `Owner` | For an owned entry, the display name of the owner whose tenant was checked, the one that isn't owned; null otherwise |
 | `State` | `Added`, `Modified` or `Deleted` |
 | `Keys` | The primary key values by property name; empty under `IncludeKeysInErrors(false)`, or for a key EF Core hasn't generated yet |
 | `Expected` | The current tenant, or null when there is none |
-| `Actual` | The tenant on the row: the new value for an insert, the stored or changed value for an update, the stored value for a delete |
+| `Actual` | The tenant on the row: the new value for an insert, the stored or changed value for an update, the stored value for a delete; for an owned entry, the owner's tenant |
 
 The message lists up to ten violations and the total:
 
@@ -48,6 +49,16 @@ TenantGuard blocked 12 writes outside the current tenant "acme":
 - Modified Invoice (Id: 3): TenantId changes from "acme" to "globex"
 ...
 - and 2 more
+Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
+```
+
+An owned entry's line names its owner, with the owner's keys under `IncludeKeysInErrors`,
+and the owner's tenant:
+
+```text
+TenantGuard blocked 2 writes outside the current tenant "globex":
+- Modified Address (OrderId: 3): owned by Order (Id: 3), whose TenantId is "acme"
+- Added OrderLine (OrderId: 3, Id: 2): owned by Order (Id: 3), whose TenantId is "acme"
 Write only rows of the current tenant, or wrap a write meant to cross tenants in context.TenantGuard().Bypass(reason).
 ```
 

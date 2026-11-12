@@ -208,9 +208,11 @@ for TGM001, and with `tenantguard.tenant_filter_names` set, TG001 lets
 **DbContext pooling?** Supported. A context goes back to the pool with the guard on, even
 if a bypass scope was never disposed.
 
-**What doesn't it check yet?** Owned entities: the write guard skips their entries, so a
-save that changes only the owned part of another tenant's row isn't blocked. The raw SQL
-check looks for the column's name in the SQL text; it doesn't parse SQL.
+**Owned entities?** Checked through their owner: a save that changes only the owned part
+of another tenant's row, such as `order.Shipping.Street`, is blocked.
+
+**What doesn't it check?** The raw SQL check reads the SQL's tokens for a comparison of the
+tenant column with a value; it doesn't parse SQL, and SQL the compiler can't read is TG004's.
 
 ## Documentation
 
