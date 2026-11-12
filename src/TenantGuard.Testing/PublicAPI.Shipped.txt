@@ -1,9 +1,12 @@
 #nullable enable
+override TenantGuard.Testing.ProbeReport.ToString() -> string!
 override TenantGuard.Testing.ProbeRow.Equals(object? obj) -> bool
 override TenantGuard.Testing.ProbeRow.GetHashCode() -> int
 override TenantGuard.Testing.ProbeRow.ToString() -> string!
 static TenantGuard.Testing.ProbeRow.operator !=(TenantGuard.Testing.ProbeRow? left, TenantGuard.Testing.ProbeRow? right) -> bool
 static TenantGuard.Testing.ProbeRow.operator ==(TenantGuard.Testing.ProbeRow? left, TenantGuard.Testing.ProbeRow? right) -> bool
+TenantGuard.Testing.IProbeSource
+TenantGuard.Testing.IProbeSource.RunAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<TenantGuard.Testing.ProbeReport!>!
 TenantGuard.Testing.ProbeOutcome
 TenantGuard.Testing.ProbeOutcome.Failed = 1 -> TenantGuard.Testing.ProbeOutcome
 TenantGuard.Testing.ProbeOutcome.Passed = 0 -> TenantGuard.Testing.ProbeOutcome
@@ -13,6 +16,7 @@ TenantGuard.Testing.ProbeReport.AssertAllPassed() -> void
 TenantGuard.Testing.ProbeReport.Rows.get -> System.Collections.Generic.IReadOnlyList<TenantGuard.Testing.ProbeRow!>!
 TenantGuard.Testing.ProbeRow
 TenantGuard.Testing.ProbeRow.<Clone>$() -> TenantGuard.Testing.ProbeRow!
+TenantGuard.Testing.ProbeRow.AssertPassed() -> void
 TenantGuard.Testing.ProbeRow.Check.get -> string!
 TenantGuard.Testing.ProbeRow.Check.init -> void
 TenantGuard.Testing.ProbeRow.Deconstruct(out string! Entity, out string! Check, out TenantGuard.Testing.ProbeOutcome Outcome, out string! Detail) -> void
@@ -29,4 +33,5 @@ TenantGuard.Testing.TenantIsolationProbe<TContext>.RunAsync(System.Threading.Can
 TenantGuard.Testing.TenantIsolationProbe<TContext>.Seed<TEntity>(System.Func<string!, TContext!, TEntity!>! seed) -> TenantGuard.Testing.TenantIsolationProbe<TContext!>!
 TenantGuard.Testing.TenantIsolationProbe<TContext>.TenantIsolationProbe(System.Func<string!, TContext!>! createContext) -> void
 TenantGuard.Testing.TenantIsolationProbe<TContext>.WithTenants(params string![]! tenants) -> TenantGuard.Testing.TenantIsolationProbe<TContext!>!
+TenantGuard.Testing.TenantIsolationProbe<TContext>.WithoutTenant(System.Func<TContext!>! createContext) -> TenantGuard.Testing.TenantIsolationProbe<TContext!>!
 TenantGuard.Testing.TenantIsolationProbeException

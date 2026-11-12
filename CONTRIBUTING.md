@@ -242,8 +242,9 @@ tree. `task scrub` checks the tree against a private list of terms when
 Conventional Commits on `main` (`.github/workflows/release.yml`):
 
 1. Each push to `main` opens or updates a release pull request. It bumps `<Version>` in
-   `Directory.Build.props` and adds the release to `CHANGELOG.md`. `feat` commits raise
-   the minor version and `fix` commits the patch, until 1.0.
+   `Directory.Build.props` and adds the release to `CHANGELOG.md`. A breaking change (`!`
+   after the type, or a `BREAKING CHANGE:` footer) raises the major version, `feat` commits
+   the minor version and `fix` commits the patch.
 2. Merging it tags `vX.Y.Z` and creates the GitHub Release.
 3. The publish job then runs `task pack`, signs in to nuget.org with GitHub's OIDC token
    through `NuGet/login`, which needs no stored API key, and runs `task release:push` and
@@ -255,10 +256,14 @@ owns it.
 
 The releases before 0.1.0 were previews (`0.1.0-preview.N`), until EF Core 11 was
 generally available ([0016](docs/architecture/decisions/0016-first-release-is-a-preview.md)).
-0.1.0 was cut with `"release-as": "0.1.0"`, removed once it shipped: while `release-as`
-names a version, Release Please opens a release PR for it again, and merging that PR fails
-because the tag already exists. Use `release-as` only to force one version, and remove it
-in the next PR.
+0.1.0 and 1.0.0 were each cut with `release-as` (`"release-as": "1.0.0"`), removed once
+the release shipped: while `release-as` names a version, Release Please opens a release PR
+for it again, and merging that PR fails because the tag already exists. Use `release-as`
+only to force one version, and remove it in the next PR.
+
+At a release, move each package's `PublicAPI.Unshipped.txt` entries into
+`PublicAPI.Shipped.txt`, and the analyzers' `AnalyzerReleases.Unshipped.md` rules into
+`AnalyzerReleases.Shipped.md` under the release's version.
 
 ## License
 
