@@ -24,9 +24,11 @@ own to check.
 
 ## Consequences
 
-Not implemented yet: the guard still skips owned entries, and the leak reproduced again on
-2026-11-05 on EF Core 10 and 11. Until the guard changes, `Owned_types_are_skipped` pins the
-skip, and the README's FAQ and [the write guard reference](../../reference/write-guard.md)
-say owned entries aren't checked. The change replaces that test with "a change to an owned
-entity of another tenant's row is rejected", and updates the FAQ and the reference in the
-same pull request.
+Implemented in #108. A change to an owned entity of another tenant's row is rejected, for
+`OwnsOne`, `OwnsMany` (add, change and delete) and nested owned types, and `OwnedWriteGuardTests`
+covers each. An owner that is itself Added, Modified or Deleted is checked by its own entry,
+so its owned entries aren't reported again, and `StampOnAdd` stamps a new owner as before.
+`TenantViolation.Owner` names the owner whose tenant was checked, since EF Core's display
+name of an owned type doesn't. [The write guard reference](../../reference/write-guard.md#owned-entities)
+gives the details, and [Exceptions](../../reference/exceptions.md#tenantisolationviolationexception)
+the message.
