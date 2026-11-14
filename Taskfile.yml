@@ -157,7 +157,7 @@ tasks:
     dir: site
     preconditions:
       - sh: command -v pnpm
-        msg: "pnpm not found on PATH; install Node.js 22 or later and pnpm (corepack enable pnpm)"
+        msg: "pnpm not found on PATH; install Node.js 22.23.4 or later and pnpm (corepack enable pnpm)"
       # A registry mirror in ~/.npmrc makes pnpm record its own download URLs. They don't
       # resolve elsewhere and name the mirror, so the lockfile keeps integrity hashes only.
       - sh: "! grep -q 'tarball:' pnpm-lock.yaml"
