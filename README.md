@@ -271,7 +271,7 @@ a dependency that points outward. [ADR 0019](docs/architecture/decisions/0019-ru
 Requires the .NET 11 SDK (11.0.100 or later) and [Task](https://taskfile.dev). Every
 command runs through the [Taskfile](Taskfile.yml), and CI calls the same tasks: `task ci`
 runs lint, build, the unit, architecture, integration and end-to-end tests, pack, the
-samples and scrub. `task --list` shows the rest. The docs site needs Node.js 22 or later
+samples and scrub. `task --list` shows the rest. The docs site needs Node.js 22.23.4 or later
 and pnpm: `task site:install`, then `task site:dev` serves it with live reload.
 
 Commits follow [Conventional Commits](https://conventionalcommits.org).
