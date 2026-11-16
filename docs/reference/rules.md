@@ -439,7 +439,7 @@ modelBuilder.Entity<OrderLine>().HasQueryFilter(line => line.Order.TenantId == T
 ### TGM015 tenant-free-foreign-key
 
 ```text
-{Entity}: the foreign key ({Columns}) to {Principal} doesn't include '{Property}', so the database accepts a row that points at another tenant's {Principal}. Add it to the foreign key: HasForeignKey(e => new { e.{Property}, {Members} }).HasPrincipalKey(p => new { p.{PrincipalProperty}, {PrincipalMembers} }).
+{Entity}: the foreign key ({Columns}) to {Principal} doesn't include '{Property}', so the database accepts a row that points at another tenant's {Principal}. Add it to the foreign key: HasForeignKey(e => new { {Members} }).HasPrincipalKey(p => new { {PrincipalMembers} }).
 ```
 
 An invoice stamped with the current tenant can hold the key of another tenant's customer.
@@ -453,11 +453,16 @@ the database can refuse the row, with a foreign key that includes the tenant col
 Reported for each foreign key whose dependent and principal entity types are both
 tenant-scoped, required or optional, a self-reference included, unless one of its
 properties is the dependent's tenant property and the principal key property it pairs with
-is the principal's tenant property. `{Columns}` lists the foreign key's properties,
-comma-separated, and `{Members}` the same properties as `e.{Name}`; `{PrincipalProperty}`
-is the principal's tenant property, and `{PrincipalMembers}` the principal key's
-properties as `p.{Name}`. One finding is reported for each foreign key, in the order of
-`{Columns}`.
+is the principal's tenant property. One finding is reported for each foreign key, in the
+order of `{Columns}`, which lists the foreign key's properties, comma-separated.
+
+`{Members}` and `{PrincipalMembers}` are the foreign key and the principal key the fix
+needs, as `e.{Name}` and `p.{Name}`, the same length and paired in order. Each starts with
+the tenant pair: the dependent's tenant property, then the principal's. The foreign key's
+own pairs follow, in its order, without any pair that already holds either tenant property,
+so no property is listed twice. A foreign key of `(CustomerTenantId, CustomerId)` to
+`(TenantId, Id)` on an `Invoice` whose tenant property is `TenantId` gives
+`new { e.TenantId, e.CustomerId }` and `new { p.TenantId, p.Id }`.
 
 Not reported:
 
@@ -500,13 +505,31 @@ migration, and the migration fails if the table already holds a row that points 
 tenants: find those rows first.
 
 An optional relationship keeps working: with `CustomerId` null, the database checks
-nothing. Clear it by setting the foreign key property, `invoice.CustomerId = null`. When
-the tenant property's CLR type can hold null, as a `string` does, EF Core sets every such
-property of the foreign key to null when the relationship is cleared another way:
-`invoice.Customer = null`, removing the invoice from `customer.Invoices`, or deleting the
-customer under `DeleteBehavior.ClientSetNull` or `SetNull`. That would move the row to no
-tenant, so the write guard blocks the save (behavior pin 11). A tenant property of a value
-type, such as `Guid` or `int`, keeps its value.
+nothing. Clear it by setting the foreign key property, `invoice.CustomerId = null`, which
+leaves the tenant column alone. Two other ways of clearing it reach the tenant column:
+
+- **In the context.** When the tenant property's CLR type can hold null, as a `string`
+  does, EF Core sets every such property of the foreign key to null when a tracked
+  invoice's relationship is cleared another way: `invoice.Customer = null`, removing the
+  invoice from `customer.Invoices`, or deleting the customer while the invoice is tracked,
+  under `DeleteBehavior.ClientSetNull` (the default for an optional relationship) or
+  `SetNull`. That would move the row to no tenant, so the write guard blocks the save
+  (behavior pin 11). A tenant property of a value type, such as `Guid` or `int`, keeps its
+  value.
+- **In the database.** `DeleteBehavior.SetNull` also makes the constraint
+  `ON DELETE SET NULL`, which sets every column of the foreign key to null on the invoices
+  that aren't tracked, whatever the CLR type, and the write guard never sees it. A required
+  tenant column makes the delete fail; a nullable one leaves the invoice with no tenant, a
+  host row under `NullTenantIsHost`. Don't use `SetNull` on a foreign key that includes the
+  tenant property: keep `ClientSetNull`, or use `Restrict`, and set `CustomerId` to null
+  on the customer's invoices before deleting it.
+
+The fix needs the principal's tenant property to be required, because EF Core doesn't
+allow a nullable property in an alternate key. A principal whose tenant property is
+nullable, as with [`NullTenantIsHost`](options.md#host-rows) (TGM005), can't take it while
+it has rows with no tenant. Leave the foreign key as it is and say why, with
+`Suppress<TEntity>("TGM015", reason)` on the dependent, or give host rows a tenant value of
+their own so the property can be required.
 
 ### Which tables TGM009 and TGM010 check
 

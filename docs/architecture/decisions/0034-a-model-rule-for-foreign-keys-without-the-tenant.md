@@ -32,6 +32,11 @@ A check on EF Core 11.0.0 with SQLite found how the composite foreign key behave
   `ClientSetNull`, EF Core sets every foreign key property whose CLR type can hold null to
   null. A `string` tenant property becomes null, and the save fails; a `Guid` one keeps its
   value. Setting `CustomerId` to null clears the relationship and leaves the tenant alone.
+- `DeleteBehavior.SetNull` makes the constraint `ON DELETE SET NULL`, which nulls every
+  column of the foreign key in the database, tenant column included, on rows that aren't
+  tracked.
+- EF Core doesn't allow a nullable property in an alternate key, so the fix needs the
+  principal's tenant property to be required.
 
 ## Decision
 
@@ -51,6 +56,12 @@ A check on EF Core 11.0.0 with SQLite found how the composite foreign key behave
 - It is a warning because most models use single-column foreign keys, and the fix adds an
   alternate key to each principal and needs a migration. It is suppressed as any warning
   is, with `Suppress` or `Suppress<TEntity>`.
+- The message gives the foreign key and the principal key the fix needs: the tenant pair
+  first, then the foreign key's own pairs without any that already holds either tenant
+  property, so the two lists stay the same length and name no property twice.
+- A principal whose tenant property is nullable is still reported. It can't take the fix
+  while it has rows with no tenant, as under `NullTenantIsHost`, so the reference says to
+  suppress the rule for the dependent, with the reason.
 - The write guard doesn't check where a foreign key points. When the principal isn't
   tracked, that takes a query for each foreign key on every save, and another writer can
   still change the principal between the query and the save.
@@ -70,7 +81,11 @@ Fixing a relationship costs an alternate key on the principal and a migration, a
 migration fails while the table holds a link across tenants, which is the thing to find.
 With a `string` tenant property, an optional relationship then has to be cleared through
 its foreign key property; clearing it through the navigation makes the save fail, loudly,
-and moves no row.
+and moves no row. `DeleteBehavior.SetNull` doesn't fit a foreign key that includes the
+tenant property, and the reference says to keep `ClientSetNull` or use `Restrict`.
+
+A model with host rows, where the principal's tenant property is nullable, gets warnings
+it can only suppress, unless host rows are given a tenant value of their own.
 
 Many-to-many relationships with EF Core's implicit join type stay unchecked: the join
 table has no tenant column to put in a foreign key. The rules reference says so, and how to
