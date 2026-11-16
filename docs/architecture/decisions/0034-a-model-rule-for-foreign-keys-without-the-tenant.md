@@ -37,6 +37,10 @@ A check on EF Core 11.0.0 with SQLite found how the composite foreign key behave
   tracked.
 - EF Core doesn't allow a nullable property in an alternate key, so the fix needs the
   principal's tenant property to be required.
+- The database doesn't check a composite foreign key when one of its columns is null. A
+  dependent row with a null tenant and a `CustomerId` is accepted, whichever tenant the
+  customer belongs to; a check constraint that keeps a row with no tenant from holding a
+  `CustomerId` refuses it.
 
 ## Decision
 
@@ -62,6 +66,11 @@ A check on EF Core 11.0.0 with SQLite found how the composite foreign key behave
 - A principal whose tenant property is nullable is still reported. It can't take the fix
   while it has rows with no tenant, as under `NullTenantIsHost`, so the reference says to
   suppress the rule for the dependent, with the reason.
+- A foreign key that has the tenant pair isn't reported when the dependent's tenant
+  property is nullable, though the database then checks only the rows that have a tenant.
+  TGM005 already reports a nullable tenant property, and under `NullTenantIsHost` the rows
+  with no tenant are the host's on purpose. The reference gives the limit and the two ways
+  to close it: a required tenant property, or a check constraint.
 - The write guard doesn't check where a foreign key points. When the principal isn't
   tracked, that takes a query for each foreign key on every save, and another writer can
   still change the principal between the query and the save.
@@ -85,7 +94,10 @@ and moves no row. `DeleteBehavior.SetNull` doesn't fit a foreign key that includ
 tenant property, and the reference says to keep `ClientSetNull` or use `Restrict`.
 
 A model with host rows, where the principal's tenant property is nullable, gets warnings
-it can only suppress, unless host rows are given a tenant value of their own.
+it can only suppress, unless host rows are given a tenant value of their own. Where the
+dependent's tenant property is nullable, a foreign key that passes TGM015 still lets a host
+row point at any tenant's row, until a check constraint is added: the rule reads the
+model, and can't see check constraints written as SQL.
 
 Many-to-many relationships with EF Core's implicit join type stay unchecked: the join
 table has no tenant column to put in a foreign key. The rules reference says so, and how to

@@ -531,6 +531,22 @@ it has rows with no tenant. Leave the foreign key as it is and say why, with
 `Suppress<TEntity>("TGM015", reason)` on the dependent, or give host rows a tenant value of
 their own so the property can be required.
 
+The constraint only holds for a dependent row that has a tenant. A database doesn't check
+a composite foreign key when any of its columns is null, so where the dependent's tenant
+property is nullable, an invoice with no tenant, a host row under `NullTenantIsHost`, can
+hold the `CustomerId` of any tenant's customer, and the write guard lets the host save it.
+TGM015 doesn't report this: the foreign key has the tenant pair. Make the dependent's
+tenant property required, or, when host rows are meant, add a check constraint that keeps
+a row with no tenant from holding a customer:
+
+```csharp
+modelBuilder.Entity<Invoice>().ToTable(table => table.HasCheckConstraint(
+    "CK_Invoices_HostHasNoCustomer",
+    "\"TenantId\" IS NOT NULL OR \"CustomerId\" IS NULL"));
+```
+
+The SQL is the provider's: quote the columns the way your database does.
+
 ### Which tables TGM009 and TGM010 check
 
 Both rules check the indexes and keys declared anywhere in the hierarchy, so an index on a
