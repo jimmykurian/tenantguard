@@ -77,6 +77,15 @@ public sealed class IndexRuleTests
         => TestModels.ValidateAll<Tgm010Models.UniqueOnDerived>().Findings.Should().ContainSingle().Subject.Message.Should().StartWith("CardPayment: the unique index on (Last4) doesn't include 'TenantId'");
 
     [Fact]
+    public void Suppress_for_a_derived_type_leaves_out_the_unique_index_it_declares()
+    {
+        var report = TestModels.ValidateAll<Tgm010Models.UniqueOnDerived>(tg => tg.Suppress<Tgm009Models.CardPayment>("TGM010", "card numbers are tokens from one processor"));
+
+        report.Findings.Should().BeEmpty();
+        report.Suppressed.Should().ContainSingle().Which.Entity.Should().Be("CardPayment");
+    }
+
+    [Fact]
     public void One_to_one_foreign_key_index_passes()
         => TestModels.ValidateIndexes<Tgm010Models.OneToOne>().Findings.Should().BeEmpty();
 

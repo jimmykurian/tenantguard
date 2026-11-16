@@ -121,6 +121,30 @@ public sealed class ForeignKeyRuleTests
     }
 
     [Fact]
+    public void Suppress_for_a_derived_type_leaves_out_the_foreign_key_it_declares()
+    {
+        var report = TestModels.ValidateAll<Tgm015Models.OnDerived>(tg => tg.Suppress<Tgm015Models.CreditNote>("TGM015", Why));
+
+        report.Findings.Should().BeEmpty();
+        report.SuppressedWithReasons.Should().ContainSingle().Which.Should().Match<ModelReport.SuppressedFinding>(
+            suppressed => suppressed.Finding.Entity == "CreditNote" && suppressed.Reason == Why);
+    }
+
+    [Fact]
+    public void Suppress_for_the_root_type_covers_a_foreign_key_a_derived_type_declares()
+    {
+        var report = TestModels.ValidateAll<Tgm015Models.OnDerived>(tg => tg.Suppress<Tgm015Models.Invoice>("TGM015", Why));
+
+        report.Findings.Should().BeEmpty();
+        report.Suppressed.Should().ContainSingle().Which.Entity.Should().Be("CreditNote");
+    }
+
+    [Fact]
+    public void Suppress_for_a_sibling_type_leaves_the_finding_in()
+        => TestModels.ValidateAll<Tgm015Models.OnDerived>(tg => tg.Suppress<Tgm015Models.Customer>("TGM015", Why))
+            .Findings.Should().ContainSingle().Which.Entity.Should().Be("CreditNote");
+
+    [Fact]
     public void Cross_tenant_context_runs_no_rule()
         => TestModels.ValidateAll<Tgm015Models.SingleColumn>(tg => tg.CrossTenant("a reporting context")).Findings.Should().BeEmpty();
 

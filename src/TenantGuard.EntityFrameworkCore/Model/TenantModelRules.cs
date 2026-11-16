@@ -103,7 +103,7 @@ internal static class TenantModelRules
 
         for (var index = start; index < findings.Count;)
         {
-            if (options.SuppressionReason(entityType.ClrType, findings[index].RuleId) is { } reason)
+            if (SuppressionReason(entityType, options, findings[index]) is { } reason)
             {
                 suppressed.Add(new ModelReport.SuppressedFinding(findings[index], reason));
                 findings.RemoveAt(index);
@@ -113,6 +113,23 @@ internal static class TenantModelRules
                 index++;
             }
         }
+    }
+
+    // A finding names the type that declares what it reports, which can be a derived type, as for an
+    // index or a foreign key declared on one. It is left out by a suppression for that type or for a
+    // type it derives from, and then by one for every type.
+    private static string? SuppressionReason(IReadOnlyEntityType entityType, TenantGuardOptions options, ModelFinding finding)
+    {
+        var named = entityType.GetDerivedTypesInclusive().FirstOrDefault(type => type.DisplayName() == finding.Entity) ?? entityType;
+        for (var type = named; type is not null; type = type.BaseType)
+        {
+            if (options.TypeSuppressions.TryGetValue((type.ClrType, finding.RuleId), out var reason))
+            {
+                return reason;
+            }
+        }
+
+        return options.Suppressions.GetValueOrDefault(finding.RuleId);
     }
 
     private static void CheckRoot(

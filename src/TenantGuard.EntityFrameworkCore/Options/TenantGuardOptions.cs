@@ -94,17 +94,6 @@ public sealed class TenantGuardOptions
     internal TenantGuardOptions WithSuppression(Type entityType, string ruleId, string reason)
         => With(options => options.TypeSuppressions = options.TypeSuppressions.SetItem((entityType, ruleId), reason));
 
-    // The reason a finding of ruleId on entityType is suppressed, or null.
-    internal string? SuppressionReason(Type entityType, string ruleId)
-    {
-        if (TypeSuppressions.TryGetValue((entityType, ruleId), out var reason))
-        {
-            return reason;
-        }
-
-        return Suppressions.GetValueOrDefault(ruleId);
-    }
-
     internal TenantGuardOptions WithCurrentTenant(Func<DbContext, object?> resolver)
         => With(options => options.CurrentTenant = resolver);
 

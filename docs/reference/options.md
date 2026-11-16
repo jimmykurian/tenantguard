@@ -137,7 +137,10 @@ the host still can't write a tenant's row ([write guard](write-guard.md#host-row
     .Suppress("TGM008", "owned types hold no tenant data in this app"))
 ```
 
-`Suppress<TEntity>(ruleId, reason)` leaves one rule out for one entity type.
+`Suppress<TEntity>(ruleId, reason)` leaves one rule out for one entity type. A finding
+names the type that declares what it reports, which can be a derived type, as for an index
+or a foreign key declared on one: it is left out by a suppression for that type, or for a
+type it derives from.
 `Suppress(ruleId, reason)` leaves it out for every type, and takes only a warning rule:
 an error is suppressed one type at a time, with its reason. TGM001 and TGM002 aren't
 suppressed: declare the type with `Unfiltered<TEntity>` or `Shared<TEntity>` instead. A
