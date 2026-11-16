@@ -38,6 +38,10 @@ internal static class TenantModelRules
         var unfiltered = new List<ModelReport.Declaration>();
         var tenantProperties = new Dictionary<string, string>(StringComparer.Ordinal);
 
+        // The derived type that declares what a finding reports, for the findings that name one. Kept by
+        // reference: two derived types can share a display name, and their findings can be equal.
+        var declaredOn = new Dictionary<ModelFinding, IReadOnlyEntityType>(ReferenceEqualityComparer.Instance);
+
         // TGM011 reports a view only in a model that has tenant data.
         var hasTenantData = model.GetEntityTypes().Any(entityType => !entityType.IsOwned()
             && entityType.BaseType is null
@@ -56,10 +60,10 @@ internal static class TenantModelRules
             }
             else
             {
-                CheckRoot(entityType, options, findings, tenantProperties, unfiltered, contextType, checksIndexes, capturedValuesAllowed, hasTenantData);
+                CheckRoot(entityType, options, findings, declaredOn, tenantProperties, unfiltered, contextType, checksIndexes, capturedValuesAllowed, hasTenantData);
             }
 
-            Suppress(entityType, options, findings, start, suppressed);
+            Suppress(entityType, options, findings, declaredOn, start, suppressed);
         }
 
         return new TenantModelCheck(
@@ -93,6 +97,7 @@ internal static class TenantModelRules
         IReadOnlyEntityType entityType,
         TenantGuardOptions options,
         List<ModelFinding> findings,
+        Dictionary<ModelFinding, IReadOnlyEntityType> declaredOn,
         int start,
         List<ModelReport.SuppressedFinding> suppressed)
     {
@@ -103,7 +108,7 @@ internal static class TenantModelRules
 
         for (var index = start; index < findings.Count;)
         {
-            if (SuppressionReason(entityType, options, findings[index]) is { } reason)
+            if (SuppressionReason(declaredOn.GetValueOrDefault(findings[index], entityType), options, findings[index].RuleId) is { } reason)
             {
                 suppressed.Add(new ModelReport.SuppressedFinding(findings[index], reason));
                 findings.RemoveAt(index);
@@ -115,27 +120,27 @@ internal static class TenantModelRules
         }
     }
 
-    // A finding names the type that declares what it reports, which can be a derived type, as for an
-    // index or a foreign key declared on one. It is left out by a suppression for that type or for a
-    // type it derives from, and then by one for every type.
-    private static string? SuppressionReason(IReadOnlyEntityType entityType, TenantGuardOptions options, ModelFinding finding)
+    // A finding is left out by a suppression for the type that declares what it reports, which can be
+    // a derived type, as for an index or a foreign key declared on one, or for a type that one derives
+    // from, and then by a suppression for every type.
+    private static string? SuppressionReason(IReadOnlyEntityType declaringType, TenantGuardOptions options, string ruleId)
     {
-        var named = entityType.GetDerivedTypesInclusive().FirstOrDefault(type => type.DisplayName() == finding.Entity) ?? entityType;
-        for (var type = named; type is not null; type = type.BaseType)
+        for (var type = declaringType; type is not null; type = type.BaseType)
         {
-            if (options.TypeSuppressions.TryGetValue((type.ClrType, finding.RuleId), out var reason))
+            if (options.TypeSuppressions.TryGetValue((type.ClrType, ruleId), out var reason))
             {
                 return reason;
             }
         }
 
-        return options.Suppressions.GetValueOrDefault(finding.RuleId);
+        return options.Suppressions.GetValueOrDefault(ruleId);
     }
 
     private static void CheckRoot(
         IReadOnlyEntityType entityType,
         TenantGuardOptions options,
         List<ModelFinding> findings,
+        Dictionary<ModelFinding, IReadOnlyEntityType> declaredOn,
         Dictionary<string, string> tenantProperties,
         List<ModelReport.Declaration> unfiltered,
         Type? contextType,
@@ -211,8 +216,8 @@ internal static class TenantModelRules
 
         if (checksIndexes)
         {
-            TenantIndexRules.Check(entityType, tenantProperty, options, findings);
-            TenantForeignKeyRules.Check(entityType, tenantProperty, options, findings);
+            TenantIndexRules.Check(entityType, tenantProperty, options, findings, declaredOn);
+            TenantForeignKeyRules.Check(entityType, tenantProperty, options, findings, declaredOn);
         }
     }
 

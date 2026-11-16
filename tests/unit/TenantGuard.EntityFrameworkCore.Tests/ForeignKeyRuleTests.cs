@@ -65,7 +65,6 @@ public sealed class ForeignKeyRuleTests
 
     [Theory]
     [InlineData(typeof(Tgm015Models.SharedPrincipal))]
-    [InlineData(typeof(Tgm015Models.TableOfTenants))]
     [InlineData(typeof(Tgm015Models.UnscopedDependent))]
     [InlineData(typeof(Tgm015Models.OwnedDependent))]
     [InlineData(typeof(Tgm015Models.ImplicitJoin))]
@@ -73,6 +72,24 @@ public sealed class ForeignKeyRuleTests
     [InlineData(typeof(Tgm015Models.DependentIsView))]
     public void Foreign_keys_the_rule_leaves_out_pass(Type context)
         => Reported(context).Should().BeEmpty();
+
+    [Fact]
+    public void Tenant_property_that_points_at_a_table_of_tenants_keyed_by_its_tenant_property_passes()
+        => TestModels.ValidateAll<Tgm015Models.TableOfTenants>(tg => tg.TenantProperty<Tgm015Models.Club>(club => club.Id)).Findings.Should().BeEmpty();
+
+    [Fact]
+    public void Foreign_key_to_a_table_of_tenants_that_is_not_the_tenant_property_is_reported()
+        => Reported<Tgm015Models.SecondClub>(tg => tg.TenantProperty<Tgm015Models.Club>(club => club.Id)).Should().Equal(
+            "Member: the foreign key (HomeClubId) to Club doesn't include 'TenantId', so the database accepts a row that points at another tenant's Club. Add it to the foreign key: HasForeignKey(e => new { e.TenantId }).HasPrincipalKey(p => new { p.Id }).");
+
+    [Fact]
+    public void Suppress_for_one_of_two_derived_types_with_the_same_name_leaves_the_other_in()
+    {
+        var report = TestModels.ValidateAll<Tgm015Models.SameNameSiblings>(tg => tg.Suppress<Tgm015Models.Retail.Order>("TGM015", Why));
+
+        report.Findings.Where(finding => finding.RuleId == "TGM015").Should().ContainSingle().Which.Message.Should().StartWith("Order: the foreign key (WholesaleCustomerId) to Customer");
+        report.Suppressed.Should().ContainSingle().Which.Message.Should().StartWith("Order: the foreign key (RetailCustomerId) to Customer");
+    }
 
     [Fact]
     public void Join_entity_type_with_a_tenant_property_has_its_foreign_keys_checked()

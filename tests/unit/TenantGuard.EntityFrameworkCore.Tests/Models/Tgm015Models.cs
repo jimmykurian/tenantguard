@@ -10,6 +10,22 @@ namespace TenantGuard.EntityFrameworkCore.Tests.Models;
 // pair their tenant properties.
 internal static class Tgm015Models
 {
+    internal static class Retail
+    {
+        internal sealed class Order : Sale
+        {
+            public int? RetailCustomerId { get; set; }
+        }
+    }
+
+    internal static class Wholesale
+    {
+        internal sealed class Order : Sale
+        {
+            public int? WholesaleCustomerId { get; set; }
+        }
+    }
+
     internal abstract class Billing(DbContextOptions options) : DbContext(options)
     {
         public string CurrentTenant { get; set; } = "acme";
@@ -204,6 +220,41 @@ internal static class Tgm015Models
         }
     }
 
+    // Negative: a second foreign key to the table of tenants, which can name another tenant.
+    internal sealed class SecondClub(DbContextOptions options) : DbContext(options)
+    {
+        public string CurrentTenant { get; set; } = "acme";
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Club>().HasQueryFilter(row => row.Id == CurrentTenant);
+            modelBuilder.Entity<Member>(member =>
+            {
+                member.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                member.HasOne<Club>().WithMany().HasForeignKey(row => row.TenantId);
+                member.HasOne<Club>().WithMany().HasForeignKey(row => row.HomeClubId);
+            });
+        }
+    }
+
+    // Negative: two derived types with the same display name, each with a foreign key of its own.
+    internal sealed class SameNameSiblings(DbContextOptions options) : Billing(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Invoice>().Ignore(row => row.Customer);
+            modelBuilder.Entity<Sale>(sale =>
+            {
+                sale.HasQueryFilter(row => row.TenantId == CurrentTenant);
+                sale.HasIndex(row => row.TenantId);
+                sale.HasDiscriminator<string>("Kind").HasValue<Sale>("sale").HasValue<Retail.Order>("retail").HasValue<Wholesale.Order>("wholesale");
+            });
+            modelBuilder.Entity<Retail.Order>().HasOne<Customer>().WithMany().HasForeignKey(row => row.RetailCustomerId);
+            modelBuilder.Entity<Wholesale.Order>().HasOne<Customer>().WithMany().HasForeignKey(row => row.WholesaleCustomerId);
+        }
+    }
+
     // Positive: the dependent has no tenant property; TGM014 is the rule for it.
     internal sealed class UnscopedDependent(DbContextOptions options) : Billing(options)
     {
@@ -394,6 +445,15 @@ internal static class Tgm015Models
     }
 
     internal sealed class Member
+    {
+        public int Id { get; set; }
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public string? HomeClubId { get; set; }
+    }
+
+    internal class Sale
     {
         public int Id { get; set; }
 

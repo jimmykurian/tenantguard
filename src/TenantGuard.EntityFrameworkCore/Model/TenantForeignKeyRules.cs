@@ -11,7 +11,13 @@ namespace TenantGuard;
 // provider, on the tables TGM009 and TGM010 check.
 internal static class TenantForeignKeyRules
 {
-    public static void Check(IReadOnlyEntityType root, IReadOnlyProperty tenantProperty, TenantGuardOptions options, List<ModelFinding> findings)
+    // declaredOn takes the type that declares the foreign key a finding reports.
+    public static void Check(
+        IReadOnlyEntityType root,
+        IReadOnlyProperty tenantProperty,
+        TenantGuardOptions options,
+        List<ModelFinding> findings,
+        Dictionary<ModelFinding, IReadOnlyEntityType> declaredOn)
     {
         if (!TenantIndexRules.IsTable(root))
         {
@@ -35,6 +41,7 @@ internal static class TenantForeignKeyRules
                 continue;
             }
 
+            declaredOn[finding] = foreignKey.DeclaringEntityType;
             findings.Add(finding);
         }
     }

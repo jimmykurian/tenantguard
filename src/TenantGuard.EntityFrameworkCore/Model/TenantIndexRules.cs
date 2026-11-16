@@ -35,7 +35,13 @@ internal static class TenantIndexRules
     public static bool IsTable(IReadOnlyEntityType root)
         => root.FindPrimaryKey() is not null && !IsMappedToNonTable(root);
 
-    public static void Check(IReadOnlyEntityType root, IReadOnlyProperty tenantProperty, TenantGuardOptions options, List<ModelFinding> findings)
+    // declaredOn takes the type that declares the key or index a finding reports.
+    public static void Check(
+        IReadOnlyEntityType root,
+        IReadOnlyProperty tenantProperty,
+        TenantGuardOptions options,
+        List<ModelFinding> findings,
+        Dictionary<ModelFinding, IReadOnlyEntityType> declaredOn)
     {
         if (!IsTable(root))
         {
@@ -67,7 +73,9 @@ internal static class TenantIndexRules
             && !Includes(key.Properties, property)
             && !CoversTenantScopedForeignKey(key.DeclaringEntityType, key.Properties, options)))
         {
-            findings.Add(RuleMessages.TenantFreeAlternateKey(key.DeclaringEntityType.DisplayName(), property, Names(key.Properties)));
+            var finding = RuleMessages.TenantFreeAlternateKey(key.DeclaringEntityType.DisplayName(), property, Names(key.Properties));
+            declaredOn[finding] = key.DeclaringEntityType;
+            findings.Add(finding);
         }
 
         foreach (var index in indexes.Where(index => index.IsUnique
@@ -75,7 +83,9 @@ internal static class TenantIndexRules
             && !BacksForeignKey(index)
             && !CoversTenantScopedForeignKey(index.DeclaringEntityType, index.Properties, options)))
         {
-            findings.Add(RuleMessages.TenantFreeUniqueIndex(index.DeclaringEntityType.DisplayName(), property, Names(index.Properties)));
+            var finding = RuleMessages.TenantFreeUniqueIndex(index.DeclaringEntityType.DisplayName(), property, Names(index.Properties));
+            declaredOn[finding] = index.DeclaringEntityType;
+            findings.Add(finding);
         }
     }
 
