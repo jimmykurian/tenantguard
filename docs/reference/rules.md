@@ -442,6 +442,10 @@ modelBuilder.Entity<OrderLine>().HasQueryFilter(line => line.Order.TenantId == T
 {Entity}: the foreign key ({Columns}) to {Principal} doesn't include '{Property}', so the database accepts a row that points at another tenant's {Principal}. Add it to the foreign key: HasForeignKey(e => new { {Members} }).HasPrincipalKey(p => new { {PrincipalMembers} }).
 ```
 
+```text
+{Entity}: the foreign key ({Columns}) to {Principal} pairs '{Property}' with '{PrincipalColumn}', not with {Principal}'s tenant property '{PrincipalProperty}', so the database accepts a row that points at another tenant's {Principal}. Pair '{Property}' with '{PrincipalProperty}' in the foreign key, and keep '{PrincipalColumn}' paired with a property of its own.
+```
+
 An invoice stamped with the current tenant can hold the key of another tenant's customer.
 The write guard checks the invoice's own tenant, not where its foreign keys point
 ([write guard](write-guard.md#foreign-keys)), and the customer needn't be tracked, so the
@@ -459,10 +463,18 @@ order of `{Columns}`, which lists the foreign key's properties, comma-separated.
 `{Members}` and `{PrincipalMembers}` are the foreign key and the principal key the fix
 needs, as `e.{Name}` and `p.{Name}`, the same length and paired in order. Each starts with
 the tenant pair: the dependent's tenant property, then the principal's. The foreign key's
-own pairs follow, in its order, without any pair that already holds either tenant property,
-so no property is listed twice. A foreign key of `(CustomerTenantId, CustomerId)` to
-`(TenantId, Id)` on an `Invoice` whose tenant property is `TenantId` gives
+own pairs follow, in its order, without a pair that already holds the principal's tenant
+property, so no property is listed twice. A foreign key of `(CustomerTenantId, CustomerId)`
+to `(TenantId, Id)` on an `Invoice` whose tenant property is `TenantId` gives
 `new { e.TenantId, e.CustomerId }` and `new { p.TenantId, p.Id }`.
+
+The second message is for a foreign key that already holds the dependent's tenant
+property, paired with another property of the principal, `{PrincipalColumn}`, as when
+`Invoice.TenantId` is itself the foreign key to `Customer.Id`. Dropping that pair would
+leave the principal key without `{PrincipalColumn}`, and a key of the tenant property alone
+allows one principal row for each tenant, so the message gives no code: the relationship
+needs a property of the dependent's to hold `{PrincipalColumn}`, which only the app can
+name.
 
 The message writes the fix the way a one-to-many relationship takes it. A one-to-one
 relationship takes the same two lists in `HasForeignKey<TDependent>` and

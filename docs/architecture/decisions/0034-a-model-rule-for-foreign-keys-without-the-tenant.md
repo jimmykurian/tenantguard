@@ -61,8 +61,12 @@ A check on EF Core 11.0.0 with SQLite found how the composite foreign key behave
   alternate key to each principal and needs a migration. It is suppressed as any warning
   is, with `Suppress` or `Suppress<TEntity>`.
 - The message gives the foreign key and the principal key the fix needs: the tenant pair
-  first, then the foreign key's own pairs without any that already holds either tenant
-  property, so the two lists stay the same length and name no property twice.
+  first, then the foreign key's own pairs without one that already holds the principal's
+  tenant property, so the two lists stay the same length and name no property twice.
+- A foreign key that pairs the dependent's tenant property with another property of the
+  principal gets a message of its own, with no code. Dropping that pair would take the
+  other property out of the principal key and leave a key that allows one principal row
+  for each tenant, and the property that should hold it instead is the app's to name.
 - A principal whose tenant property is nullable is still reported. It can't take the fix
   while it has rows with no tenant, as under `NullTenantIsHost`, so the reference says to
   suppress the rule for the dependent, with the reason.
