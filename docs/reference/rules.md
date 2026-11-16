@@ -69,6 +69,7 @@ TGM002 doesn't report it.
 | TGM012 | switchable-filter | warning | The tenant filter is ORed with a condition that doesn't read the row, so it can be switched off |
 | TGM013 | open-without-tenant | warning | The tenant filter is ORed with a null check of the current tenant, so it returns every row when there is none |
 | TGM014 | unscoped-dependent | warning | An entity type with no tenant property and no filter that reaches one belongs to a tenant-scoped principal through a required foreign key |
+| TGM015 | tenant-free-foreign-key | warning | A foreign key from a tenant-scoped entity type to another doesn't include the tenant property |
 
 TGM011 and TGM014 aren't reported under `RequireAllEntitiesScoped`, where TGM002 reports the
 same types as errors.
@@ -435,6 +436,78 @@ modelBuilder.Entity<OrderLine>().HasOne(line => line.Order).WithMany(order => or
 modelBuilder.Entity<OrderLine>().HasQueryFilter(line => line.Order.TenantId == TenantId);
 ```
 
+### TGM015 tenant-free-foreign-key
+
+```text
+{Entity}: the foreign key ({Columns}) to {Principal} doesn't include '{Property}', so the database accepts a row that points at another tenant's {Principal}. Add it to the foreign key: HasForeignKey(e => new { e.{Property}, {Members} }).HasPrincipalKey(p => new { p.{PrincipalProperty}, {PrincipalMembers} }).
+```
+
+An invoice stamped with the current tenant can hold the key of another tenant's customer.
+The write guard checks the invoice's own tenant, not where its foreign keys point
+([write guard](write-guard.md#foreign-keys)), and the customer needn't be tracked, so the
+row is saved. The tenant filter on `Customer` keeps `Include` from loading it, which the
+probe's [NavigationLeak](probe.md#navigationleak) check proves, but the reference is in
+the database: raw SQL, a report or a view that joins on `CustomerId` crosses tenants. Only
+the database can refuse the row, with a foreign key that includes the tenant column.
+
+Reported for each foreign key whose dependent and principal entity types are both
+tenant-scoped, required or optional, a self-reference included, unless one of its
+properties is the dependent's tenant property and the principal key property it pairs with
+is the principal's tenant property. `{Columns}` lists the foreign key's properties,
+comma-separated, and `{Members}` the same properties as `e.{Name}`; `{PrincipalProperty}`
+is the principal's tenant property, and `{PrincipalMembers}` the principal key's
+properties as `p.{Name}`. One finding is reported for each foreign key, in the order of
+`{Columns}`.
+
+Not reported:
+
+- a foreign key to an entity type with no tenant property, such as a shared `Country` or a
+  table of tenants;
+- a foreign key that is the tenant property alone, to a table of tenants whose key is named
+  as its tenant property with `TenantProperty<Club>(club => club.Id)`: the pair is there;
+- a foreign key of an owned type, whose rows are its owner's (TGM008);
+- a foreign key of an entity type with no tenant property. TGM014 reports a dependent that
+  nothing scopes. The join entity type EF Core creates for a many-to-many relationship has
+  no tenant column to put in a foreign key, so it isn't reported either: give the
+  relationship a join entity type with a tenant property, with `UsingEntity`, to have its
+  foreign keys checked;
+- a foreign key whose dependent or principal isn't a table, as for TGM009 and TGM010
+  ([which tables](#which-tables-tgm009-and-tgm010-check)): the database holds no
+  constraint for it.
+
+A principal declared with `Unfiltered<TEntity>` is still tenant-scoped, so a foreign key to
+it is reported.
+
+```csharp
+// TGM015
+modelBuilder.Entity<Invoice>()
+    .HasOne(invoice => invoice.Customer)
+    .WithMany(customer => customer.Invoices)
+    .HasForeignKey(invoice => invoice.CustomerId);
+
+// Passes: the database refuses an invoice that points at another tenant's customer.
+modelBuilder.Entity<Invoice>()
+    .HasOne(invoice => invoice.Customer)
+    .WithMany(customer => customer.Invoices)
+    .HasForeignKey(invoice => new { invoice.TenantId, invoice.CustomerId })
+    .HasPrincipalKey(customer => new { customer.TenantId, customer.Id });
+```
+
+`HasPrincipalKey` adds the alternate key `(TenantId, Id)` on the principal. It includes
+the tenant property, so TGM010 doesn't report it, and it starts with it, as the index EF
+Core adds for the foreign key does, so both tables pass TGM009. The change needs a
+migration, and the migration fails if the table already holds a row that points across
+tenants: find those rows first.
+
+An optional relationship keeps working: with `CustomerId` null, the database checks
+nothing. Clear it by setting the foreign key property, `invoice.CustomerId = null`. When
+the tenant property's CLR type can hold null, as a `string` does, EF Core sets every such
+property of the foreign key to null when the relationship is cleared another way:
+`invoice.Customer = null`, removing the invoice from `customer.Invoices`, or deleting the
+customer under `DeleteBehavior.ClientSetNull` or `SetNull`. That would move the row to no
+tenant, so the write guard blocks the save (behavior pin 11). A tenant property of a value
+type, such as `Guid` or `int`, keeps its value.
+
 ### Which tables TGM009 and TGM010 check
 
 Both rules check the indexes and keys declared anywhere in the hierarchy, so an index on a
@@ -445,7 +518,8 @@ builds the model, TenantGuard tells a relational provider by its options extensi
 derives from `RelationalOptionsExtension`; `TenantGuardModel.Validate` tells by the
 `Relational:` annotations a relational provider puts on each entity type of the model
 `context.Model` returns. Both are matched by name, so the runtime package needs no
-relational reference. TGM011 checks the types these rules skip, the ones mapped to a view,
+relational reference. TGM015 skips a foreign key when either of its ends is one of the
+types skipped here. TGM011 checks the types these rules skip, the ones mapped to a view,
 a SQL query or a function, and tells the provider the same way.
 
 ## How the operand is classified

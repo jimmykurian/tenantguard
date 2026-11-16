@@ -54,6 +54,17 @@ tenant-scoped, or belongs to a context declared `CrossTenant`; and `NoTenantPoli
 A tenant property declared on the owned type itself is ignored, and TGM008 reports it
 ([rules](rules.md#tgm008-owned-tenant)).
 
+## Foreign keys
+
+The guard checks a row's own tenant property, not the rows its foreign keys point at. An
+invoice stamped with the current tenant passes even when its `CustomerId` is the key of
+another tenant's customer: that customer needn't be tracked, and checking it would take a
+query for each foreign key on every save
+([0034](../architecture/decisions/0034-a-model-rule-for-foreign-keys-without-the-tenant.md)).
+The database refuses such a row when the foreign key includes the tenant property, and
+TGM015 reports each foreign key that doesn't
+([rules](rules.md#tgm015-tenant-free-foreign-key)).
+
 ## The current tenant
 
 The current tenant comes from `CurrentTenant(context)`. When it returns null,
