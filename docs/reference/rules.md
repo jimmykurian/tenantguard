@@ -464,6 +464,12 @@ so no property is listed twice. A foreign key of `(CustomerTenantId, CustomerId)
 `(TenantId, Id)` on an `Invoice` whose tenant property is `TenantId` gives
 `new { e.TenantId, e.CustomerId }` and `new { p.TenantId, p.Id }`.
 
+The message writes the fix the way a one-to-many relationship takes it. A one-to-one
+relationship takes the same two lists in `HasForeignKey<TDependent>` and
+`HasPrincipalKey<TPrincipal>`. A shadow property is listed as `e.{Name}` too, though a
+lambda can't read it: pass the names instead, as in
+`HasForeignKey("TenantId", "CustomerId")`.
+
 Not reported:
 
 - a foreign key to an entity type with no tenant property, such as a shared `Country` or a
