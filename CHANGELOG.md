@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/jimmykurian/tenantguard/compare/v1.0.1...v1.1.0) (2026-11-16)
+
+
+### Features
+
+* **model:** report TGM015 for a foreign key that leaves out the tenant property ([#123](https://github.com/jimmykurian/tenantguard/issues/123)) ([3335fbd](https://github.com/jimmykurian/tenantguard/commit/3335fbdc405ffb9e9282889144e449e62da337b8)), closes [#120](https://github.com/jimmykurian/tenantguard/issues/120)
+
+
+### Documentation
+
+* **docs:** specify TGM015 for a foreign key that leaves out the tenant property ([#121](https://github.com/jimmykurian/tenantguard/issues/121)) ([1e1717e](https://github.com/jimmykurian/tenantguard/commit/1e1717e74d0abac32091b21767f9add5cc582f52)), closes [#120](https://github.com/jimmykurian/tenantguard/issues/120)
+
 ## [1.0.1](https://github.com/jimmykurian/tenantguard/compare/v1.0.0...v1.0.1) (2026-11-12)
 
 
