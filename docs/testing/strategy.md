@@ -77,3 +77,9 @@ Core version, stop and open an issue: the design rests on it.
     EF Core refuses an unnamed filter beside named ones on one entity type, so TG001 leaves
     the named overload alone under `tenantguard.tenant_filter_unnamed`
     ([0032](../architecture/decisions/0032-analyzers-read-sql-locals-compare-the-tenant-and-see-framework-switches.md)).
+11. A foreign key that includes the tenant column makes the database refuse a link across
+    tenants. Clearing an optional one through its navigation sets every foreign key property
+    that can hold null to null, a `string` tenant property included; setting the other
+    foreign key property to null leaves the tenant alone. A row with a null tenant isn't
+    checked. TGM015's fix rests on these
+    ([0034](../architecture/decisions/0034-a-model-rule-for-foreign-keys-without-the-tenant.md)).
