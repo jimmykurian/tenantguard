@@ -69,6 +69,7 @@ TGM002 doesn't report it.
 | TGM012 | switchable-filter | warning | The tenant filter is ORed with a condition that doesn't read the row, so it can be switched off |
 | TGM013 | open-without-tenant | warning | The tenant filter is ORed with a null check of the current tenant, so it returns every row when there is none |
 | TGM014 | unscoped-dependent | warning | An entity type with no tenant property and no filter that reaches one belongs to a tenant-scoped principal through a required foreign key |
+| TGM015 | tenant-free-foreign-key | warning | A foreign key from a tenant-scoped entity type to another doesn't include the tenant property |
 
 TGM011 and TGM014 aren't reported under `RequireAllEntitiesScoped`, where TGM002 reports the
 same types as errors.
@@ -435,6 +436,135 @@ modelBuilder.Entity<OrderLine>().HasOne(line => line.Order).WithMany(order => or
 modelBuilder.Entity<OrderLine>().HasQueryFilter(line => line.Order.TenantId == TenantId);
 ```
 
+### TGM015 tenant-free-foreign-key
+
+```text
+{Entity}: the foreign key ({Columns}) to {Principal} doesn't include '{Property}', so the database accepts a row that points at another tenant's {Principal}. Add it to the foreign key: HasForeignKey(e => new { {Members} }).HasPrincipalKey(p => new { {PrincipalMembers} }).
+```
+
+```text
+{Entity}: the foreign key ({Columns}) to {Principal} pairs '{Property}' with '{PrincipalColumn}', not with {Principal}'s tenant property '{PrincipalProperty}', so the database accepts a row that points at another tenant's {Principal}. Pair '{Property}' with '{PrincipalProperty}' in the foreign key, and keep '{PrincipalColumn}' paired with a property of its own.
+```
+
+An invoice stamped with the current tenant can hold the key of another tenant's customer.
+The write guard checks the invoice's own tenant, not where its foreign keys point
+([write guard](write-guard.md#foreign-keys)), and the customer needn't be tracked, so the
+row is saved. The tenant filter on `Customer` keeps `Include` from loading it, which the
+probe's [NavigationLeak](probe.md#navigationleak) check proves, but the reference is in
+the database: raw SQL, a report or a view that joins on `CustomerId` crosses tenants. Only
+the database can refuse the row, with a foreign key that includes the tenant column.
+
+Reported for each foreign key whose dependent and principal entity types are both
+tenant-scoped, required or optional, a self-reference included, unless one of its
+properties is the dependent's tenant property and the principal key property it pairs with
+is the principal's tenant property. One finding is reported for each foreign key, in the
+order of `{Columns}`, which lists the foreign key's properties, comma-separated.
+
+`{Members}` and `{PrincipalMembers}` are the foreign key and the principal key the fix
+needs, as `e.{Name}` and `p.{Name}`, the same length and paired in order. Each starts with
+the tenant pair: the dependent's tenant property, then the principal's. The foreign key's
+own pairs follow, in its order, without a pair that already holds the principal's tenant
+property, so no property is listed twice. A foreign key of `(CustomerTenantId, CustomerId)`
+to `(TenantId, Id)` on an `Invoice` whose tenant property is `TenantId` gives
+`new { e.TenantId, e.CustomerId }` and `new { p.TenantId, p.Id }`.
+
+The second message is for a foreign key that already holds the dependent's tenant
+property, paired with another property of the principal, `{PrincipalColumn}`, as when
+`Invoice.TenantId` is itself the foreign key to `Customer.Id`. Dropping that pair would
+leave the principal key without `{PrincipalColumn}`, and a key of the tenant property alone
+allows one principal row for each tenant, so the message gives no code: the relationship
+needs a property of the dependent's to hold `{PrincipalColumn}`, which only the app can
+name.
+
+The message writes the fix the way a one-to-many relationship takes it. A one-to-one
+relationship takes the same two lists in `HasForeignKey<TDependent>` and
+`HasPrincipalKey<TPrincipal>`. A shadow property is listed as `e.{Name}` too, though a
+lambda can't read it: pass the names instead, as in
+`HasForeignKey("TenantId", "CustomerId")`.
+
+Not reported:
+
+- a foreign key to an entity type with no tenant property, such as a shared `Country` or a
+  table of tenants;
+- a foreign key that is the tenant property alone, to a table of tenants whose key is named
+  as its tenant property with `TenantProperty<Club>(club => club.Id)`: the pair is there;
+- a foreign key of an owned type, whose rows are its owner's (TGM008);
+- a foreign key of an entity type with no tenant property. TGM014 reports a dependent that
+  nothing scopes. The join entity type EF Core creates for a many-to-many relationship has
+  no tenant column to put in a foreign key, so it isn't reported either: give the
+  relationship a join entity type with a tenant property, with `UsingEntity`, to have its
+  foreign keys checked;
+- a foreign key whose dependent or principal isn't a table, as for TGM009 and TGM010
+  ([which tables](#which-tables-tgm009-and-tgm010-check)): the database holds no
+  constraint for it.
+
+A principal declared with `Unfiltered<TEntity>` is still tenant-scoped, so a foreign key to
+it is reported.
+
+```csharp
+// TGM015
+modelBuilder.Entity<Invoice>()
+    .HasOne(invoice => invoice.Customer)
+    .WithMany(customer => customer.Invoices)
+    .HasForeignKey(invoice => invoice.CustomerId);
+
+// Passes: the database refuses an invoice that points at another tenant's customer.
+modelBuilder.Entity<Invoice>()
+    .HasOne(invoice => invoice.Customer)
+    .WithMany(customer => customer.Invoices)
+    .HasForeignKey(invoice => new { invoice.TenantId, invoice.CustomerId })
+    .HasPrincipalKey(customer => new { customer.TenantId, customer.Id });
+```
+
+`HasPrincipalKey` adds the alternate key `(TenantId, Id)` on the principal. It includes
+the tenant property, so TGM010 doesn't report it, and it starts with it, as the index EF
+Core adds for the foreign key does, so both tables pass TGM009. The change needs a
+migration, and the migration fails if the table already holds a row that points across
+tenants: find those rows first.
+
+An optional relationship keeps working: with `CustomerId` null, the database checks
+nothing. Clear it by setting the foreign key property, `invoice.CustomerId = null`, which
+leaves the tenant column alone. Two other ways of clearing it reach the tenant column:
+
+- **In the context.** When the tenant property's CLR type can hold null, as a `string`
+  does, EF Core sets every such property of the foreign key to null when a tracked
+  invoice's relationship is cleared another way: `invoice.Customer = null`, removing the
+  invoice from `customer.Invoices`, or deleting the customer while the invoice is tracked,
+  under `DeleteBehavior.ClientSetNull` (the default for an optional relationship) or
+  `SetNull`. That would move the row to no tenant, so the write guard blocks the save
+  (behavior pin 11). A tenant property of a value type, such as `Guid` or `int`, keeps its
+  value.
+- **In the database.** `DeleteBehavior.SetNull` also makes the constraint
+  `ON DELETE SET NULL`, which sets every column of the foreign key to null on the invoices
+  that aren't tracked, whatever the CLR type, and the write guard never sees it. A required
+  tenant column makes the delete fail; a nullable one leaves the invoice with no tenant, a
+  host row under `NullTenantIsHost`. Don't use `SetNull` on a foreign key that includes the
+  tenant property: keep `ClientSetNull`, or use `Restrict`, and set `CustomerId` to null
+  on the customer's invoices before deleting it.
+
+The fix needs the principal's tenant property to be required, because EF Core doesn't
+allow a nullable property in an alternate key. A principal whose tenant property is
+nullable, as with [`NullTenantIsHost`](options.md#host-rows) (TGM005), can't take it while
+it has rows with no tenant. Leave the foreign key as it is and say why, with
+`Suppress<TEntity>("TGM015", reason)` on the dependent, or give host rows a tenant value of
+their own so the property can be required.
+
+The constraint only holds for a dependent row that has a tenant. A database doesn't check
+a composite foreign key when any of its columns is null, so where the dependent's tenant
+property is nullable, an invoice with no tenant, a host row under `NullTenantIsHost`, can
+hold the `CustomerId` of any tenant's customer, and the write guard lets the host save it.
+TGM015 doesn't report this: the foreign key has the tenant pair. Make the dependent's
+tenant property required, or, when host rows are meant, add a check constraint that keeps
+a row with no tenant from holding a customer:
+
+```csharp
+modelBuilder.Entity<Invoice>().ToTable(table => table.HasCheckConstraint(
+    "CK_Invoices_HostHasNoCustomer",
+    "\"TenantId\" IS NOT NULL OR \"CustomerId\" IS NULL"));
+```
+
+The SQL is the provider's: quote the columns the way your database does.
+
 ### Which tables TGM009 and TGM010 check
 
 Both rules check the indexes and keys declared anywhere in the hierarchy, so an index on a
@@ -445,7 +575,8 @@ builds the model, TenantGuard tells a relational provider by its options extensi
 derives from `RelationalOptionsExtension`; `TenantGuardModel.Validate` tells by the
 `Relational:` annotations a relational provider puts on each entity type of the model
 `context.Model` returns. Both are matched by name, so the runtime package needs no
-relational reference. TGM011 checks the types these rules skip, the ones mapped to a view,
+relational reference. TGM015 skips a foreign key when either of its ends is one of the
+types skipped here. TGM011 checks the types these rules skip, the ones mapped to a view,
 a SQL query or a function, and tells the provider the same way.
 
 ## How the operand is classified

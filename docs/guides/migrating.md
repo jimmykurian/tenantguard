@@ -105,5 +105,6 @@ each one then needs a tenant property, or `Shared<T>()` for a lookup table.
 | TGM012 | The filter has a switch, such as `!IsTenantFilterEnabled \|\| ...`, as in ABP | Leave it if the switch is turned on only on purpose, and say so once: [`Suppress("TGM012", "why")`](../reference/options.md#suppressing-a-rule) |
 | TGM013 | The filter opens up when there's no tenant: `CurrentTenantId == null \|\| ...` | Compare with the current tenant alone; for an admin context meant to see every tenant, [`Suppress("TGM013", "why")`](../reference/options.md#suppressing-a-rule) |
 | TGM014 | A line item or registration has no tenant property and no filter | Filter it through its principal, `HasQueryFilter(e => e.Order.TenantId == TenantId)`, or give it a tenant property and a filter; for a table shared on purpose, `Shared<T>()` |
+| TGM015 | A foreign key between two tenant-scoped types, such as `Invoice.CustomerId`, leaves out the tenant property | Add the tenant property to the foreign key, `HasForeignKey(e => new { e.TenantId, e.CustomerId }).HasPrincipalKey(p => new { p.TenantId, p.Id })`, in a migration of its own; until then, [`Suppress("TGM015", "why")`](../reference/options.md) |
 
 The [reference](../reference/rules.md) has each rule's message and examples.
