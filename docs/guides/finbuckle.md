@@ -38,6 +38,15 @@ tenant. Finbuckle stores `TenantInfo.Id` in each row's `TenantId`, so that is wh
   `AdjustUniqueIndexes()` adds `TenantId` to each unique index, which clears it. So is a
   natural primary key without `TenantId`, such as an external login's
   `(LoginProvider, ProviderKey)`; Finbuckle's `AdjustKey()` adds `TenantId` to a key.
+- `IsMultiTenant()` leaves foreign keys as they are, so a relationship between two
+  multi-tenant entities is TGM015: the database accepts an invoice that points at another
+  tenant's customer. `TenantId` is a shadow property, so the fix names it:
+  `HasForeignKey("TenantId", nameof(Invoice.CustomerId)).HasPrincipalKey("TenantId", nameof(Customer.Id))`.
+  The customer's `TenantId` is then part of a key, which EF Core needs when the row is
+  added, before Finbuckle sets it at `SaveChanges`: give it a value generator that reads
+  `TenantInfo.Id`, as the [sample](../../samples/Finbuckle.Api)
+  does ([rules](../reference/rules.md#tgm015-tenant-free-foreign-key)). To leave the
+  foreign keys alone, say so once: `Suppress("TGM015", "why")`.
 
 `RequireAllEntitiesScoped()` makes every entity type take a side. An entity marked
 `IsNotMultiTenant()`, or never marked, then needs `Shared<T>()` (TGM002):

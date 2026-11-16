@@ -19,7 +19,7 @@ const checkpoints = [
   {
     when: 'At startup',
     what: 'Model rules',
-    ids: 'TGM001 to TGM014',
+    ids: 'TGM001 to TGM015',
     text: 'Fail the host when a tenant-scoped entity has no query filter, or its filter is frozen to one tenant.',
     href: '/reference/rules/',
   },
@@ -41,7 +41,7 @@ const checkpoints = [
 
 const stats = [
   { number: '5', label: 'analyzers', detail: 'TG001 to TG005, at build' },
-  { number: '14', label: 'model rules', detail: 'TGM001 to TGM014, at startup' },
+  { number: '15', label: 'model rules', detail: 'TGM001 to TGM015, at startup' },
   { number: '3', label: 'write states guarded', detail: 'Added, Modified and Deleted, on SaveChanges' },
   { number: '7', label: 'probe checks', detail: 'per entity, for every pair of tenants, in tests' },
 ];
@@ -54,6 +54,7 @@ const leaks = [
   ["A framework's own filter switch, such as ABP's IDataFilter.Disable<IMultiTenant>()", 'Yes: TG005', '', '', ''],
   ["A write, move or delete of another tenant's row", '', '', 'Yes: TenantIsolationViolationException, before the database', 'Yes: UpdateGuard, InsertGuard, DeleteGuard'],
   ["A change to only the owned part of another tenant's row, such as order.Shipping", '', '', 'Yes: checked through its owner', ''],
+  ["A row whose foreign key points at another tenant's row, such as invoice.CustomerId", '', 'Yes: TGM015, unless the foreign key includes the tenant column', "Not seen: it checks the row's own tenant", 'Yes for reads: NavigationLeak'],
   ['A bulk ExecuteDelete or ExecuteUpdate across tenants', '', '', 'Not seen: it skips SaveChanges', 'Yes: BulkIsolation'],
   ['A new entity added months later', '', 'Yes: every rule runs on every entity', "Yes, once it's tenant-scoped", 'Yes: every tenant-scoped entity is probed'],
 ];

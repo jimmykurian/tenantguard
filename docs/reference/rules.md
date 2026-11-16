@@ -542,7 +542,27 @@ leaves the tenant column alone. Two other ways of clearing it reach the tenant c
   tenant property: keep `ClientSetNull`, or use `Restrict`, and set `CustomerId` to null
   on the customer's invoices before deleting it.
 
-The fix needs the principal's tenant property to be required, because EF Core doesn't
+The principal's tenant value has to be set when the row is added to the context. EF Core
+needs a key's values to track a row, so `Add` throws for a customer whose tenant property
+is still null: "Unable to track an entity of type 'Customer' because alternate key
+property 'TenantId' is null". That is before `SaveChanges`, where `StampOnAdd` and
+Finbuckle set it. Set the tenant when the row is created, or give the property a value
+generator that reads the context's tenant, as `samples/Finbuckle.Api` does:
+
+```csharp
+customer.Property<string>("TenantId").HasValueGenerator<CurrentTenantGenerator>();
+
+internal sealed class CurrentTenantGenerator : ValueGenerator<string>
+{
+    public override bool GeneratesTemporaryValues => false;
+
+    public override string Next(EntityEntry entry)
+        => ((AppDbContext)entry.Context).TenantInfo?.Id
+            ?? throw new InvalidOperationException("A row can't be added without a current tenant.");
+}
+```
+
+The fix also needs the principal's tenant property to be required, because EF Core doesn't
 allow a nullable property in an alternate key. A principal whose tenant property is
 nullable, as with [`NullTenantIsHost`](options.md#host-rows) (TGM005), can't take it while
 it has rows with no tenant. Leave the foreign key as it is and say why, with

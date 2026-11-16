@@ -32,12 +32,21 @@ internal sealed class AppDbContext(IMultiTenantContextAccessor<TenantInfo> acces
         modelBuilder.Entity<Customer>(customer =>
         {
             customer.IsMultiTenant();
+
+            // TenantId is in the key Invoice's foreign key points at, so it's set when a customer is
+            // added to the context, not at SaveChanges.
+            customer.Property<string>("TenantId").HasValueGenerator<CurrentTenantGenerator>();
             customer.HasIndex("TenantId");
         });
         modelBuilder.Entity<Invoice>(invoice =>
         {
             invoice.IsMultiTenant();
-            invoice.HasOne<Customer>().WithMany().HasForeignKey(row => row.CustomerId);
+
+            // The foreign key includes TenantId, so the database refuses an invoice that points at
+            // another tenant's customer (TGM015). TenantId is a shadow property, so it's named.
+            invoice.HasOne<Customer>().WithMany()
+                .HasForeignKey("TenantId", nameof(Invoice.CustomerId))
+                .HasPrincipalKey("TenantId", nameof(Customer.Id));
             invoice.HasIndex("TenantId");
         });
     }

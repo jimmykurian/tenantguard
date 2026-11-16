@@ -36,15 +36,14 @@ internal sealed class IsolationChecks<TContext>(
     // A copy of the owner's row, attached to the viewer's context as if it had been read there.
     internal static EntityEntry AttachCopy(DbContext context, SeededRow row)
     {
-        var entry = context.Attach(row.Values.ToObject());
+        // The values are set before the copy is tracked: a shadow property that is part of a key, as a
+        // shadow tenant property in a foreign key's principal key is, can't be changed afterwards.
+        var entry = context.Entry(row.Values.ToObject());
 
         // By name: with a model per tenant, the row's values belong to another model.
         foreach (var property in entry.Metadata.GetProperties())
         {
-            var value = row.Values[property.Name];
-            var current = entry.Property(property);
-            current.CurrentValue = value;
-            current.OriginalValue = value;
+            entry.Property(property).CurrentValue = row.Values[property.Name];
         }
 
         entry.State = EntityState.Unchanged;

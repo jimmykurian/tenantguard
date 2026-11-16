@@ -77,16 +77,25 @@ public sealed class IndexRuleTests
         => TestModels.ValidateAll<Tgm010Models.UniqueOnDerived>().Findings.Should().ContainSingle().Subject.Message.Should().StartWith("CardPayment: the unique index on (Last4) doesn't include 'TenantId'");
 
     [Fact]
+    public void Suppress_for_a_derived_type_leaves_out_the_unique_index_it_declares()
+    {
+        var report = TestModels.ValidateAll<Tgm010Models.UniqueOnDerived>(tg => tg.Suppress<Tgm009Models.CardPayment>("TGM010", "card numbers are tokens from one processor"));
+
+        report.Findings.Should().BeEmpty();
+        report.Suppressed.Should().ContainSingle().Which.Entity.Should().Be("CardPayment");
+    }
+
+    [Fact]
     public void One_to_one_foreign_key_index_passes()
-        => TestModels.ValidateAll<Tgm010Models.OneToOne>().Findings.Should().BeEmpty();
+        => TestModels.ValidateIndexes<Tgm010Models.OneToOne>().Findings.Should().BeEmpty();
 
     [Fact]
     public void Unique_index_and_alternate_key_over_a_foreign_key_to_a_tenant_scoped_row_pass()
-        => TestModels.ValidateAll<Tgm010Models.UniqueWithinTenantScopedPrincipal>().Findings.Should().BeEmpty();
+        => TestModels.ValidateIndexes<Tgm010Models.UniqueWithinTenantScopedPrincipal>().Findings.Should().BeEmpty();
 
     [Fact]
     public void Join_table_of_tenant_scoped_rows_passes()
-        => TestModels.ValidateAll<Tgm010Models.JoinOfTenantScopedPrincipals>().Findings.Should().BeEmpty();
+        => TestModels.ValidateIndexes<Tgm010Models.JoinOfTenantScopedPrincipals>().Findings.Should().BeEmpty();
 
     [Fact]
     public void Unique_index_over_a_foreign_key_to_a_shared_row_is_TGM010()
