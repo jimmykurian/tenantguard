@@ -327,10 +327,10 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
-| Files | 94 | 120 | 14 | 228 |
-| Lines of code | 5,837 | 8,971 | 233 | 15,041 |
-| Methods | 439 | 923 | 21 | 1,383 |
-| Average complexity | 3.7 | 1.2 | 1.2 | 2.0 |
+| Files | 95 | 123 | 15 | 233 |
+| Lines of code | 5,891 | 9,532 | 242 | 15,665 |
+| Methods | 441 | 977 | 23 | 1,441 |
+| Average complexity | 3.7 | 1.1 | 1.3 | 1.9 |
 | Max complexity | 48 | 5 | 4 | 48 |
 
 <details>
