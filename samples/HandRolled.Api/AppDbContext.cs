@@ -24,7 +24,11 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options, ITena
         });
         modelBuilder.Entity<Invoice>(invoice =>
         {
-            invoice.HasOne<Customer>().WithMany().HasForeignKey(row => row.CustomerId);
+            // The foreign key includes TenantId, so the database refuses an invoice that points at
+            // another tenant's customer (TGM015).
+            invoice.HasOne<Customer>().WithMany()
+                .HasForeignKey(row => new { row.TenantId, row.CustomerId })
+                .HasPrincipalKey(row => new { row.TenantId, row.Id });
             invoice.HasQueryFilter(row => row.TenantId == TenantId);
             invoice.HasIndex(row => row.TenantId);
         });
