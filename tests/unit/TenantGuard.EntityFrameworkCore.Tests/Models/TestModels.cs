@@ -17,11 +17,16 @@ internal static class TestModels
         return (TContext)Activator.CreateInstance(typeof(TContext), builder.Options)!;
     }
 
-    // The filter rules' models have no tenant index, so this leaves out TGM009 and TGM010;
-    // ValidateAll keeps them.
+    // The filter rules' models have no tenant index and single-column foreign keys, so this leaves
+    // out TGM009, TGM010 and TGM015; ValidateAll keeps them.
     public static ModelReport Validate<TContext>(Action<TenantGuardOptionsBuilder>? configure = null)
         where TContext : DbContext
-        => new([.. ValidateAll<TContext>(configure).Findings.Where(finding => finding.RuleId is not ("TGM009" or "TGM010"))]);
+        => new([.. ValidateAll<TContext>(configure).Findings.Where(finding => finding.RuleId is not ("TGM009" or "TGM010" or "TGM015"))]);
+
+    // The index rules' models have single-column foreign keys, so this leaves out TGM015.
+    public static ModelReport ValidateIndexes<TContext>(Action<TenantGuardOptionsBuilder>? configure = null)
+        where TContext : DbContext
+        => new([.. ValidateAll<TContext>(configure).Findings.Where(finding => finding.RuleId is not "TGM015")]);
 
     public static ModelReport ValidateAll<TContext>(Action<TenantGuardOptionsBuilder>? configure = null)
         where TContext : DbContext

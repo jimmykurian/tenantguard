@@ -33,7 +33,7 @@ public sealed class LeakShapeRuleTests
 
     [Fact]
     public void Primary_key_shared_with_a_tenant_scoped_principal_passes()
-        => TestModels.ValidateAll<Tgm010KeyModels.SharedPrimaryKey>().Findings.Should().BeEmpty();
+        => TestModels.ValidateIndexes<Tgm010KeyModels.SharedPrimaryKey>().Findings.Should().BeEmpty();
 
     [Fact]
     public void Generated_primary_key_passes()

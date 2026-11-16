@@ -8,7 +8,7 @@ namespace TenantGuard;
 
 // TGM009 and TGM010: the indexes and keys of a tenant-scoped table, on a relational provider. The
 // relational annotations are read by name, so the runtime package needs no relational reference.
-// TGM011 reads the same annotations for the types these rules skip.
+// TGM011 reads the same annotations for the types these rules skip, and TGM015 skips them too.
 internal static class TenantIndexRules
 {
     private static readonly string[] _nonTableMappings = ["Relational:ViewName", "Relational:SqlQuery", "Relational:FunctionName"];
@@ -30,9 +30,14 @@ internal static class TenantIndexRules
         return root.FindAnnotation("Relational:FunctionName")?.Value is string function ? $"the function '{function}'" : null;
     }
 
+    // A table: not keyless, and not mapped to a view, a SQL query or a function. The database holds
+    // indexes, keys and foreign key constraints only for these.
+    public static bool IsTable(IReadOnlyEntityType root)
+        => root.FindPrimaryKey() is not null && !IsMappedToNonTable(root);
+
     public static void Check(IReadOnlyEntityType root, IReadOnlyProperty tenantProperty, TenantGuardOptions options, List<ModelFinding> findings)
     {
-        if (root.FindPrimaryKey() is null || IsMappedToNonTable(root))
+        if (!IsTable(root))
         {
             return;
         }

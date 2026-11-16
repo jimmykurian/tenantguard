@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace TenantGuard;
 
-// Runs rules TGM001 to TGM014 over every entity type in name order, so the findings are
+// Runs rules TGM001 to TGM015 over every entity type in name order, so the findings are
 // deterministic.
 internal static class TenantModelRules
 {
-    // relational says whether the model's provider is relational, for TGM009 and TGM010; when it's
+    // relational says whether the model's provider is relational, for TGM009, TGM010 and TGM015; when it's
     // null, the model's annotations tell. capturedValuesAllowed leaves TGM003 out, when the context
     // passed the AllowCapturedValues check (PerTenantModel). noTenantModel says the context building the
     // model passed the CrossTenantWhenNoTenant check.
@@ -195,6 +195,7 @@ internal static class TenantModelRules
         if (checksIndexes)
         {
             TenantIndexRules.Check(entityType, tenantProperty, options, findings);
+            TenantForeignKeyRules.Check(entityType, tenantProperty, options, findings);
         }
     }
 

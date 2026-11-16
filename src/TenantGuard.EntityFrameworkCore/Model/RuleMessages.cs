@@ -154,8 +154,37 @@ internal static class RuleMessages
             null,
             $"{entity} has no tenant property and no query filter that reaches one, but its rows belong to tenant-scoped {principal} through the required foreign key ({string.Join(", ", columns)}), so Set<{entity}>() returns every tenant's rows. Filter it through {principal}, give it '{suggestedProperty}' and a filter, or declare it with Shared<{entity}>().");
 
-    private static string Members(IReadOnlyList<string> columns)
-        => string.Join(", ", columns.Select(column => "e." + column));
+    // members and principalMembers are the foreign key and the principal key the fix needs, paired in order.
+    public static ModelFinding TenantFreeForeignKey(
+        string entity,
+        string property,
+        IReadOnlyList<string> columns,
+        string principal,
+        IReadOnlyList<string> members,
+        IReadOnlyList<string> principalMembers)
+        => new(
+            "TGM015",
+            Severity.Warning,
+            entity,
+            property,
+            $"{entity}: the foreign key ({string.Join(", ", columns)}) to {principal} doesn't include '{property}', so the database accepts a row that points at another tenant's {principal}. Add it to the foreign key: HasForeignKey(e => new {{ {Members(members)} }}).HasPrincipalKey(p => new {{ {Members(principalMembers, "p")} }}).");
+
+    public static ModelFinding MispairedTenantForeignKey(
+        string entity,
+        string property,
+        IReadOnlyList<string> columns,
+        string principal,
+        string principalColumn,
+        string principalProperty)
+        => new(
+            "TGM015",
+            Severity.Warning,
+            entity,
+            property,
+            $"{entity}: the foreign key ({string.Join(", ", columns)}) to {principal} pairs '{property}' with '{principalColumn}', not with {principal}'s tenant property '{principalProperty}', so the database accepts a row that points at another tenant's {principal}. Pair '{property}' with '{principalProperty}' in the foreign key, and keep '{principalColumn}' paired with a property of its own.");
+
+    private static string Members(IReadOnlyList<string> columns, string parameter = "e")
+        => string.Join(", ", columns.Select(column => parameter + "." + column));
 
     private static ModelFinding FilterNotParameterized(string entity, string property, string message)
         => new("TGM007", Severity.Warning, entity, property, message);
