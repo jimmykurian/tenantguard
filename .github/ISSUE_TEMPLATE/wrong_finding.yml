@@ -33,6 +33,7 @@ body:
         - TGM012 switchable-filter
         - TGM013 open-without-tenant
         - TGM014 unscoped-dependent
+        - TGM015 tenant-free-foreign-key
         - TG001 ignore-query-filters
         - TG002 raw-sql-without-tenant
         - TG003 missing-justification

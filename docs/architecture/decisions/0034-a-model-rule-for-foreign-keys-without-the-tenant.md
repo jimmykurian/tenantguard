@@ -37,6 +37,10 @@ A check on EF Core 11.0.0 with SQLite found how the composite foreign key behave
   tracked.
 - EF Core doesn't allow a nullable property in an alternate key, so the fix needs the
   principal's tenant property to be required.
+- EF Core needs a key's values to track a row, so adding a principal whose tenant property
+  is still null throws at `Add`. `StampOnAdd` and Finbuckle set the tenant at
+  `SaveChanges`, which is too late. A value generator on the tenant property that reads
+  the context's tenant sets it at `Add`.
 - The database doesn't check a composite foreign key when one of its columns is null. A
   dependent row with a null tenant and a `CustomerId` is accepted, whichever tenant the
   customer belongs to; a check constraint that keeps a row with no tenant from holding a
@@ -102,6 +106,12 @@ it can only suppress, unless host rows are given a tenant value of their own. Wh
 dependent's tenant property is nullable, a foreign key that passes TGM015 still lets a host
 row point at any tenant's row, until a check constraint is added: the rule reads the
 model, and can't see check constraints written as SQL.
+
+An app that leaves the tenant to be stamped at `SaveChanges`, as with `StampOnAdd` or
+Finbuckle's shadow `TenantId`, needs a value generator on each principal's tenant property
+before it can take the fix. The Finbuckle sample has one, and the reference shows it. The
+probe sets a copied row's values before it tracks the copy, so a shadow tenant property in
+a key can be probed.
 
 Many-to-many relationships with EF Core's implicit join type stay unchecked: the join
 table has no tenant column to put in a foreign key. The rules reference says so, and how to

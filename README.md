@@ -108,6 +108,7 @@ Finbuckle's.
 | TGM012 | warning | The tenant filter is ORed with a switch that doesn't read the row, so it can be turned off |
 | TGM013 | warning | The tenant filter is ORed with a null check of the current tenant, so it opens up when there is none |
 | TGM014 | warning | A dependent of a tenant-scoped type has no tenant property and no filter that reaches one |
+| TGM015 | warning | A foreign key between two tenant-scoped types leaves out the tenant property, so the database accepts a row that points at another tenant's |
 
 [Rules reference](https://github.com/jimmykurian/tenantguard/blob/main/docs/reference/rules.md)
 
@@ -211,6 +212,11 @@ if a bypass scope was never disposed.
 **Owned entities?** Checked through their owner: a save that changes only the owned part
 of another tenant's row, such as `order.Shipping.Street`, is blocked.
 
+**A row that points at another tenant's row?** The write guard checks a row's own tenant,
+not where its foreign keys point, so an invoice can be saved with another tenant's
+`CustomerId`. Only the database can refuse it, with a foreign key that includes the tenant
+column, and TGM015 reports each foreign key between tenant-scoped types that doesn't.
+
 **What doesn't it check?** The raw SQL check reads the SQL's tokens for a comparison of the
 tenant column with a value; it doesn't parse SQL, and SQL the compiler can't read is TG004's.
 
@@ -222,7 +228,7 @@ The full documentation is at **<https://tenantguard.is-cool.dev/>**, with search
 | | |
 | --- | --- |
 | [Guides](docs/guides/README.md) | [Why TenantGuard](docs/guides/why.md), [hand-rolled filters](docs/guides/hand-rolled.md), [Finbuckle](docs/guides/finbuckle.md), [testing with the probe](docs/guides/testing.md) and [migrating an existing app](docs/guides/migrating.md) |
-| [Reference](docs/reference/README.md) | [Rules](docs/reference/rules.md) TGM001 to TGM014, [analyzers](docs/reference/analyzers.md) TG001 to TG004, the [write guard](docs/reference/write-guard.md), the [isolation probe](docs/reference/probe.md), [options](docs/reference/options.md), [exceptions](docs/reference/exceptions.md) and [logging](docs/reference/logging.md), with every message, and what stays [compatible](docs/reference/compatibility.md) |
+| [Reference](docs/reference/README.md) | [Rules](docs/reference/rules.md) TGM001 to TGM015, [analyzers](docs/reference/analyzers.md) TG001 to TG004, the [write guard](docs/reference/write-guard.md), the [isolation probe](docs/reference/probe.md), [options](docs/reference/options.md), [exceptions](docs/reference/exceptions.md) and [logging](docs/reference/logging.md), with every message, and what stays [compatible](docs/reference/compatibility.md) |
 | [Architecture](docs/architecture/README.md) | The [packages](docs/architecture/packages.md), the [flows](docs/architecture/flows.md), and the [decision records](docs/architecture/decisions/README.md) behind them |
 | [Testing strategy](docs/testing/strategy.md) | How TenantGuard tests itself, and the EF Core behaviors it pins |
 | [Releases and CI](docs/deployment/releases-and-ci.md) | The workflows and how a release ships |
@@ -247,7 +253,7 @@ flowchart LR
         direction TB
         hosting["Hosting<br/>UseTenantGuard,<br/>startup validation"]
         guard["Interception<br/>SaveChanges write guard"]
-        rules["Model<br/>rules TGM001 to TGM014"]
+        rules["Model<br/>rules TGM001 to TGM015"]
         options["Options<br/>configuration"]
         hosting --> guard --> rules --> options
     end
@@ -322,8 +328,8 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | Metric | Packages | Tests | Samples | Total |
 | --- | --- | --- | --- | --- |
 | Files | 94 | 120 | 14 | 228 |
-| Lines of code | 5,811 | 8,968 | 228 | 15,007 |
-| Methods | 436 | 922 | 21 | 1,379 |
+| Lines of code | 5,837 | 8,971 | 233 | 15,041 |
+| Methods | 439 | 923 | 21 | 1,383 |
 | Average complexity | 3.7 | 1.2 | 1.2 | 2.0 |
 | Max complexity | 48 | 5 | 4 | 48 |
 
@@ -338,10 +344,10 @@ pre-push hook fail while they're out of date, so each change updates them. Run
 | `CommandLine.Parse` | `src/TenantGuard.Tool/CommandLine.cs:41` | 22 |
 | `ValueGenerator.Create` | `src/TenantGuard.Testing/Seeding/ValueGenerator.cs:119` | 20 |
 | `ProbeRun.RunAsync` | `src/TenantGuard.Testing/Probe/ProbeRun.cs:32` | 19 |
-| `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:33` | 17 |
+| `TenantIndexRules.Check` | `src/TenantGuard.EntityFrameworkCore/Model/TenantIndexRules.cs:38` | 16 |
 | `RawSqlCall.FindSql` | `src/TenantGuard.Analyzers/RawSqlCall.cs:136` | 14 |
 | `RawSqlCall.IsWritten` | `src/TenantGuard.Analyzers/RawSqlCall.cs:197` | 13 |
-| `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:201` | 13 |
+| `IsolationChecks.ExpectBlockedAsync` | `src/TenantGuard.Testing/Probe/IsolationChecks.cs:200` | 13 |
 
 </details>
 
